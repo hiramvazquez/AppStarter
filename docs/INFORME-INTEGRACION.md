@@ -13,6 +13,15 @@ cambio en el paquete).
 > documenta en su guía «Desde un proyecto Xcode» las fricciones 1, 5, 6, 7, 8, 9 y 11. Los
 > workarounds locales que 1.0.1 hace innecesarios (`--path Sources`, reintento y espera
 > larga en los helpers de XCUITest) se retiraron en este repo.
+>
+> **Flakiness en el runner (2026-09-03, abierta):** con el commit del linter (`3ea7da5`) los
+> tres XCUITests que entran al detalle fallaron dos veces en CI con «`product.1` existe pero
+> nunca es hittable» (20 s), sin diálogo del sistema en el log; el commit siguiente (`2e269c3`,
+> mismo código fuente, solo diagnóstico en los tests) pasó dos veces. Misma imagen
+> `macos-15-arm64`, mismo Xcode 17C529, mismo iPhone 17 Pro. El diff de fuentes entre ambos es
+> semánticamente neutro (ternario → `if/else`, `scaledToFit`, formato), y en local (iOS 26.5)
+> no se reproduce. Desde `2e269c3`, un fallo sube el `.xcresult` como artefacto y `waitAndTap`
+> adjunta captura y árbol de accesibilidad: el siguiente rojo traerá la evidencia.
 
 ## Resumen
 
