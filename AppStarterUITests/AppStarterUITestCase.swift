@@ -92,6 +92,17 @@ class AppStarterUITestCase: XCTestCase {
             dismissSystemAlertIfPresent(app, timeout: 1)
             result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: hittable, object: element)], timeout: 5)
         }
+        if result != .completed {
+            // Evidence for the CI-only "exists but never hittable" case: what covers it?
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "not-hittable"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            let tree = XCTAttachment(string: "frame=\(element.frame) exists=\(element.exists)\n\(app.debugDescription)")
+            tree.name = "not-hittable-tree"
+            tree.lifetime = .keepAlways
+            add(tree)
+        }
         XCTAssertEqual(result, .completed, "Element never became hittable: \(element)", file: file, line: line)
         element.tap()
         return element

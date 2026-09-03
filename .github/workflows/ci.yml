@@ -79,7 +79,18 @@ jobs:
           xcodebuild -scheme AppStarter \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
             -skipPackagePluginValidation \
+            -resultBundlePath TestResults.xcresult \
             test
+
+      # Si un XCUITest falla en el runner (iOS distinto al local), el .xcresult con las
+      # capturas y el árbol de accesibilidad es la única evidencia: se sube como artefacto.
+      - name: Upload TestResults.xcresult (only on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults.xcresult
+          path: TestResults.xcresult
+          if-no-files-found: ignore
 
   integration:
     name: Integration (real DummyJSON)
