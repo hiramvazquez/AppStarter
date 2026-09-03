@@ -5,6 +5,10 @@ Cada una de estas fricciones (detalladas con contexto completo en
 en AppStarter. Formato: título + descripción, listas para abrir tal cual en
 `hiramvazquez/AppFoundation` o `hiramvazquez/CoreNetworking`.
 
+> **Estado (2026-09-03):** las issues 1, 3 y 4 están resueltas en AppFoundation **1.0.1**
+> y la 2 documentada con repro (`docs/repros/actor-inline-conformance.md` del paquete).
+> Se conservan aquí como registro; AppStarter ya consume 1.0.1.
+
 ---
 
 ## AppFoundation

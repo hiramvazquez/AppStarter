@@ -39,7 +39,7 @@ jobs:
 
       - name: ArchitectureLint (AppStarterKit/Sources)
         working-directory: AppStarterKit
-        run: swift package archlint --path Sources
+        run: swift package archlint
 
       - name: AppStarterKit unit tests (swift test)
         working-directory: AppStarterKit

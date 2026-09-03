@@ -49,14 +49,7 @@ class AppStarterUITestCase: XCTestCase {
 
         let list = app.descendants(matching: .any)["products.list"]
         XCTAssertTrue(list.waitForExistence(timeout: timeout), "Products list did not appear after login")
-        // La PRIMERA fila tarda más que la lista en un simulador recién instalado (arranque en
-        // frío, contenedor de SwiftData, primer render de la List): espera larga y explícita
-        // aquí, una vez, para que el resto del test no dependa del estado del simulador.
-        let firstProduct = app.buttons["product.1"]
-        XCTAssertTrue(
-            firstProduct.waitForExistence(timeout: max(timeout, 60)),
-            "First product did not appear after login (cold simulator?)"
-        )
+        XCTAssertTrue(app.buttons["product.1"].waitForExistence(timeout: timeout), "First product did not appear after login")
         return list
     }
 
@@ -123,17 +116,9 @@ class AppStarterUITestCase: XCTestCase {
     /// here specifically. `docs/INFORME-INTEGRACION.md`.
     @discardableResult
     func navigateToProductDetail(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
-        let row = app.descendants(matching: .any)["product.1"]
+        waitAndTap(app.descendants(matching: .any)["product.1"], file: file, line: line)
         let title = app.descendants(matching: .any)["productDetail.title"]
-
-        for attempt in 1...3 {
-            if title.exists { break }
-            waitAndTap(row, file: file, line: line)
-            if waitForExistenceTolerant(title, in: app, timeout: attempt == 3 ? 15 : 6) {
-                break
-            }
-        }
-        XCTAssertTrue(title.exists, "ProductDetail did not appear after retrying the tap on product.1", file: file, line: line)
+        XCTAssertTrue(waitForExistenceTolerant(title, in: app, timeout: 15), "ProductDetail did not appear", file: file, line: line)
         return title
     }
 }

@@ -110,7 +110,7 @@ swift package --allow-writing-to-package-directory generate-feature MiFeature --
 
 Sigue los "pasos manuales" que imprime el comando (añadir el `case` a `AppRoute`,
 registrar el `DependencyModule` en `AppStarterApp.makeModules()`), y complétalo con el
-dominio real. `swift package archlint --path Sources` (o el build de Xcode, que ya lo
+dominio real. `swift package archlint` (o el build de Xcode, que ya lo
 corre solo) te dice si te saliste de la arquitectura.
 
 ## Arquitectura y sesión
@@ -153,8 +153,8 @@ Resultados literales de la última ejecución, y el detalle de cada fricción en
 
 ## CI
 
-`.github/workflows/ci.yml`: `xcodegen generate` → `swift package archlint --path
-Sources` → `swift test` (AppStarterKit) → `xcodebuild test` (unit + UI, offline) en cada
+`.github/workflows/ci.yml`: `xcodegen generate` → `swift package archlint`
+→ `swift test` (AppStarterKit) → `xcodebuild test` (unit + UI, offline) en cada
 push/PR a `main`. Job `integration` (real, contra DummyJSON) solo por
 `workflow_dispatch`.
 

@@ -68,17 +68,10 @@ public struct ProductDetailView: View {
                     .padding()
                 }
             }
-            // `.task` (identity-bound) sends the initial `.load`. NOTE the `@State` above: this
-            // screen's ViewModel is TRANSIENT (one per pushed product, built by the
-            // `ProductDetailViewModelFactory` inside the `CoordinatorView` destination builder),
-            // and SwiftUI re-runs that builder during the push transition. With a plain
-            // `let viewModel`, every re-run replaced the instance in the view tree: the
-            // `.task` had already sent `.load` to instance A, A was deallocated ~10 ms later
-            // (`performLoad` captures `[weak self]`, so the load silently never ran), and the
-            // instance B now on screen never received `.load` — `.task`/`.onAppear` fire per
-            // view identity, not per ViewModel. Confirmed with `os_log` tracing on iOS 26.5
-            // (see `docs/INFORME-INTEGRACION.md`, friction 10). `@State` keeps instance A alive
-            // for the life of the view identity, which is what every screen wants.
+            // `@State` above is the kit's rule (AppFoundation ≥ 1.0.1, linter R12): this
+            // ViewModel is transient (one per pushed product), and SwiftUI re-runs the
+            // navigation destination builder during the push — a plain `let` would drop
+            // the instance that received `.load`. See `docs/INFORME-INTEGRACION.md`, friction 10.
             .task { send(.load) }
         }
     }

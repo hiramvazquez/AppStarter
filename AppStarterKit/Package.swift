@@ -31,7 +31,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.0.0"),
+        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.0.1"),
         .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.0.0")
     ],
     targets: [
