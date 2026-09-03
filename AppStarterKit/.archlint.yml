@@ -1,0 +1,24 @@
+# .archlint.yml — configuración de ArchitectureLint.
+# Formato: 'key: value' plano, con listas en bloque ('- item') o inline ('[a, b]').
+# Ver AppFoundation/README.md § Generador y linter para el detalle de cada regla (R1-R11).
+
+# strict: true exige que cada ViewModel herede de LogicViewModel<any XxxLogicProtocol>
+# en vez de BaseViewModel a pelo.
+strict: false
+
+# Sufijos que identifican cada capa por nombre de fichero.
+suffixes.viewModel: ViewModel
+suffixes.logic: Logic
+suffixes.service: Service
+suffixes.store: Store
+suffixes.module: Module
+
+# Reglas desactivadas (por id, p. ej. R11 si @MainActor en una Logic es intencional
+# en este proyecto).
+disabled: []
+
+# Rutas ignoradas (glob: '*' un segmento, '**' cualquier profundidad). Tests/ y los
+# dobles de test están ignorados por defecto aunque no se declaren aquí.
+ignore:
+  - Tests/**
+  - "**/Mocks/**"
