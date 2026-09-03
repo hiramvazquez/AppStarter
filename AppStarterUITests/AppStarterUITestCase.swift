@@ -49,6 +49,14 @@ class AppStarterUITestCase: XCTestCase {
 
         let list = app.descendants(matching: .any)["products.list"]
         XCTAssertTrue(list.waitForExistence(timeout: timeout), "Products list did not appear after login")
+        // La PRIMERA fila tarda más que la lista en un simulador recién instalado (arranque en
+        // frío, contenedor de SwiftData, primer render de la List): espera larga y explícita
+        // aquí, una vez, para que el resto del test no dependa del estado del simulador.
+        let firstProduct = app.buttons["product.1"]
+        XCTAssertTrue(
+            firstProduct.waitForExistence(timeout: max(timeout, 60)),
+            "First product did not appear after login (cold simulator?)"
+        )
         return list
     }
 
