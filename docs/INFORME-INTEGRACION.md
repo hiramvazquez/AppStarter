@@ -6,13 +6,14 @@ aparición, cada fricción real encontrada — con su impacto, la solución apli
 propuesta de cambio para 1.0.1 (recogidas también en `docs/ISSUES.md` cuando requieren un
 cambio en el paquete).
 
-> **Estado (2026-09-03):** AppStarter usa ya AppFoundation **1.0.1**, que resuelve las
+> **Estado (2026-09-03):** AppStarter usa ya AppFoundation **1.1.0** (1.0.1 resuelve las
 > fricciones 2 (`archlint` ignora siempre `.build`; el CI ya no pasa `--path`), 3
 > (`generate-feature --service-from/--store-from`), 4 (guía y repro documentados) y 10
 > (plantilla con `@State`, regla R12 y diagnóstico en DEBUG de acciones descartadas), y
 > documenta en su guía «Desde un proyecto Xcode» las fricciones 1, 5, 6, 7, 8, 9 y 11. Los
 > workarounds locales que 1.0.1 hace innecesarios (`--path Sources`, reintento y espera
-> larga en los helpers de XCUITest) se retiraron en este repo.
+> larga en los helpers de XCUITest) se retiraron en este repo. Con 1.1.0, el `.swiftlint.yml`
+> de este repo es el que instala `archinit` (`docs/INFORME-CALIDAD.md`), sin copia manual.
 >
 > **Flakiness en el runner (2026-09-03, abierta):** con el commit del linter (`3ea7da5`) los
 > tres XCUITests que entran al detalle fallaron dos veces en CI con «`product.1` existe pero

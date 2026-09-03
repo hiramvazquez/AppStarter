@@ -89,3 +89,10 @@ grafo de build que sale con código distinto de 0 es un fallo de build, y el dia
   que el generador nunca produzca código que su propio linter rechace.
 - Pendiente de calibrar con proyectos reales: los umbrales de tamaño y complejidad (aquí no se
   tensaron) y la utilidad de `accessibility_label_for_image`/`accessibility_trait_for_button`.
+
+## 5. Cierre (AppFoundation 1.1.0)
+
+Hecho: `Templates/swiftlint.yml` es esta configuración; `archinit` la deja en la raíz (aquí se
+regeneró con él y coincide byte a byte); el generador, los cuatro ejemplos y los snippets del
+kit la pasan en modo estricto y su CI lo vigila. La plantilla del ViewModel ya no genera el
+ternario con `Void` que aquí hubo que corregir a mano.

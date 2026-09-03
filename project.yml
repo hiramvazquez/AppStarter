@@ -34,7 +34,7 @@ packages:
   # empíricamente, ver docs/INFORME-INTEGRACION.md).
   AppFoundation:
     url: https://github.com/hiramvazquez/AppFoundation.git
-    from: 1.0.1
+    from: 1.1.0
 targets:
   AppStarter:
     type: application

@@ -31,7 +31,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.0.1"),
+        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.1.0"),
         .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.0.0"),
         // Calidad de código (PRD-AF-09): SwiftLint como build-tool plugin, con la
         // configuración curada en `.swiftlint.yml`. Complementa a ArchitectureLint:

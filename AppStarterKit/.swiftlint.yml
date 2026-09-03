@@ -1,4 +1,5 @@
-# .swiftlint.yml — calidad de código (PRD-AF-09). Complementa a ArchitectureLint (.archlint.yml):
+# .swiftlint.yml — calidad de código, instalado por `swift package archinit` (AppFoundation).
+# Complementa a ArchitectureLint (.archlint.yml):
 # archlint valida DÓNDE está el código (capas); SwiftLint valida CÓMO está escrito; el
 # compilador (Swift 6, warnings estrictos) valida la concurrencia. El formato es de swift-format.
 #
@@ -59,12 +60,17 @@ only_rules:
   # ── Reglas propias (abajo) ──────────────────────────────────────────────────────────
   - custom_rules
 
-excluded:
+excluded:           # globs: valen también al lintar subdirectorios desde otro sitio (--config)
   - .build
   - .swiftpm
   - DerivedData
+  - Package.swift
+  - "**/.build"
+  - "**/.swiftpm"
+  - "**/DerivedData"
 
 # ── Umbrales ──────────────────────────────────────────────────────────────────────────
+empty_count: { severity: warning }                     # `count == 0` sobre un Int que se llama `count` es legítimo: aviso, no error
 function_body_length: { warning: 50, error: 100 }
 type_body_length: { warning: 250, error: 400 }
 file_length: { warning: 400, error: 600, ignore_comment_only_lines: true }
