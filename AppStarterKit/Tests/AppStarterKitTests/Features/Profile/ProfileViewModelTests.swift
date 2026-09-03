@@ -37,7 +37,11 @@ struct ProfileViewModelTests {
     func refreshInfoMirrorsLog() {
         let log = RefreshActivityLog()
         log.recordRefresh(now: Date(timeIntervalSince1970: 100))
-        let viewModel = ProfileViewModel(logic: ProfileLogicMock(), router: Coordinator(root: .profile), refreshLog: log)
+        let viewModel = ProfileViewModel(
+            logic: ProfileLogicMock(),
+            router: Coordinator(root: .profile),
+            refreshLog: log
+        )
 
         #expect(viewModel.refreshCount == 1)
         #expect(viewModel.lastRefreshDate == Date(timeIntervalSince1970: 100))

@@ -26,7 +26,7 @@ public struct ProductDetailView: View {
                 if let product = viewModel.product {
                     VStack(alignment: .leading, spacing: 16) {
                         AsyncImage(url: product.thumbnailURL) { image in
-                            image.resizable().aspectRatio(contentMode: .fit)
+                            image.resizable().scaledToFit()
                         } placeholder: {
                             Color.gray.opacity(0.2)
                         }
@@ -84,7 +84,14 @@ public struct ProductDetailView: View {
 private final class ProductDetailPreviewLogic: ProductDetailLogicProtocol {
     func load(id: Int) async throws -> ProductDetailState {
         ProductDetailState(
-            product: Product(id: id, title: "Producto de ejemplo", description: "Descripción de ejemplo.", price: 19.99, rating: 4.2, thumbnailURL: nil),
+            product: Product(
+                id: id,
+                title: "Producto de ejemplo",
+                description: "Descripción de ejemplo.",
+                price: 19.99,
+                rating: 4.2,
+                thumbnailURL: nil
+            ),
             isFavorite: false
         )
     }

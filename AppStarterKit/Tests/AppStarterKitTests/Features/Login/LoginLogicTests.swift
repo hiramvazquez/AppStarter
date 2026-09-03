@@ -45,7 +45,9 @@ struct LoginLogicTests {
         #expect(saved == [StoredSession(accessToken: "a", refreshToken: "r", userID: 42)])
     }
 
-    @Test("A 400 (client) service failure maps to LoginError.invalidCredentials — DummyJSON's real status for bad credentials")
+    @Test(
+        "A 400 service failure maps to LoginError.invalidCredentials (DummyJSON's status for bad credentials)"
+    )
     func clientFailureMapsToInvalidCredentials() async {
         let service = AuthServiceMock()
         service.errorToThrow = .stub(code: .httpStatus, statusCode: 400)

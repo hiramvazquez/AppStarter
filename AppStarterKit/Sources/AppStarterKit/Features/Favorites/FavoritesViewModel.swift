@@ -32,7 +32,7 @@ public final class FavoritesViewModel: LogicViewModel<any FavoritesLogicProtocol
         performLoad(successTransition: .preserveCurrentPhase) { vm in
             let items = try await vm.logic.loadFavorites()
             vm.items = items
-            items.isEmpty ? vm.setEmpty() : vm.setContent()
+            if items.isEmpty { vm.setEmpty() } else { vm.setContent() }
         }
     }
 

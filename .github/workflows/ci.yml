@@ -41,6 +41,17 @@ jobs:
         working-directory: AppStarterKit
         run: swift package archlint
 
+      # Calidad de código (PRD-AF-09): el plugin ya corre SwiftLint en cada build, pero solo
+      # los `error` bloquean; `--strict` promueve los `warning` a error en CI. swift-format
+      # valida el formato con la misma configuración que los paquetes del kit.
+      - name: SwiftLint --strict + swift-format lint (AppStarterKit)
+        working-directory: AppStarterKit
+        run: |
+          brew install swiftlint
+          swiftlint version
+          swiftlint lint --strict --quiet Sources Tests
+          swift format lint --strict --configuration ../.swift-format --recursive Sources Tests
+
       - name: AppStarterKit unit tests (swift test)
         working-directory: AppStarterKit
         run: swift test

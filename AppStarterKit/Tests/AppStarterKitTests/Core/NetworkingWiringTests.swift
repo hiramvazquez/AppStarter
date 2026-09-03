@@ -20,13 +20,15 @@ struct NetworkingWiringTests {
     private static let meBody = Data(
         """
         {"id":1,"username":"emilys","email":"emily@example.com","firstName":"Emily","lastName":"Johnson","image":"https://example.com/i.png"}
-        """.utf8
+        """
+        .utf8
     )
 
     private static let refreshBody = Data(
         """
         {"accessToken":"new-access","refreshToken":"new-refresh"}
-        """.utf8
+        """
+        .utf8
     )
 
     @Test("A 401 triggers exactly one refresh, then the original request is retried and succeeds")
@@ -40,7 +42,11 @@ struct NetworkingWiringTests {
             )
         )
         await transport.register(
-            InMemoryTransport.Exchange(method: .post, url: Self.refreshURL, response: .response(status: 200, body: Self.refreshBody))
+            InMemoryTransport.Exchange(
+                method: .post,
+                url: Self.refreshURL,
+                response: .response(status: 200, body: Self.refreshBody)
+            )
         )
 
         let sessionStore = SessionStoreSpy(
@@ -82,8 +88,12 @@ struct NetworkingWiringTests {
     @Test("When the refresh itself fails, the session is invalidated and SessionExpiring fires — no extra request")
     func failedRefreshInvalidatesSessionAndNotifiesExpiry() async {
         let transport = InMemoryTransport()
-        await transport.register(InMemoryTransport.Exchange(method: .get, url: Self.meURL, response: .response(status: 401)))
-        await transport.register(InMemoryTransport.Exchange(method: .post, url: Self.refreshURL, response: .response(status: 403)))
+        await transport.register(
+            InMemoryTransport.Exchange(method: .get, url: Self.meURL, response: .response(status: 401))
+        )
+        await transport.register(
+            InMemoryTransport.Exchange(method: .post, url: Self.refreshURL, response: .response(status: 403))
+        )
 
         let sessionStore = SessionStoreSpy(
             sessionToReturn: StoredSession(accessToken: "old-access", refreshToken: "old-refresh", userID: 1)

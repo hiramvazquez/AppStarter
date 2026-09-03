@@ -76,7 +76,7 @@ struct ProductRow: View {
     var body: some View {
         HStack(spacing: 12) {
             AsyncImage(url: product.thumbnailURL) { image in
-                image.resizable().aspectRatio(contentMode: .fill)
+                image.resizable().scaledToFill()
             } placeholder: {
                 Color.gray.opacity(0.2)
             }
@@ -107,7 +107,16 @@ private final class ProductsPreviewLogic: ProductsLogicProtocol {
     let pageSize = 20
     func loadPage(skip: Int) async throws -> ProductsPage {
         ProductsPage(
-            items: [Product(id: 1, title: "Producto de ejemplo", description: "", price: 9.99, rating: 4.5, thumbnailURL: nil)],
+            items: [
+                Product(
+                    id: 1,
+                    title: "Producto de ejemplo",
+                    description: "",
+                    price: 9.99,
+                    rating: 4.5,
+                    thumbnailURL: nil
+                )
+            ],
             total: 1,
             skip: 0,
             limit: pageSize

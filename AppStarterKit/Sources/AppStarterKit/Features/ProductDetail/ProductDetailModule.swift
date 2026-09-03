@@ -19,7 +19,11 @@ public struct ProductDetailModule: DependencyModule {
 
         container.register(ProductDetailViewModelFactory.self) { c in
             { productID in
-                ProductDetailViewModel(logic: c.resolve(ProductDetailLogicProtocol.self), productID: productID, router: c.resolve())
+                ProductDetailViewModel(
+                    logic: c.resolve(ProductDetailLogicProtocol.self),
+                    productID: productID,
+                    router: c.resolve()
+                )
             }
         }
     }

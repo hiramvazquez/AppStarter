@@ -48,7 +48,7 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
             let page = try await vm.logic.loadPage(skip: 0)
             vm.items = page.items
             vm.canLoadMore = page.hasMore
-            page.items.isEmpty ? vm.setEmpty() : vm.setContent()
+            if page.items.isEmpty { vm.setEmpty() } else { vm.setContent() }
         }
     }
 

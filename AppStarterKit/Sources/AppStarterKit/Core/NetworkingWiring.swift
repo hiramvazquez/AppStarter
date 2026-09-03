@@ -18,6 +18,9 @@ struct NoStoredSessionToRefresh: Error {}
 /// This wiring lives in `Core/`, not inside any one feature's `Module`, because it is
 /// genuinely cross-feature: every authenticated request in the app goes through the ONE
 /// `APIServiceProtocol` this builds.
+// Composition root: the seven collaborators are injected explicitly on purpose (DI by init,
+// no hidden globals); grouping them in a struct would only move the same seven names.
+// swiftlint:disable:next function_parameter_count
 func makeAuthenticatedAPIService(
     configuration: NetworkingConfiguration,
     transport: any HTTPTransport,

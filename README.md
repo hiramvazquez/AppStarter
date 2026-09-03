@@ -113,6 +113,27 @@ registrar el `DependencyModule` en `AppStarterApp.makeModules()`), y complétalo
 dominio real. `swift package archlint` (o el build de Xcode, que ya lo
 corre solo) te dice si te saliste de la arquitectura.
 
+### Calidad de código: SwiftLint curado
+
+Tres capas, cada una con su herramienta (PRD-AF-09 del kit, calibrado aquí primero):
+
+| Capa | Herramienta | Valida |
+|---|---|---|
+| Arquitectura | `ArchitectureLint` (AppFoundation) | DÓNDE está el código: capas, nombres, `APIError` fuera del ViewModel (R1-R12) |
+| Calidad | SwiftLint con `AppStarterKit/.swiftlint.yml` | CÓMO está escrito: `try!`, casts y desempaquetados forzados, `[unowned]`, tamaños, complejidad, idioms |
+| Concurrencia | el compilador (Swift 6, warnings estrictos) | Sendable, aislamiento, data races |
+
+SwiftLint corre como build-tool plugin en `AppStarterKit/Package.swift`, junto a
+`ArchitectureLint`: un `try!` en un ViewModel rompe el build con un error navegable en
+Xcode (`error: Force Try Violation … (force_try)`), igual que una violación de capa. Las
+reglas de tamaño y de idioms son avisos en Xcode y solo bloquean en CI (`swiftlint
+--strict`). La configuración usa `only_rules` (una versión nueva de SwiftLint no activa
+reglas sin que lo decidamos) y cada regla lleva su porqué; las descartadas en la
+calibración están anotadas con el motivo. Detalle en `docs/INFORME-CALIDAD.md`.
+
+El formato lo pone `swift-format` con el mismo `.swift-format` que los paquetes del kit
+(`swift format format -i --recursive AppStarterKit/Sources AppStarterKit/Tests`).
+
 ## Arquitectura y sesión
 
 - **`SessionStore`**: `UserDefaults`, no Keychain — elección deliberada del starter (la
@@ -154,7 +175,7 @@ Resultados literales de la última ejecución, y el detalle de cada fricción en
 ## CI
 
 `.github/workflows/ci.yml`: `xcodegen generate` → `swift package archlint`
-→ `swift test` (AppStarterKit) → `xcodebuild test` (unit + UI, offline) en cada
+→ `swiftlint --strict` + `swift format lint` → `swift test` (AppStarterKit) → `xcodebuild test` (unit + UI, offline) en cada
 push/PR a `main`. Job `integration` (real, contra DummyJSON) solo por
 `workflow_dispatch`.
 

@@ -32,7 +32,11 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.0.1"),
-        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.0.0")
+        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.0.0"),
+        // Calidad de código (PRD-AF-09): SwiftLint como build-tool plugin, con la
+        // configuración curada en `.swiftlint.yml`. Complementa a ArchitectureLint:
+        // archlint valida DÓNDE está el código (capas), SwiftLint CÓMO está escrito.
+        .package(url: "https://github.com/SimplyDanny/SwiftLintPlugins", from: "0.65.0")
     ],
     targets: [
         .target(
@@ -47,7 +51,8 @@ let package = Package(
                 // ArchitectureLint activo en el propio paquete (PRD-APP-01, criterio de
                 // aceptación 3): cada `swift build`/build de Xcode corre `archlint` sobre
                 // `Sources/AppStarterKit` antes de compilar.
-                .plugin(name: "ArchitectureLint", package: "AppFoundation")
+                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "SwiftLintBuildToolPlugin", package: "SwiftLintPlugins")
             ]
         ),
         .testTarget(

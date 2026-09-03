@@ -50,7 +50,10 @@ private final class FavoritesPreviewLogic: FavoritesLogicProtocol {
 #Preview {
     NavigationStack {
         FavoritesView(
-            viewModel: FavoritesViewModel(logic: FavoritesPreviewLogic(), router: Coordinator<AppRoute>(root: .favorites))
+            viewModel: FavoritesViewModel(
+                logic: FavoritesPreviewLogic(),
+                router: Coordinator<AppRoute>(root: .favorites)
+            )
         )
     }
 }

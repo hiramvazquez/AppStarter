@@ -50,7 +50,9 @@ private final class SearchPreviewLogic: SearchLogicProtocol {
 
 #Preview {
     NavigationStack {
-        SearchView(viewModel: SearchViewModel(logic: SearchPreviewLogic(), router: Coordinator<AppRoute>(root: .products)))
+        SearchView(
+            viewModel: SearchViewModel(logic: SearchPreviewLogic(), router: Coordinator<AppRoute>(root: .products))
+        )
     }
 }
 #endif

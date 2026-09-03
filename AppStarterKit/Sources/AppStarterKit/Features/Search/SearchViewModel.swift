@@ -44,7 +44,7 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
         performLoad(successTransition: .preserveCurrentPhase) { vm in
             let results = try await vm.logic.search(query: vm.query)
             vm.results = results
-            results.isEmpty ? vm.setEmpty() : vm.setContent()
+            if results.isEmpty { vm.setEmpty() } else { vm.setContent() }
         }
     }
 }

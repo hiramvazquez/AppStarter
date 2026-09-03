@@ -19,7 +19,7 @@ public struct ProfileView: View {
                     Section {
                         HStack(spacing: 16) {
                             AsyncImage(url: profile.imageURL) { image in
-                                image.resizable().aspectRatio(contentMode: .fill)
+                                image.resizable().scaledToFill()
                             } placeholder: {
                                 Color.gray.opacity(0.2)
                             }
@@ -69,7 +69,14 @@ public struct ProfileView: View {
 #if canImport(SwiftUI) && DEBUG
 private final class ProfilePreviewLogic: ProfileLogicProtocol {
     func loadProfile() async throws -> UserProfile {
-        UserProfile(id: 1, username: "emilys", email: "emily.johnson@x.dummyjson.com", firstName: "Emily", lastName: "Johnson", imageURL: nil)
+        UserProfile(
+            id: 1,
+            username: "emilys",
+            email: "emily.johnson@x.dummyjson.com",
+            firstName: "Emily",
+            lastName: "Johnson",
+            imageURL: nil
+        )
     }
     func logout() async {}
 }

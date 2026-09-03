@@ -67,7 +67,9 @@ public struct AuthService: AuthServicing, EndpointService {
     }
 
     public func login(username: String, password: String, expiresInMinutes: Int) async throws(APIError) -> AuthSession {
-        let response = try await call(LoginRequest(username: username, password: password, expiresInMins: expiresInMinutes))
+        let response = try await call(
+            LoginRequest(username: username, password: password, expiresInMins: expiresInMinutes)
+        )
         return AuthSession(
             tokens: AuthTokens(accessToken: response.accessToken, refreshToken: response.refreshToken),
             userID: response.id

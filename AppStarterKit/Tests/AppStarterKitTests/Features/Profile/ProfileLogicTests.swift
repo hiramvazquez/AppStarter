@@ -20,7 +20,9 @@ struct ProfileLogicTests {
     @Test("logout() invalidates the session store")
     func logoutInvalidatesSessionStore() async {
         let service = ProfileServiceMock()
-        let sessionStore = SessionStoreSpy(sessionToReturn: StoredSession(accessToken: "a", refreshToken: "r", userID: 1))
+        let sessionStore = SessionStoreSpy(
+            sessionToReturn: StoredSession(accessToken: "a", refreshToken: "r", userID: 1)
+        )
         let logic = ProfileLogic(profileService: service, sessionStore: sessionStore)
 
         await logic.logout()

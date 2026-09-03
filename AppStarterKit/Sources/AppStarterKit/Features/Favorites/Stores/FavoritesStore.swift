@@ -14,7 +14,8 @@ final class FavoriteProductRecord {
     var rating: Double
     var thumbnailURLString: String?
 
-    init(id: Int, title: String, productDescription: String, price: Double, rating: Double, thumbnailURLString: String?) {
+    init(id: Int, title: String, productDescription: String, price: Double, rating: Double, thumbnailURLString: String?)
+    {
         self.id = id
         self.title = title
         self.productDescription = productDescription
