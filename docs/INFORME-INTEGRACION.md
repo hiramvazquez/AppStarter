@@ -19,7 +19,7 @@ cambio en el paquete).
 | 7 | xcodegen 2.46.0 no soporta referenciar el test target de un paquete Swift local desde un `scheme` | `project.yml` | Un solo `xcodebuild test` no puede cubrir el test target del paquete | `swift test` aparte, documentado |
 | 8 | `.accessibilityIdentifier` en un contenedor SwiftUI se propaga a los identificadores de sus hijos, pisando los suyos propios | `ProductDetailView` | Los XCUITests no distinguían el botón de favorito del texto del título | Identificadores solo en hojas, nunca en el contenedor |
 | 9 | Variables de entorno exportadas antes de `xcodebuild test` no llegan de forma fiable al proceso del test runner de XCUITest | `AppStarterUITests` | `-UITestOffline` se activaba de forma intermitente, red real sin avisar | Hornear la variable en el `.xcscheme` vía interpolación de xcodegen, no leerla del entorno de la shell en tiempo de test |
-| 10 | `.onAppear` no siempre se dispara de forma fiable en un push con `chrome: .custom` | `ProductDetailView` | `.load` a veces nunca se enviaba | `.task` en su lugar |
+| 10 | Un ViewModel transitorio creado en el builder de destino de navegación y retenido con `let` en la View se libera a mitad del push: el `.load` enviado por `.task`/`.onAppear` va a una instancia muerta (`[weak self]`) y la instancia que queda en pantalla nunca lo recibe | `ProductDetailView` | Detalle vacío indefinidamente, ~50 % de las ejecuciones en iOS 26.5 | La View es dueña de su ViewModel con `@State` (`_viewModel = State(initialValue:)`); propuesta para la plantilla y un diagnóstico en DEBUG en AppFoundation 1.0.1 |
 | 11 | El sistema operativo del simulador puede mostrar "¿Guardar contraseña?" tras el login, en un momento impredecible | XCUITests | Bloqueaba cualquier tap posterior sin previo aviso | Desactivar `.textContentType(.password)` bajo XCUITest; helpers tolerantes al diálogo como red de seguridad |
 
 ## Detalle
@@ -185,21 +185,43 @@ SÍ lee el entorno de forma fiable, porque lo hace en el momento de `xcodegen ge
 (un proceso síncrono normal), no en el del test runner. `Scripts/bootstrap.sh` y el CI
 exportan la variable ANTES de generar el proyecto, no antes de testear.
 
-### 10. `.onAppear` no siempre se dispara de forma fiable en un push con `chrome: .custom`
+### 10. Un ViewModel transitorio retenido con `let` en la View se libera a mitad del push y la carga inicial se pierde en silencio
 
-Con trazas (`NSLog`) dentro de `ProductDetailLogic.load(id:)`, confirmé que
-`ProductDetailView`'s `.onAppear { send(.load) }` — el mismo patrón que usan las otras
-cinco pantallas de este repo, sin problema — a veces NUNCA se disparaba tras un push a
-`ProductDetail` específicamente: cero líneas de log, la pantalla se quedaba con la barra
-custom y el contenido vacío indefinidamente. `ProductDetail` es la única pantalla con
-`chrome: .custom` (que además de `CustomNavigationBar` instala `PopGestureEnabler` como
-vista hermana, vía `ScreenContainer`) — sospecho que esa vista adicional interactúa con el
-timing del evento "appeared" de SwiftUI durante la transición de push de forma que a veces
-se pierde.
+**Síntoma**: tras pulsar un producto, `ProductDetail` se mostraba con la barra custom y el
+contenido vacío indefinidamente — sin spinner, sin error — en aproximadamente la mitad
+de las ejecuciones en iOS 26.5 (nunca en CI con iOS 26.2). El primer diagnóstico
+("`.onAppear` no se dispara con `chrome: .custom`") era incorrecto: `.task` reducía la
+frecuencia pero no la eliminaba.
 
-**Solución**: `.task { send(.load) }` en vez de `.onAppear` — atado al ciclo de vida/
-identidad de la vista en vez de al evento de aparición, no reprodujo el hueco en decenas
-de ejecuciones posteriores.
+**Causa raíz** (confirmada con `os_log` en View, ViewModel y Logic, y `ObjectIdentifier`
+de cada instancia): `RootView` construye el ViewModel de detalle dentro del builder de
+destino de `CoordinatorView` (`ProductDetailView(viewModel: factory(id))`), y SwiftUI
+vuelve a ejecutar ese builder durante la transición de push. Con `let viewModel` en la
+View, cada reejecución sustituye la instancia en el árbol de vistas:
+
+```
+18:53:17.230 view.task fired, vm=0x108588000
+18:53:17.233 vm.handle load on 0x108588000      ← performLoad crea su Task
+18:53:17.246 vm deinit 0x108588000              ← 13 ms después, la instancia A muere
+                                                  (ninguna traza más: la B nunca recibe .load)
+```
+
+`performLoad` captura `[weak self]`, así que el trabajo de la instancia A termina sin
+ejecutarse y sin error; y `.task`/`.onAppear` se disparan por IDENTIDAD de la vista, no
+por instancia de ViewModel, así que la instancia B que queda en pantalla nunca recibe
+`.load`. Las otras cinco pantallas no lo sufren porque resuelven un ViewModel singleton
+del contenedor: el builder devuelve siempre la misma instancia. Es un fallo de timing
+puro (si el builder no se reejecuta durante el push, funciona), de ahí el ~50 %.
+
+**Solución**: la View es dueña de su ViewModel con `@State` — `@State private var
+viewModel` y `_viewModel = State(initialValue: viewModel)` en el `init`. `State` conserva
+la primera instancia durante toda la vida de la identidad de la vista e ignora las
+siguientes evaluaciones del builder (esas instancias mueren sin haber recibido nada).
+Aplicado a las seis vistas por coherencia: 3 ejecuciones consecutivas de los 4 XCUITests,
+12/12 en verde. Propuesto para AppFoundation 1.0.1 (`docs/ISSUES.md`, issue 4): que la
+plantilla `View.swift.txt`, los ejemplos y el artículo de arquitectura fijen este patrón,
+y que `ActionSender` avise en DEBUG cuando descarta una acción porque su ViewModel ya no
+existe — habría convertido horas de diagnóstico en una línea de log.
 
 ### 11. El diálogo del sistema "¿Guardar contraseña?" interrumpe los XCUITests en un momento impredecible
 

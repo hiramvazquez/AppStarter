@@ -6,10 +6,10 @@ import SwiftUI
 /// `ScreenContainer` bound to `ProfileViewModel`. Native chrome — never references
 /// `ProfileLogic`/`ProfileService`/`APIService` directly.
 public struct ProfileView: View {
-    let viewModel: ProfileViewModel
+    @State private var viewModel: ProfileViewModel
 
     public init(viewModel: ProfileViewModel) {
-        self.viewModel = viewModel
+        _viewModel = State(initialValue: viewModel)
     }
 
     public var body: some View {

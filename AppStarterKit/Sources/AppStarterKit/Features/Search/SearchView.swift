@@ -7,10 +7,10 @@ import SwiftUI
 /// (`router.present(.search, as: .sheet)`). Native chrome + `.searchable` — never
 /// references `SearchLogic`/`ProductsService` directly.
 public struct SearchView: View {
-    let viewModel: SearchViewModel
+    @State private var viewModel: SearchViewModel
 
     public init(viewModel: SearchViewModel) {
-        self.viewModel = viewModel
+        _viewModel = State(initialValue: viewModel)
     }
 
     public var body: some View {

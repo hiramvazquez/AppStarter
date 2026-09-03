@@ -11,10 +11,10 @@ import SwiftUI
 /// covered by `ProductDetailUITests`. Never references `ProductDetailLogic`/
 /// `ProductsService`/`FavoritesStore` directly.
 public struct ProductDetailView: View {
-    let viewModel: ProductDetailViewModel
+    @State private var viewModel: ProductDetailViewModel
 
     public init(viewModel: ProductDetailViewModel) {
-        self.viewModel = viewModel
+        _viewModel = State(initialValue: viewModel)
     }
 
     public var body: some View {
@@ -68,14 +68,17 @@ public struct ProductDetailView: View {
                     .padding()
                 }
             }
-            // `.task`, not `.onAppear` — on THIS screen specifically (`chrome: .custom`
-            // installs `PopGestureEnabler` as an extra sibling view, see `ScreenContainer`),
-            // `.onAppear` on the `ScrollView` intermittently never fired during a push
-            // transition, so `.load` was intermittently never sent (confirmed empirically
-            // with `NSLog` tracing — every other screen here still uses `.onAppear` safely,
-            // this is the one with the extra chrome). `.task` is tied to the view's
-            // identity/lifetime instead of the appear event and did not reproduce the gap
-            // across dozens of runs. See `docs/INFORME-INTEGRACION.md`.
+            // `.task` (identity-bound) sends the initial `.load`. NOTE the `@State` above: this
+            // screen's ViewModel is TRANSIENT (one per pushed product, built by the
+            // `ProductDetailViewModelFactory` inside the `CoordinatorView` destination builder),
+            // and SwiftUI re-runs that builder during the push transition. With a plain
+            // `let viewModel`, every re-run replaced the instance in the view tree: the
+            // `.task` had already sent `.load` to instance A, A was deallocated ~10 ms later
+            // (`performLoad` captures `[weak self]`, so the load silently never ran), and the
+            // instance B now on screen never received `.load` — `.task`/`.onAppear` fire per
+            // view identity, not per ViewModel. Confirmed with `os_log` tracing on iOS 26.5
+            // (see `docs/INFORME-INTEGRACION.md`, friction 10). `@State` keeps instance A alive
+            // for the life of the view identity, which is what every screen wants.
             .task { send(.load) }
         }
     }

@@ -116,11 +116,36 @@ protocolo de tu Service compartido`) evitaría el paso "generar → borrar dos f
 editar el resto a mano" en el caso, nada raro, de una feature de solo-lectura sobre datos
 que otra feature ya trae.
 
+### 4. La View debe ser dueña de su ViewModel (`@State`): la plantilla usa `let`, y una acción a un ViewModel liberado se pierde sin rastro
+
+**Descripción.** `Templates/View.swift.txt` genera `let viewModel: XxxViewModel` (es lo
+que `generate-feature` dejó en las seis vistas de este repo). Cuando el ViewModel es
+transitorio y se construye dentro de un builder de destino de navegación
+(`CoordinatorView`/`navigationDestination`), SwiftUI reejecuta ese builder durante el
+push y sustituye la instancia: la acción `.load` enviada por `.task`/`.onAppear` llega a
+la instancia A, A se libera unos milisegundos después (`performLoad` captura `[weak
+self]`, así que el trabajo nunca corre y no hay error), y la instancia B que queda en
+pantalla nunca recibe `.load`. Resultado: pantalla vacía sin spinner ni error, ~50 % de
+las veces en iOS 26.5. Detalle completo y trazas en `INFORME-INTEGRACION.md`, fricción 10.
+
+**Propuesta para 1.0.1.**
+
+1. `Templates/View.swift.txt`: `@State private var viewModel: {{Name}}ViewModel` +
+   `_viewModel = State(initialValue: viewModel)` en el `init`. Mismo cambio en los cuatro
+   ejemplos y en los snippets de DocC (`ScreenContainer`, arquitectura, guía de 20 min).
+2. Documentar la regla en `AGENTS.md`/artículo de arquitectura: "la View es dueña de su
+   ViewModel con `@State`; el composition root lo construye, la View lo retiene".
+3. `ActionSender` (`ScreenState.sender`): en `DEBUG`, cuando `self` ya es `nil`, emitir un
+   `os_log`/`assertionFailure` configurable ("acción X descartada: el ViewModel ya no
+   existe") en vez de descartarla en silencio. Lo mismo en el `guard let self else { throw
+   CancellationError() }` de `performLoad`/`performActivity`.
+4. Opcional: una regla del linter (R12) que marque `let viewModel:` en un fichero `*View.swift`.
+
 ---
 
 ## CoreNetworking
 
-### 4. Ningún hallazgo que requiera cambiar CoreNetworking
+### 5. Ningún hallazgo que requiera cambiar CoreNetworking
 
 Todo lo usado — `APIService`, `NetworkingConfiguration`, `BaseRequest`/`EndpointService`,
 `BearerTokenInterceptor`/`TokenRefreshRetrier`/`TokenRefresher`, `APIError`/`category`,

@@ -8,10 +8,10 @@ import SwiftUI
 /// Profile (both pushed). Native chrome — never references `ProductsLogic`/
 /// `ProductsService`/`APIService`.
 public struct ProductsView: View {
-    let viewModel: ProductsViewModel
+    @State private var viewModel: ProductsViewModel
 
     public init(viewModel: ProductsViewModel) {
-        self.viewModel = viewModel
+        _viewModel = State(initialValue: viewModel)
     }
 
     public var body: some View {

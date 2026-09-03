@@ -8,10 +8,10 @@ import SwiftUI
 /// `ProductDetail` opts into `chrome: .custom` in this app. Never references `LoginLogic`/
 /// `AuthService`/`APIService` — only `viewModel` (reads) and `send` (actions).
 public struct LoginView: View {
-    let viewModel: LoginViewModel
+    @State private var viewModel: LoginViewModel
 
     public init(viewModel: LoginViewModel) {
-        self.viewModel = viewModel
+        _viewModel = State(initialValue: viewModel)
     }
 
     public var body: some View {

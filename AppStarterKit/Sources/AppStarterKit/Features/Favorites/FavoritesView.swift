@@ -6,10 +6,10 @@ import SwiftUI
 /// `ScreenContainer` bound to `FavoritesViewModel`: the SwiftData-backed favorites list.
 /// Native chrome — never references `FavoritesLogic`/`FavoritesStore`/SwiftData directly.
 public struct FavoritesView: View {
-    let viewModel: FavoritesViewModel
+    @State private var viewModel: FavoritesViewModel
 
     public init(viewModel: FavoritesViewModel) {
-        self.viewModel = viewModel
+        _viewModel = State(initialValue: viewModel)
     }
 
     public var body: some View {
