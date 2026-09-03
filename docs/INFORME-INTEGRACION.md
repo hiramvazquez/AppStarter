@@ -298,3 +298,29 @@ $ echo $?
 ```
 
 (Revertido inmediatamente después — `git diff` limpio.)
+
+## Estado real del CI (GitHub Actions)
+
+Repo publicado y primer push con CI verde:
+
+- **Push a `main`** (commit `docs: README, informe de integración e issues propuestas`
+  tras el fix de selección de Xcode) — <https://github.com/hiramvazquez/AppStarter/actions/runs/33697909703>
+  — **✓ success**, los dos jobs relevantes al push completos: `ArchitectureLint`, `swift
+  test` (AppStarterKit), y `xcodebuild test` (unit + UI, offline) los 4 XCUITests en
+  verde.
+- **`workflow_dispatch` manual** (para ejercitar también el job `integration`) —
+  <https://github.com/hiramvazquez/AppStarter/actions/runs/33698612352> — el job
+  `Integration (real DummyJSON)` en **✓ success** contra la API real; el job `Unit + UI
+  (offline)` esta vez con 1 de los 4 XCUITests en rojo por timeout
+  (`DynamicTypeTests`, "Element never became hittable: product.1 Button", 48s) — la
+  MISMA clase de fricción de carga/timing documentada arriba (puntos 8-11), no una
+  regresión nueva: los otros tres XCUITests (`AccessibilityLabelTests`,
+  `FullFlowTests`, `SwipeBackTests`) pasaron en la misma ejecución, y `AppStarterKit`
+  (48 tests, sin UI) pasó limpio en ambas ejecuciones.
+
+El primer push — el criterio de aceptación del PRD — quedó verde. La ejecución
+`workflow_dispatch` posterior confirma que la inestabilidad de los XCUITests bajo carga
+no es exclusiva de esta máquina de desarrollo: también se observó, una vez, en el
+runner de GitHub Actions. Ninguna de las dos ejecuciones tuvo un fallo determinista
+(aserción incorrecta, estado equivocado) — siempre timeouts esperando un elemento que sí
+llega a aparecer con más margen.
