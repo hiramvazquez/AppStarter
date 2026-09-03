@@ -11,11 +11,25 @@ jobs:
     name: Unit + UI (offline)
     runs-on: macos-15
     timeout-minutes: 30
+    env:
+      # Horneada en el .xcscheme por xcodegen AL GENERAR (no leída del entorno del test
+      # runner de XCUITest en tiempo de test — no llega ahí de forma fiable, ver
+      # docs/INFORME-INTEGRACION.md) — por eso está en el `env:` del JOB, no del paso de
+      # `xcodebuild test`: debe estar presente cuando corre `Scripts/bootstrap.sh`.
+      UI_TEST_OFFLINE: "1"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Xcode version
-        run: xcodebuild -version
+      - name: Select the newest available Xcode (swift-tools 6.2 mínimo)
+        run: |
+          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$LATEST" ]; then
+            LATEST=/Applications/Xcode.app
+          fi
+          echo "Usando $LATEST"
+          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
+          swift --version
 
       - name: Install xcodegen
         run: brew install xcodegen
@@ -50,8 +64,6 @@ jobs:
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
       - name: xcodebuild test (unit + UI, -UITestOffline)
-        env:
-          UI_TEST_OFFLINE: "1"
         run: |
           xcodebuild -scheme AppStarter \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
@@ -65,6 +77,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select the newest available Xcode (swift-tools 6.2 mínimo)
+        run: |
+          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$LATEST" ]; then
+            LATEST=/Applications/Xcode.app
+          fi
+          sudo xcode-select -s "$LATEST"
+          swift --version
 
       - name: AppStarterKit integration tests (real DummyJSON)
         working-directory: AppStarterKit
