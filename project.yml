@@ -1,0 +1,126 @@
+name: AppStarter
+options:
+  bundleIdPrefix: com.appstarter
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+configs:
+  Debug: debug
+  Release: release
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: ""
+packages:
+  AppStarterKit:
+    path: AppStarterKit
+  # Segundo nivel, re-declarado aquí para el target de la app (fricción,
+  # docs/INFORME-INTEGRACION.md): un target de Xcode no hereda acceso a los productos de
+  # una dependencia DE una dependencia solo por enlazar `AppStarterKit` — `import
+  # CoreNetworkingTestSupport` en `OfflineFixtures.swift` (para `-UITestOffline`,
+  # InMemoryTransport) no resuelve sin este paquete declarado también aquí, con la MISMA
+  # URL y versión que `AppStarterKit/Package.swift` ya fija — xcodegen/SwiftPM
+  # deduplican por identidad de paquete, no por duplicar el checkout.
+  CoreNetworking:
+    url: https://github.com/hiramvazquez/CoreNetworking.git
+    from: 1.0.0
+  # Mismo motivo: `AppStarterApp.swift`/`RootView.swift` hacen `import AppFoundation`
+  # directamente (Container, Coordinator, CoordinatorView) — enlazar solo
+  # `AppStarterKit` basta para `build` pero NO para `test` (el linker no resuelve los
+  # símbolos de AppFoundation al construir para testing; fricción confirmada
+  # empíricamente, ver docs/INFORME-INTEGRACION.md).
+  AppFoundation:
+    url: https://github.com/hiramvazquez/AppFoundation.git
+    from: 1.0.0
+targets:
+  AppStarter:
+    type: application
+    platform: iOS
+    sources:
+      - path: AppStarter
+    dependencies:
+      - package: AppStarterKit
+        product: AppStarterKit
+      - package: AppFoundation
+        product: AppFoundation
+      - package: CoreNetworking
+        product: CoreNetworkingTestSupport
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app
+        PRODUCT_NAME: AppStarter
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_CFBundleDisplayName: AppStarter
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_STRICT_CONCURRENCY: complete
+
+  AppStarterTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AppStarterTests
+    dependencies:
+      - target: AppStarter
+      - package: AppStarterKit
+        product: AppStarterKit
+      - package: AppFoundation
+        product: AppFoundation
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app.tests
+
+  AppStarterUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: AppStarterUITests
+    dependencies:
+      - target: AppStarter
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app.uitests
+        TEST_TARGET_NAME: AppStarter
+
+schemes:
+  AppStarter:
+    build:
+      targets:
+        AppStarter: all
+        AppStarterTests: [test]
+        AppStarterUITests: [test]
+    test:
+      config: Debug
+      targets:
+        - AppStarterTests
+        - AppStarterUITests
+      # NOTA (docs/INFORME-INTEGRACION.md): el target de tests unitarios de
+      # AppStarterKit (el paquete local, `swift test`) no se puede añadir aquí — xcodegen
+      # 2.46.0 rechaza una referencia de scheme a un test target de un paquete Swift
+      # local ("invalid test target"). Se ejecuta aparte: `cd AppStarterKit && swift
+      # test`. `AppStarterTests` (arriba) es un smoke test del composition root completo,
+      # nativo de Xcode, cubierto por ESTE `xcodebuild test`.
+      #
+      # UI_TEST_OFFLINE se hornea en el ESQUEMA (no se lee del entorno de la shell que
+      # invoca `xcodebuild test`): confirmado empíricamente que una variable exportada
+      # justo antes de `xcodebuild test` no llega de forma fiable al proceso del test
+      # runner XCUITest (que el simulador lanza por su cuenta, no como hijo directo de
+      # `xcodebuild`) — con esa variable a veces AppStarterUITests corría offline y a
+      # veces contra red real sin avisar, la causa real de buena parte de la
+      # inestabilidad observada (docs/INFORME-INTEGRACION.md). xcodegen interpola
+      # `${UI_TEST_OFFLINE}` desde el entorno DEL PROCESO QUE GENERA EL PROYECTO
+      # (`xcodegen generate`), que sí es fiable — por eso `Scripts/bootstrap.sh` la lee y
+      # el CI la exporta antes de generar, no antes de testear.
+      environmentVariables:
+        UI_TEST_OFFLINE: "${UI_TEST_OFFLINE}"
+    run:
+      config: Debug
+    archive:
+      config: Release
