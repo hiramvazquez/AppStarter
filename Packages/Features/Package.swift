@@ -23,6 +23,7 @@ let package = Package(
         .library(name: "ProductsFeature", targets: ["ProductsFeature"]),
         .library(name: "ProductDetailFeature", targets: ["ProductDetailFeature"]),
         .library(name: "FavoritesFeature", targets: ["FavoritesFeature"]),
+        .library(name: "ProfileFeature", targets: ["ProfileFeature"]),
         // archinit:products-end
     ],
     dependencies: [
@@ -129,6 +130,31 @@ let package = Package(
                 .product(name: "PlatformTestSupport", package: "Platform"),
             ],
             path: "Tests/FavoritesFeatureTests",
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "ProfileFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform"),
+                .product(name: "Networking", package: "Platform"),
+            ],
+            path: "Sources/ProfileFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+            ]
+        ),
+        .testTarget(
+            name: "ProfileFeatureTests",
+            dependencies: [
+                "ProfileFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "PlatformTestSupport", package: "Platform"),
+            ],
+            path: "Tests/ProfileFeatureTests",
             swiftSettings: swiftSettings
         ),
         // archinit:features-end
