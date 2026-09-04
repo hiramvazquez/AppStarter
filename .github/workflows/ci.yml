@@ -10,6 +10,15 @@ on:
   workflow_dispatch:
 
 jobs:
+  showcase:
+    name: check-showcase.sh (README escaparate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scripts/check-showcase.sh
+        run: ./Scripts/check-showcase.sh
+
   packages:
     name: ${{ matrix.package }} (swift test + archlint)
     runs-on: macos-15
@@ -49,7 +58,7 @@ jobs:
           swift format lint --strict --configuration ../../.swift-format --recursive Sources Tests
 
   app:
-    name: App (xcodebuild test, offline)
+    name: App (xcodebuild test: unit + snapshot + UI, offline)
     runs-on: macos-15
     timeout-minutes: 30
     needs: packages
