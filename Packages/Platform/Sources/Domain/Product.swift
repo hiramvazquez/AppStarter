@@ -1,9 +1,10 @@
 import Foundation
 
 /// What every screen that shows a product renders — `Products`, `ProductDetail`,
-/// `Search`, `Favorites`. `Sendable`/`Equatable`/`Identifiable`, never the network `DTO`
-/// (M2) — see `ProductsFeature/Services/ProductsService.swift`. Shared by four features:
-/// lives in `Domain` (`AGENTS.md` § Módulos de este proyecto), not in any one of them.
+/// `Search`, `Favorites`, `Gallery`. `Sendable`/`Equatable`/`Identifiable`, never the
+/// network `DTO` (M2) — see `ProductsFeature/Services/ProductsService.swift`. Shared by
+/// five features: lives in `Domain` (`AGENTS.md` § Módulos de este proyecto), not in any
+/// one of them.
 public nonisolated struct Product: Sendable, Equatable, Hashable, Identifiable {
     public let id: Int
     public let title: String
@@ -11,14 +12,27 @@ public nonisolated struct Product: Sendable, Equatable, Hashable, Identifiable {
     public let price: Double
     public let rating: Double
     public let thumbnailURL: URL?
+    /// The full-size gallery images DummyJSON's `GET /products`/`GET /products/{id}` both
+    /// return (PRD-APP-02, `Gallery`) — never empty on a real response, but a fixture or a
+    /// hand-built `Product` may still omit it, hence the default `[]`.
+    public let images: [URL]
 
-    public init(id: Int, title: String, description: String, price: Double, rating: Double, thumbnailURL: URL?) {
+    public init(
+        id: Int,
+        title: String,
+        description: String,
+        price: Double,
+        rating: Double,
+        thumbnailURL: URL?,
+        images: [URL] = []
+    ) {
         self.id = id
         self.title = title
         self.description = description
         self.price = price
         self.rating = rating
         self.thumbnailURL = thumbnailURL
+        self.images = images
     }
 }
 

@@ -13,6 +13,28 @@ struct GetProductsRequest: BaseRequest {
         let price: Double
         let rating: Double
         let thumbnail: String
+        /// Absent on some hand-built fixtures (`App/OfflineFixtures.swift`'s older
+        /// entries) — decoded (and defaulted, for the memberwise `init` existing tests
+        /// use) as `nil`/`[]` rather than failing the whole product.
+        let images: [String]?
+
+        init(
+            id: Int,
+            title: String,
+            description: String,
+            price: Double,
+            rating: Double,
+            thumbnail: String,
+            images: [String]? = nil
+        ) {
+            self.id = id
+            self.title = title
+            self.description = description
+            self.price = price
+            self.rating = rating
+            self.thumbnail = thumbnail
+            self.images = images
+        }
     }
 
     struct Response: Decodable, Sendable {
@@ -99,7 +121,8 @@ public struct ProductsService: ProductsServicing, EndpointService {
             description: dto.description,
             price: dto.price,
             rating: dto.rating,
-            thumbnailURL: URL(string: dto.thumbnail)
+            thumbnailURL: URL(string: dto.thumbnail),
+            images: (dto.images ?? []).compactMap(URL.init(string:))
         )
     }
 }

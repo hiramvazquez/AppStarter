@@ -27,4 +27,11 @@ public protocol AnalyticsTracking: Sendable {
     /// every navigation (`App/RootView.swift`); `Uploads` calls it with `"upload"` on a
     /// successful upload.
     func track(_ event: AnalyticsEvent) async
+
+    /// The last N tracked events, most recent last — `Settings` (PRD-APP-02) shows these
+    /// as "actividad reciente". Part of the protocol (not just `ConsoleAnalyticsAdapter`'s
+    /// own API) so `SettingsFeature` can depend on `any AnalyticsTracking` like every
+    /// other feature does — `SettingsFeature` cannot import `AnalyticsAdapters` directly
+    /// (R13: `forbiddenImports: ["Analytics*"]` on every `*Feature`).
+    func recentEvents() async -> [AnalyticsEvent]
 }

@@ -20,4 +20,8 @@ public actor InMemoryAnalytics: AnalyticsTracking {
     public func track(_ event: AnalyticsEvent) async {
         await trackedEvents.record(event)
     }
+
+    public func recentEvents() async -> [AnalyticsEvent] {
+        await trackedEvents.calls
+    }
 }
