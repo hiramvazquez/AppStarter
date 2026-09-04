@@ -230,22 +230,22 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
   (`queryItems` en la línea 49); POST con body en `LoginRequest` en
   `Packages/Platform/Sources/Networking/AuthService.swift:34`; POST de Uploads en
   `AddProductRequest` en `Packages/Features/Sources/UploadsFeature/Services/UploadsService.swift:18`;
-  `Empty` en `Empty` en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:208`.
+  `Empty` en `Empty` en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:214`.
 - **`APIError`**: categorías/código/resúmenes proyectados a `DiagnosticsOutcome` en
-  `APIError` en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:227`
+  `APIError` en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:233`
   (mapeo completo hasta la línea 245); `decodeBody` de un error del servidor y
   `LocalizedError` los ejercen los siete experimentos de Diagnostics contra ese mismo
   bloque.
 - **`RequestInterceptor` + `RequestContext`**: `BearerTokenInterceptor` en
   `Packages/Platform/Sources/Networking/NetworkingWiring.swift:63`; `LoggingInterceptor`
-  en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:152`;
+  en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:158`;
   el interceptor propio (`X-Client` + contador) es `RequestCounterInterceptor` en
   `Packages/Features/Sources/DiagnosticsFeature/RequestCounterInterceptor.swift:19`, con
   `RequestContext` en la línea 30 y la cabecera `X-Client` en la línea 34 — su log se
   enseña en Diagnostics vía `diagnostics.log` en
   `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsView.swift:72`.
 - **`RequestRetrier` + `RetryPolicy`**: `RetryPolicy` en
-  `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:151`
+  `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:157`
   (el experimento `retry5xx`, reintentos visibles vía `RequestCounterInterceptor`).
 - **`TokenRefresher` + `TokenRefreshRetrier`** (dedupe de refresh): `TokenRefresher` en
   `Packages/Platform/Sources/Networking/NetworkingWiring.swift:36`,
@@ -280,15 +280,15 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
   `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModels.swift:121`
   (`DiagnosticsError.from(category:)` en la línea 144), disparado por
   `runUnreachable()` en
-  `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:174`.
+  `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:180`.
 
 ### AppFoundation
 
 - **`performLoad`/`performActivity`/`successTransition`/`load()`/`activity()`**:
   `performLoad` con `.preserveCurrentPhase` en
-  `Packages/Features/Sources/ProductsFeature/ProductsViewModel.swift:57`; `activity()`
+  `Packages/Features/Sources/ProductsFeature/ProductsViewModel.swift:63`; `activity()`
   estructurado con `.inline` en
-  `Packages/Features/Sources/UploadsFeature/UploadsViewModel.swift:70`.
+  `Packages/Features/Sources/UploadsFeature/UploadsViewModel.swift:76`.
 - **`ErrorPresenting` propio + `DomainError` + `isRetryable`**: `AppErrorPresenter` en
   `App/AppErrorPresenter.swift`; `isRetryable` en
   `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModels.swift:106`.
@@ -338,7 +338,7 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
   `Packages/Platform/Tests/NetworkingTests/` (`AppSessionState — Container(parent:) per
   session`, ver `swift test --package-path Packages/Platform`).
 - **`Debouncer`/`Throttler`**: `Debouncer` en
-  `Packages/Features/Sources/SearchFeature/SearchViewModel.swift:31` (uso en la línea 57);
+  `Packages/Features/Sources/SearchFeature/SearchViewModel.swift:37` (uso en la línea 57);
   `Throttler` en `Packages/Features/Sources/GalleryFeatureUI/GalleryViewModel.swift:31`
   (uso en la línea 60).
 - **`Logic`/`LogicViewModel` + flags del generador**: `--api` en `LoginLogic` en
