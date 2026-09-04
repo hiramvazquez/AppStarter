@@ -24,7 +24,9 @@ let package = Package(
         .library(name: "ProductDetailFeature", targets: ["ProductDetailFeature"]),
         .library(name: "FavoritesFeature", targets: ["FavoritesFeature"]),
         .library(name: "ProfileFeature", targets: ["ProfileFeature"]),
-        .library(name: "SearchFeature", targets: ["SearchFeature"])
+        .library(name: "SearchFeature", targets: ["SearchFeature"]),
+        .library(name: "DiagnosticsFeature", targets: ["DiagnosticsFeature"]),
+        .library(name: "UploadsFeature", targets: ["UploadsFeature"])
         // archinit:products-end
     ],
     dependencies: [
@@ -181,6 +183,60 @@ let package = Package(
                 .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/SearchFeatureTests",
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "DiagnosticsFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                // Not added by `--api` — added by hand: the retry5xx experiment's fixture
+                // (PRD-APP-02: "un endpoint 5xx simulado por fixture con reintentos
+                // visibles") uses `InMemoryTransport` directly in `DiagnosticsService`,
+                // the same accepted trade-off `App/OfflineFixtures.swift` already makes
+                // for `-UITestOffline` (`CoreNetworkingTestSupport` linked into a
+                // non-test target — see its doc comment).
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform")
+            ],
+            path: "Sources/DiagnosticsFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
+            ]
+        ),
+        .testTarget(
+            name: "DiagnosticsFeatureTests",
+            dependencies: [
+                "DiagnosticsFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking")
+            ],
+            path: "Tests/DiagnosticsFeatureTests",
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "UploadsFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform")
+            ],
+            path: "Sources/UploadsFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
+            ]
+        ),
+        .testTarget(
+            name: "UploadsFeatureTests",
+            dependencies: [
+                "UploadsFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "PlatformTestSupport", package: "Platform")
+            ],
+            path: "Tests/UploadsFeatureTests",
             swiftSettings: swiftSettings
         ),
         // archinit:features-end

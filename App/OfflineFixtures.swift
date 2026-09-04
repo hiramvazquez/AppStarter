@@ -63,6 +63,71 @@ enum OfflineFixtures {
                     response: .response(status: 200, body: meBody)
                 )
             )
+            // Diagnostics (PRD-APP-02) — experiments that reuse the app's own
+            // authenticated `APIServiceProtocol`, so their fixtures live on the SAME
+            // shared transport as everything above:
+            await transport.register(
+                InMemoryTransport.Exchange(
+                    method: .get,
+                    url: baseURL.appendingPathComponent("products/999999"),
+                    response: .response(status: 404, body: notFoundBody)
+                )
+            )
+            await transport.register(
+                InMemoryTransport.Exchange(
+                    method: .get,
+                    url: baseURL.appendingPathComponent("products").withQuery([("delay", "3000")]),
+                    // 4s, deliberately longer than the real 3s delay it stands in for:
+                    // `DiagnosticsUITests` needs a comfortable window to find AND tap
+                    // "Cancelar" (each XCUITest query round-trip alone can take several
+                    // hundred ms) before the fixture would resolve on its own — a shorter
+                    // latency made the test race the fixture and occasionally tap into a
+                    // result that had already landed.
+                    response: .response(status: 200, body: productsPageBody, latency: .seconds(4))
+                )
+            )
+            // Uploads (PRD-APP-02): `POST /products/add`, uploaded (not `execute`d) with
+            // the photo as base64 in the JSON body — DummyJSON echoes it with a fresh id;
+            // the fixture does the same.
+            await transport.register(
+                InMemoryTransport.Exchange(
+                    method: .post,
+                    url: baseURL.appendingPathComponent("products/add"),
+                    response: .response(status: 200, body: addProductBody)
+                )
+            )
+            semaphore.signal()
+        }
+
+        semaphore.wait()
+        return transport
+    }
+
+    /// A SEPARATE transport for Diagnostics' 401/host-unreachable experiments
+    /// (`DiagnosticsService`'s own `unauthenticatedAPI`/`unreachableAPI` pipelines) — NOT
+    /// the shared one above: both experiments target `GET /auth/me`/`GET /` on
+    /// `baseURL`, paths the shared transport already answers with 200 for the app's
+    /// normal (authenticated) flows. Reusing it here would make the 401 experiment
+    /// "succeed" offline instead of demonstrating the failure it exists to show.
+    static func makeDiagnosticsOfflineTransport() -> InMemoryTransport {
+        let transport = InMemoryTransport()
+        let semaphore = DispatchSemaphore(value: 0)
+
+        Task {
+            await transport.register(
+                InMemoryTransport.Exchange(
+                    method: .get,
+                    url: baseURL.appendingPathComponent("auth/me"),
+                    response: .response(status: 401, body: unauthorizedBody)
+                )
+            )
+            await transport.register(
+                InMemoryTransport.Exchange(
+                    method: .get,
+                    url: URL(string: "https://unreachable.invalid/") ?? baseURL,
+                    response: .failure(URLError(.cannotFindHost))
+                )
+            )
             semaphore.signal()
         }
 
@@ -104,6 +169,10 @@ enum OfflineFixtures {
         """
         .utf8
     )
+
+    private static let notFoundBody = Data(#"{"message":"Product not found"}"#.utf8)
+    private static let unauthorizedBody = Data(#"{"message":"Authentication Invalid"}"#.utf8)
+    private static let addProductBody = Data(#"{"id":101,"title":"Producto de prueba"}"#.utf8)
 }
 
 private extension URL {

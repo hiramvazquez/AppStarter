@@ -1,4 +1,5 @@
 import AppFoundation
+import DiagnosticsFeature
 import Domain
 import FavoritesFeature
 import LoginFeature
@@ -8,6 +9,7 @@ import ProductsFeature
 import ProfileFeature
 import SearchFeature
 import SwiftUI
+import UploadsFeature
 
 // archinit:imports
 
@@ -44,6 +46,10 @@ struct RootView: View {
                 ProfileView(viewModel: sessionState.sessionContainer.resolve())
             case .search:
                 SearchView(viewModel: Container.shared.resolve())
+            case .diagnostics:
+                DiagnosticsView(viewModel: Container.shared.resolve())
+            case .uploads:
+                UploadsView(viewModel: Container.shared.resolve())
             }
         }
     }

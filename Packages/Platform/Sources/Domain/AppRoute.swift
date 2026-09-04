@@ -24,4 +24,6 @@ public enum AppRoute: Hashable {
     case favorites
     case profile
     case search
+    case diagnostics
+    case uploads
 }

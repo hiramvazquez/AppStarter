@@ -2,6 +2,7 @@ import AnalyticsAdapters
 import AppFoundation
 import CameraKit
 import CoreNetworking
+import DiagnosticsFeature
 import Domain
 import FavoritesFeature
 import Foundation
@@ -11,6 +12,7 @@ import ProductDetailFeature
 import ProductsFeature
 import ProfileFeature
 import SearchFeature
+import UploadsFeature
 
 // archinit:imports
 
@@ -55,7 +57,12 @@ enum AppModule {
             ProductsModule(),
             ProductDetailModule(),
             favoritesModule,
-            SearchModule()
+            SearchModule(),
+            DiagnosticsModule(
+                baseURL: apiBaseURL,
+                offlineTransport: isOffline ? OfflineFixtures.makeDiagnosticsOfflineTransport() : nil
+            ),
+            UploadsModule()
             // archinit:modules
         ]
     }
@@ -83,7 +90,8 @@ struct PlatformModule: DependencyModule {
 
         // MARK: Kits
         container.register(CameraProviding.self) { _ in CameraKitProvider() }
+        container.register(CameraCapturing.self) { _ in CameraKitCapture() }
         // MARK: Adapters
-        container.register(AnalyticsAdapting.self) { _ in AnalyticsAdapterStub() }
+        container.register(AnalyticsTracking.self) { _ in ConsoleAnalyticsAdapter() }
     }
 }
