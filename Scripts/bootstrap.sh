@@ -15,4 +15,4 @@ echo "==> xcodegen generate"
 xcodegen generate
 
 echo "==> AppStarter.xcodeproj generado. Abre AppStarter.xcodeproj o ejecuta:"
-echo "    xcodebuild test -scheme AppStarter -destination 'platform=iOS Simulator,name=iPhone 17 Pro'"
+echo "    xcodebuild test -scheme AppStarter -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -skipPackagePluginValidation"

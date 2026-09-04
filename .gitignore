@@ -7,6 +7,8 @@ DerivedData/
 # SwiftPM
 .build/
 .swiftpm/
+Packages/*/.build/
+Packages/*/.swiftpm/
 
 # xcodegen cache
 .xcodegen/
