@@ -15,12 +15,20 @@ funcionando desde el primer commit — en la estructura **modular de tres nivele
 - **Arquitectura**: View → ViewModel → Logic → Services/Stores (la de `AppFoundation`),
   sin excepciones, con `ArchitectureLint` activo en cada `swift build` y R13 (aislamiento
   entre módulos) vigilando que ninguna feature importe otra.
-- **Seis pantallas + una hoja modal**: Login, Productos (lista paginada), Detalle de
-  producto (favorito ⭐, `chrome: .custom` a propósito), Favoritos (SwiftData), Perfil
-  (`GET /auth/me`, logout, y muestra cuándo se renovó el token en silencio), Buscar
-  (sheet).
+- **Ocho pantallas + una hoja modal**: Login, Productos (lista paginada), Detalle de
+  producto (favorito ⭐, `chrome: .custom` a propósito), Favoritos (SwiftData, "Vaciar
+  favoritos" con `AlertState` destructiva), Perfil (`GET /auth/me`, logout con
+  confirmación, y muestra cuándo se renovó el token en silencio), Buscar (sheet),
+  **Diagnostics** (escaparate de `CoreNetworking`: siete experimentos reales contra
+  DummyJSON — 404, 401, timeout, JSON inválido, host inalcanzable, 5xx con reintentos,
+  petición lenta cancelable) y **Uploads** (`POST /products/add` con
+  `upload(_:data:progress:)`, una foto vía `any CameraCapturing`, y progreso real).
 - **Sesión**: bearer token + refresh automático en 401, con logout global si el refresh
-  también falla.
+  también falla. `Container(parent:)` por sesión: al hacer login se crea un contenedor
+  hijo con los módulos autenticados (hoy, `Profile`); al cerrar sesión se descarta.
+- **Analítica**: `AnalyticsTracking` (`Domain`) — un evento `screen_view` por navegación
+  (`App/RootView.swift`) y uno `upload` al subir una foto, con un adaptador de consola
+  que además guarda los últimos eventos en memoria.
 
 ## Arranca en 5 minutos
 
@@ -131,6 +139,30 @@ Sigue los pasos manuales que imprime el comando (el `case` en
 producto en `project.yml` si no hay marker `# archinit:products`), y complétalo con el
 dominio real. `swift package archlint` (o el build de Xcode) te dice si te saliste de la
 arquitectura — incluida la regla R13: una feature no puede importar otra.
+
+### Reutilizar el Service/Store de otro feature (`--service-from`/`--store-from`)
+
+`ProductDetail` reutiliza `ProductsServicing` (`Networking`) y `FavoritesStoring`
+(`Domain`) — hecho a mano al mover la feature en la Fase 1 de la migración a modo multi.
+Generado hoy, con el kit, sería:
+
+```bash
+cd Packages/Features
+swift package --disable-sandbox --allow-writing-to-package-directory \
+  generate-feature ProductDetail --api --local --service-from Products --store-from Favorites
+```
+
+Comprobado de verdad en este repo (generando `ProductDetailProbe`, revertido tras
+capturar la evidencia — nunca llegó a compilar, no quedó en el árbol): el comando
+funciona y da de alta el target, pero el test generado usa `ProductsServiceMock()`/
+`FavoritesStoreMock()` directamente, sin `import PlatformTestSupport` — en ESTE repo esos
+mocks viven en `PlatformTestSupport` (compartidos entre features, ver «Por qué dos
+manifiestos SPM locales» y `docs/INFORME-MULTI.md`), no en `ProductsFeatureTests`/
+`FavoritesFeatureTests` como el generador asume por defecto. El fichero generado no
+compila hasta que, a mano, se añade `.product(name: "PlatformTestSupport", package:
+"Platform")` a las `dependencies:` del test target nuevo en `Package.swift` y `import
+PlatformTestSupport` al fichero de test. Repro completo y propuesta para 1.2.1 en
+`docs/INFORME-MULTI.md` § «`--service-from`/`--store-from` en modo multi».
 
 ### Calidad de código: SwiftLint curado
 
