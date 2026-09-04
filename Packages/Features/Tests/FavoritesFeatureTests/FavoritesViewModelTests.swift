@@ -1,6 +1,8 @@
 import AppFoundation
 import Domain
 import Foundation
+import Observation
+import PlatformTestSupport
 import Testing
 
 @testable import FavoritesFeature
@@ -75,5 +77,24 @@ struct FavoritesViewModelTests {
         #expect(await mock.clearAllCalls.calls.count == 1)
         #expect(viewModel.items.isEmpty)
         #expect(viewModel.phase == .empty)
+    }
+
+    @Test("Changing items notifies Observation — FavoritesViewModel's own @Observable (docs/INFORME-MULTI.md §11)")
+    func changingItemsNotifiesObservation() async {
+        let mock = FavoritesLogicMock()
+        let product = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
+        mock.itemsToReturn = [product]
+        let viewModel = FavoritesViewModel(logic: mock, router: Coordinator(root: .favorites))
+        let flag = ObservationFlag()
+
+        withObservationTracking {
+            _ = viewModel.items
+        } onChange: {
+            flag.fired = true
+        }
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+
+        #expect(flag.fired)
     }
 }

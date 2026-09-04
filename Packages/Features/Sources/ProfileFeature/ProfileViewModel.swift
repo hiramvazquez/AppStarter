@@ -2,12 +2,19 @@ import AppFoundation
 import Domain
 import Foundation
 import Networking
+import Observation
 
 /// Orchestrates the profile screen: load `GET /auth/me`, show the token-refresh activity
 /// log (PRD-APP-01: "muestra el refresh cuando el token caduca"), and logout. Never
 /// imports CoreNetworking, never references `ProfileService`/`SessionStore` directly —
 /// only `logic`.
+///
+/// `@Observable` here too — not just the one `AppFoundation.BaseViewModel` already
+/// carries (`docs/INFORME-MULTI.md` §11): the macro only instruments stored properties
+/// declared IN the class it's attached to, so `profile` needs its own. PRD-APP-02 tramo B
+/// item 0: every ViewModel declares it, on principle.
 @MainActor
+@Observable
 public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, ActionHandling {
     public private(set) var profile: UserProfile?
 

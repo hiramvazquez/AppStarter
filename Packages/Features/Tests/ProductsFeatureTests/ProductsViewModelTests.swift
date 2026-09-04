@@ -1,6 +1,8 @@
 import AppFoundation
 import Domain
 import Foundation
+import Observation
+import PlatformTestSupport
 import Testing
 
 @testable import ProductsFeature
@@ -83,5 +85,24 @@ struct ProductsViewModelTests {
 
         #expect(viewModel.items == [first, second])
         #expect(viewModel.canLoadMore == false)
+    }
+
+    @Test("Changing items notifies Observation — ProductsViewModel's own @Observable (docs/INFORME-MULTI.md §11)")
+    func changingItemsNotifiesObservation() async {
+        let mock = ProductsLogicMock()
+        let product = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
+        mock.pageToReturn = ProductsPage(items: [product], total: 1, skip: 0, limit: 20)
+        let viewModel = ProductsViewModel(logic: mock, router: Coordinator(root: .products))
+        let flag = ObservationFlag()
+
+        withObservationTracking {
+            _ = viewModel.items
+        } onChange: {
+            flag.fired = true
+        }
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+
+        #expect(flag.fired)
     }
 }

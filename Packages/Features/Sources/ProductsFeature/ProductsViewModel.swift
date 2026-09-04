@@ -1,11 +1,20 @@
 import AppFoundation
 import Domain
 import Foundation
+import Observation
 
 /// Orchestrates the product list: pagination, pull-to-refresh, and navigation to
 /// `.productDetail`/`.favorites`/`.profile`/`.search`. Never imports CoreNetworking, never
 /// references `ProductsService` directly — only `logic`.
+///
+/// `@Observable` here too — not just the one `AppFoundation.BaseViewModel` already
+/// carries (`docs/INFORME-MULTI.md` §11): the macro only instruments stored properties
+/// declared IN the class it's attached to. `items`/`canLoadMore` always mutate alongside
+/// `phase`/`activity` today (every write happens inside `performLoad`/`performActivity`),
+/// so this stayed a latent bug rather than a visible one — but PRD-APP-02 tramo B item 0
+/// makes it explicit on every ViewModel regardless, not just the two where it was caught.
 @MainActor
+@Observable
 public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>, ActionHandling {
     public private(set) var items: [Product] = []
     public private(set) var canLoadMore = false

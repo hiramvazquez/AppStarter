@@ -2,12 +2,21 @@ import AppFoundation
 import Domain
 import Foundation
 import Networking
+import Observation
 
 /// Orchestrates between `LoginView` and `LoginLogic`: receives an `Action`, calls
 /// `logic`, updates `username`/`password`, and moves to `.products` on success. Never
 /// imports CoreNetworking, never references `AuthService`/`SessionStore` directly — only
 /// `logic`.
+///
+/// `@Observable` here too — not just the one `AppFoundation.BaseViewModel` already
+/// carries (`docs/INFORME-MULTI.md` §11): the macro only instruments stored properties
+/// declared IN the class it's attached to, never a subclass's, so `username`/`password`
+/// would go untracked without this. PRD-APP-02 tramo B item 0: every ViewModel in this
+/// repo declares its own `@Observable`, whether or not today's mutations happen to always
+/// ride along with a `phase`/`activity` change (they do here, but that's incidental).
 @MainActor
+@Observable
 public final class LoginViewModel: LogicViewModel<any LoginLogicProtocol>, ActionHandling {
     public private(set) var username = ""
     public private(set) var password = ""

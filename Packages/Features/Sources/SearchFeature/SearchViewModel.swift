@@ -1,11 +1,21 @@
 import AppFoundation
 import Domain
 import Foundation
+import Observation
 
 /// Orchestrates the search sheet: query text, submit, select a result, close. Never
 /// imports CoreNetworking, never references `SearchService`/`ProductsService` directly —
 /// only `logic`.
+///
+/// `@Observable` here too — not just the one `AppFoundation.BaseViewModel` already
+/// carries (`docs/INFORME-MULTI.md` §11): the macro only instruments stored properties
+/// declared IN the class it's attached to. `query` mutates OUTSIDE any `performLoad`/
+/// `performActivity` (`.updateQuery`, on every keystroke) — this is the one ViewModel in
+/// this repo where the bug §11 describes would have been directly visible (the search
+/// field's own text not updating as you type), not merely latent. PRD-APP-02 tramo B item
+/// 0: every ViewModel declares it, on principle.
 @MainActor
+@Observable
 public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, ActionHandling {
     public private(set) var query = ""
     public private(set) var results: [Product] = []

@@ -2,6 +2,8 @@ import AppFoundation
 import Domain
 import Foundation
 import Networking
+import Observation
+import PlatformTestSupport
 import Testing
 
 @testable import LoginFeature
@@ -59,5 +61,22 @@ struct LoginViewModelTests {
         viewModel.dismissBanner()
         viewModel.handle(.appear)
         #expect(viewModel.banner == nil)
+    }
+
+    @Test("Changing username notifies Observation — LoginViewModel declares its own @Observable (§11)")
+    func changingUsernameNotifiesObservation() {
+        let mock = LoginLogicMock()
+        let router = Coordinator<AppRoute>(root: .login)
+        let viewModel = LoginViewModel(logic: mock, router: router, sessionState: AppSessionState(router: router))
+        let flag = ObservationFlag()
+
+        withObservationTracking {
+            _ = viewModel.username
+        } onChange: {
+            flag.fired = true
+        }
+        viewModel.handle(.updateUsername("emilys"))
+
+        #expect(flag.fired)
     }
 }

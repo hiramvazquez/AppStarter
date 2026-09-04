@@ -1,10 +1,17 @@
 import AppFoundation
 import Domain
 import Foundation
+import Observation
 
 /// Orchestrates the favorites list: load, remove, and push to `ProductDetail`. Never
 /// imports SwiftData, never references `FavoritesStore` directly — only `logic`.
+///
+/// `@Observable` here too — not just the one `AppFoundation.BaseViewModel` already
+/// carries (`docs/INFORME-MULTI.md` §11): the macro only instruments stored properties
+/// declared IN the class it's attached to, so `items` needs its own. PRD-APP-02 tramo B
+/// item 0: every ViewModel declares it, on principle.
 @MainActor
+@Observable
 public final class FavoritesViewModel: LogicViewModel<any FavoritesLogicProtocol>, ActionHandling {
     public private(set) var items: [Product] = []
 

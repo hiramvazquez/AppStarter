@@ -1,6 +1,8 @@
 import AppFoundation
 import Domain
 import Foundation
+import Observation
+import PlatformTestSupport
 import Testing
 
 @testable import SearchFeature
@@ -46,5 +48,21 @@ struct SearchViewModelTests {
 
         #expect(router.modal == nil)
         #expect(router.mainStack.path == [.productDetail(id: 5)])
+    }
+
+    @Test("Changing query notifies Observation — SearchViewModel declares its own @Observable (§11)")
+    func changingQueryNotifiesObservation() {
+        let mock = SearchLogicMock()
+        let viewModel = SearchViewModel(logic: mock, router: Coordinator(root: .products))
+        let flag = ObservationFlag()
+
+        withObservationTracking {
+            _ = viewModel.query
+        } onChange: {
+            flag.fired = true
+        }
+        viewModel.handle(.updateQuery("phone"))
+
+        #expect(flag.fired)
     }
 }

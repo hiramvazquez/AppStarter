@@ -2,6 +2,8 @@ import AppFoundation
 import Domain
 import Foundation
 import Networking
+import Observation
+import PlatformTestSupport
 import Testing
 
 @testable import ProfileFeature
@@ -133,5 +135,27 @@ struct ProfileViewModelTests {
 
         #expect(viewModel.refreshCount == 1)
         #expect(viewModel.lastRefreshDate == Date(timeIntervalSince1970: 100))
+    }
+
+    @Test("Changing profile notifies Observation — ProfileViewModel's own @Observable (docs/INFORME-MULTI.md §11)")
+    func changingProfileNotifiesObservation() async {
+        let mock = ProfileLogicMock()
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: AppSessionState(router: Coordinator(root: .profile)),
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
+        let flag = ObservationFlag()
+
+        withObservationTracking {
+            _ = viewModel.profile
+        } onChange: {
+            flag.fired = true
+        }
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+
+        #expect(flag.fired)
     }
 }

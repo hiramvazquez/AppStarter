@@ -1,11 +1,18 @@
 import AppFoundation
 import Domain
 import Foundation
+import Observation
 
 /// Orchestrates the product detail screen: load, toggle favorite, and pop back. Never
 /// imports CoreNetworking/SwiftData, never references `ProductsService`/`FavoritesStore`
 /// directly — only `logic`.
+///
+/// `@Observable` here too — not just the one `AppFoundation.BaseViewModel` already
+/// carries (`docs/INFORME-MULTI.md` §11): the macro only instruments stored properties
+/// declared IN the class it's attached to, so `product`/`isFavorite` need their own.
+/// PRD-APP-02 tramo B item 0: every ViewModel declares it, on principle.
 @MainActor
+@Observable
 public final class ProductDetailViewModel: LogicViewModel<any ProductDetailLogicProtocol>, ActionHandling {
     public let productID: Int
     public private(set) var product: Product?
