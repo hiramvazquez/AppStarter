@@ -47,6 +47,7 @@ struct DiagnosticsLogicTests {
             ("unreachable", DiagnosticsError.unreachable),
             ("server", DiagnosticsError.server),
             ("cancelled", DiagnosticsError.cancelled),
+            ("untrustedServer", DiagnosticsError.untrustedServer),
             ("somethingUnmapped", DiagnosticsError.unknown)
         ]
     )

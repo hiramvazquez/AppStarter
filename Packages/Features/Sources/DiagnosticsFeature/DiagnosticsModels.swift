@@ -93,12 +93,21 @@ public enum DiagnosticsError: DomainError, Equatable {
     case unreachable
     case server
     case cancelled
+    /// The server's TLS identity didn't match a pinned key (`CoreNetworking`'s
+    /// `APIError.Category.untrustedServer`) — never `.cancelled` (that distinction is the
+    /// whole point of the category, `TransportError`'s own doc comment). Surfaces here
+    /// whenever `Settings`' "pinning estricto" + "pin falso" are both on (PRD-APP-02
+    /// tramo B item 2): every experiment that reuses the app's shared authenticated
+    /// `APIServiceProtocol` (404, timeout, invalid JSON, the slow request) fails this way
+    /// instead of its usual category, since the pipeline itself now rejects the
+    /// connection before a request can even be sent.
+    case untrustedServer
     case unknown
 
     public var isRetryable: Bool {
         switch self {
         case .server, .timeout: return true
-        case .notFound, .unauthorized, .decoding, .unreachable, .cancelled, .unknown: return false
+        case .notFound, .unauthorized, .decoding, .unreachable, .cancelled, .untrustedServer, .unknown: return false
         }
     }
 
@@ -113,6 +122,11 @@ public enum DiagnosticsError: DomainError, Equatable {
             return ScreenError(title: "Host inalcanzable", message: "No se pudo conectar con el servidor.")
         case .server: return ScreenError(title: "Error del servidor", message: "Inténtalo de nuevo.")
         case .cancelled: return ScreenError(title: "Cancelado", message: "La operación se canceló.")
+        case .untrustedServer:
+            return ScreenError(
+                title: "Servidor no confiable",
+                message: "El pinning TLS rechazó la conexión (pin falso activo en Ajustes)."
+            )
         case .unknown: return ScreenError(title: "Algo salió mal", message: "Inténtalo de nuevo.")
         }
     }
@@ -130,6 +144,7 @@ public enum DiagnosticsError: DomainError, Equatable {
         case "unreachable": return .unreachable
         case "server": return .server
         case "cancelled": return .cancelled
+        case "untrustedServer": return .untrustedServer
         default: return .unknown
         }
     }
