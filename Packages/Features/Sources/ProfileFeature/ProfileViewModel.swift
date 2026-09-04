@@ -16,6 +16,7 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
     /// child container (`AppSessionState`'s doc comment, PRD-APP-02 `Container(parent:)`).
     private let sessionState: AppSessionState
     private let refreshLog: RefreshActivityLog
+    private let router: any Router<AppRoute>
 
     /// `nil` when the pipeline never silently refreshed the token during this session.
     public var refreshCount: Int { refreshLog.refreshCount }
@@ -28,11 +29,19 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         /// tap.
         case logoutRequested
         case logout
+        case openDiagnostics
+        case openUploads
     }
 
-    public init(logic: any ProfileLogicProtocol, sessionState: AppSessionState, refreshLog: RefreshActivityLog) {
+    public init(
+        logic: any ProfileLogicProtocol,
+        sessionState: AppSessionState,
+        refreshLog: RefreshActivityLog,
+        router: any Router<AppRoute>
+    ) {
         self.sessionState = sessionState
         self.refreshLog = refreshLog
+        self.router = router
         super.init(logic: logic)
     }
 
@@ -41,6 +50,8 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         case .load: load()
         case .logoutRequested: requestLogout()
         case .logout: logout()
+        case .openDiagnostics: router.push(.diagnostics)
+        case .openUploads: router.push(.uploads)
         }
     }
 

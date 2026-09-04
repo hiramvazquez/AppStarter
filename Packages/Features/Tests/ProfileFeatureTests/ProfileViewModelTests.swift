@@ -13,7 +13,12 @@ struct ProfileViewModelTests {
     func loadReachesContent() async {
         let mock = ProfileLogicMock()
         let sessionState = AppSessionState(router: Coordinator(root: .profile))
-        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: sessionState,
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
 
         viewModel.handle(.load)
         await viewModel.inFlightLoad?.value
@@ -27,7 +32,12 @@ struct ProfileViewModelTests {
         let mock = ProfileLogicMock()
         let router = Coordinator<AppRoute>(root: .profile)
         let sessionState = AppSessionState(router: router)
-        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: sessionState,
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
 
         viewModel.handle(.logout)
         await viewModel.inFlightActivity?.value
@@ -40,7 +50,12 @@ struct ProfileViewModelTests {
     func logoutRequestedShowsAlert() async {
         let mock = ProfileLogicMock()
         let sessionState = AppSessionState(router: Coordinator(root: .profile))
-        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: sessionState,
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
 
         viewModel.handle(.logoutRequested)
 
@@ -53,7 +68,12 @@ struct ProfileViewModelTests {
         let mock = ProfileLogicMock()
         let router = Coordinator<AppRoute>(root: .profile)
         let sessionState = AppSessionState(router: router)
-        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: sessionState,
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
 
         viewModel.handle(.logoutRequested)
         viewModel.alert?.primaryButton.action()
@@ -69,12 +89,35 @@ struct ProfileViewModelTests {
         let sessionState = AppSessionState(router: Coordinator(root: .profile), parentContainer: Container())
         sessionState.startSession()
         let containerBeforeLogout = sessionState.sessionContainer
-        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: sessionState,
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
 
         viewModel.handle(.logout)
         await viewModel.inFlightActivity?.value
 
         #expect(sessionState.sessionContainer !== containerBeforeLogout)
+    }
+
+    @Test("handle(.openDiagnostics)/(.openUploads) push their routes")
+    func openDiagnosticsAndUploadsPushRoutes() {
+        let mock = ProfileLogicMock()
+        let router = Coordinator<AppRoute>(root: .profile)
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: AppSessionState(router: Coordinator(root: .profile)),
+            refreshLog: RefreshActivityLog(),
+            router: router
+        )
+
+        viewModel.handle(.openDiagnostics)
+        #expect(router.mainStack.path == [.diagnostics])
+
+        viewModel.handle(.openUploads)
+        #expect(router.mainStack.path == [.diagnostics, .uploads])
     }
 
     @Test("refreshCount/lastRefreshDate mirror RefreshActivityLog")
@@ -84,7 +127,8 @@ struct ProfileViewModelTests {
         let viewModel = ProfileViewModel(
             logic: ProfileLogicMock(),
             sessionState: AppSessionState(router: Coordinator(root: .profile)),
-            refreshLog: log
+            refreshLog: log,
+            router: Coordinator(root: .profile)
         )
 
         #expect(viewModel.refreshCount == 1)

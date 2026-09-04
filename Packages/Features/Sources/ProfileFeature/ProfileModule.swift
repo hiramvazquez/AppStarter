@@ -25,7 +25,8 @@ public struct ProfileModule: DependencyModule {
             ProfileViewModel(
                 logic: c.resolve(),
                 sessionState: c.resolve(AppSessionState.self),
-                refreshLog: c.resolve(RefreshActivityLog.self)
+                refreshLog: c.resolve(RefreshActivityLog.self),
+                router: c.resolve()
             )
         }
     }

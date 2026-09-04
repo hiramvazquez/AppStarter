@@ -50,6 +50,13 @@ public struct ProfileView: View {
                     }
                 }
 
+                Section("Escaparate de CoreNetworking") {
+                    Button("Diagnostics") { send(.openDiagnostics) }
+                        .accessibilityIdentifier("profile.diagnostics")
+                    Button("Subir foto") { send(.openUploads) }
+                        .accessibilityIdentifier("profile.uploads")
+                }
+
                 Section {
                     Button("Cerrar sesión", role: .destructive) {
                         send(.logoutRequested)
@@ -90,7 +97,8 @@ private final class ProfilePreviewLogic: ProfileLogicProtocol {
             viewModel: ProfileViewModel(
                 logic: ProfilePreviewLogic(),
                 sessionState: AppSessionState(router: Coordinator(root: .profile)),
-                refreshLog: RefreshActivityLog()
+                refreshLog: RefreshActivityLog(),
+                router: Coordinator<AppRoute>(root: .profile)
             )
         )
     }
