@@ -67,21 +67,20 @@ struct UploadsLogicTests {
         await service.setProgressToReport([0.25, 0.75, 1.0])
         let logic = UploadsLogic(uploadsService: service, camera: CameraCapturingMock(), analytics: InMemoryAnalytics())
 
-        let recorder = SpyRecorder<Double>()
+        // A locked array, recorded SYNCHRONOUSLY inside the (non-`async`) progress
+        // closure — `UploadsServiceMock.addProduct` calls it in a plain sequential
+        // `for` loop, so this preserves call order. Wrapping each call in its own
+        // `Task { await recorder.record(...) }` (an earlier version of this test) does
+        // NOT: separate unstructured `Task`s racing to enter an actor have no ordering
+        // guarantee, which made this test genuinely flaky under parallel test execution.
+        let recorder = LockedArray<Double>()
         _ = try await logic.upload(
             title: "Widget",
             photoData: Data(),
-            progress: { fraction in Task { await recorder.record(fraction) } }
+            progress: { fraction in recorder.append(fraction) }
         )
-        // The progress closure isn't awaited by `upload` itself (fire-and-forget, like the
-        // real `URLSessionTaskDelegate` callbacks it stands in for) — poll instead of a
-        // single fixed sleep, so this isn't flaky under CI load.
-        let deadline = ContinuousClock.now + .seconds(2)
-        while await recorder.count < 3, ContinuousClock.now < deadline {
-            try await Task.sleep(for: .milliseconds(5))
-        }
 
-        #expect(await recorder.calls == [0.25, 0.75, 1.0])
+        #expect(recorder.values == [0.25, 0.75, 1.0])
     }
 
     @Test("A server service failure maps to UploadsError.server, without tracking an event")
@@ -107,5 +106,30 @@ struct UploadsLogicTests {
         await #expect(throws: UploadsError.offline) {
             _ = try await logic.upload(title: "Widget", photoData: Data(), progress: { _ in })
         }
+    }
+}
+
+/// A plain lock-guarded array — simpler than `SpyRecorder` for a value recorded from a
+/// SYNCHRONOUS, non-`async` closure (`upload`'s `progress:` parameter): no actor hop, so
+/// no ordering ambiguity between concurrent callers.
+///
+/// `nonisolated`: this project's `defaultIsolation(MainActor.self)` would otherwise make
+/// `append`/`values` main-actor-isolated, but `progress:` calls this from whatever
+/// (non-main) context `UploadsServiceMock.addProduct` runs in — a real `NSLock`, not the
+/// main actor, is what makes this safe to call from there synchronously.
+nonisolated private final class LockedArray<Element: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [Element] = []
+
+    func append(_ element: Element) {
+        lock.lock()
+        defer { lock.unlock() }
+        storage.append(element)
+    }
+
+    var values: [Element] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
     }
 }
