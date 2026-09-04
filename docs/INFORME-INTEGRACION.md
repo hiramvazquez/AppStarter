@@ -23,6 +23,19 @@ cambio en el paquete).
 > semánticamente neutro (ternario → `if/else`, `scaledToFit`, formato), y en local (iOS 26.5)
 > no se reproduce. Desde `2e269c3`, un fallo sube el `.xcresult` como artefacto y `waitAndTap`
 > adjunta captura y árbol de accesibilidad: el siguiente rojo traerá la evidencia.
+>
+> **Migración a modo multi (2026-09-04, PRD-APP-02 Fase 1):** AppStarter usa ya
+> AppFoundation **1.2.0** y la estructura de tres niveles de `archinit --multi`
+> (`App/` + `Packages/Platform` + `Packages/Features`) — `AppStarterKit/`, el paquete
+> local único que motivó la fricción 1 de este informe, desapareció. La decisión que
+> describe la fricción 1 (un paquete SPM local porque `generate-feature`/`archlint`
+> necesitan un `Package.swift`) sigue vigente en esencia, solo que ahora son DOS
+> manifiestos (`Packages/Platform`, `Packages/Features`), no uno. Las fricciones 2, 3, 5,
+> 6, 7, 8, 9, 10 y 11 de este informe siguen aplicando sin cambios (mismo xcodegen, mismo
+> `-skipPackagePluginValidation`, mismos XCUITests). Las fricciones NUEVAS del modo multi
+> (permisos del sandbox de `archinit --multi`, R3 y el protocolo `Servicing` compartido en
+> otro módulo, la coma colgante antes de los markers y `swift-format`, `AppRoute` en
+> `Domain` en vez de `App/`) están documentadas con su repro en `docs/INFORME-MULTI.md`.
 
 ## Resumen
 

@@ -15,39 +15,82 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ""
 packages:
-  AppStarterKit:
-    path: AppStarterKit
-  # Segundo nivel, re-declarado aquí para el target de la app (fricción,
-  # docs/INFORME-INTEGRACION.md): un target de Xcode no hereda acceso a los productos de
-  # una dependencia DE una dependencia solo por enlazar `AppStarterKit` — `import
-  # CoreNetworkingTestSupport` en `OfflineFixtures.swift` (para `-UITestOffline`,
-  # InMemoryTransport) no resuelve sin este paquete declarado también aquí, con la MISMA
-  # URL y versión que `AppStarterKit/Package.swift` ya fija — xcodegen/SwiftPM
-  # deduplican por identidad de paquete, no por duplicar el checkout.
+  Platform:
+    path: Packages/Platform
+  # Features: sus productos entran en 'dependencies:' del target de la app en el marker
+  # '# archinit:products' — generate-feature (modo multi) los añade por ti (PRD-AF-10).
+  Features:
+    path: Packages/Features
+  # Segundo nivel, re-declarado aquí para el target de la app (misma fricción que antes de
+  # la migración, docs/INFORME-INTEGRACION.md): un target de Xcode no hereda acceso a los
+  # productos de una dependencia DE una dependencia solo por enlazar Platform/Features —
+  # con la MISMA URL/versión que ya fijan sus propios manifiestos (xcodegen/SwiftPM
+  # deduplican por identidad de paquete, no por duplicar el checkout).
+  AppFoundation:
+    url: https://github.com/hiramvazquez/AppFoundation.git
+    from: 1.2.1
   CoreNetworking:
     url: https://github.com/hiramvazquez/CoreNetworking.git
     from: 1.0.0
-  # Mismo motivo: `AppStarterApp.swift`/`RootView.swift` hacen `import AppFoundation`
-  # directamente (Container, Coordinator, CoordinatorView) — enlazar solo
-  # `AppStarterKit` basta para `build` pero NO para `test` (el linker no resuelve los
-  # símbolos de AppFoundation al construir para testing; fricción confirmada
-  # empíricamente, ver docs/INFORME-INTEGRACION.md).
-  AppFoundation:
-    url: https://github.com/hiramvazquez/AppFoundation.git
-    from: 1.1.0
+  # Solo para AppSnapshotTests (PRD-APP-02, Fase 3) — nunca enlazado al target
+  # `AppStarter` en sí.
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing.git
+    from: 1.19.0
 targets:
   AppStarter:
     type: application
     platform: iOS
     sources:
-      - path: AppStarter
+      - path: App
     dependencies:
-      - package: AppStarterKit
-        product: AppStarterKit
+      - package: Platform
+        product: Domain
+      - package: Platform
+        product: Networking
+      - package: Platform
+        product: CameraKit
+      - package: Platform
+        product: AnalyticsAdapters
       - package: AppFoundation
         product: AppFoundation
       - package: CoreNetworking
         product: CoreNetworkingTestSupport
+      - package: Features
+        product: LoginFeature
+      - package: Features
+        product: ProductsFeature
+      - package: Features
+        product: ProductDetailFeature
+      - package: Features
+        product: FavoritesFeature
+      - package: Features
+        product: ProfileFeature
+      - package: Features
+        product: SearchFeature
+      - package: Features
+        product: DiagnosticsFeature
+      - package: Features
+        product: UploadsFeature
+      - package: Features
+        product: GalleryFeature
+      - package: Features
+        product: SettingsFeature
+      # archinit:products
+    # URL scheme para deep links (PRD-APP-02 tramo B item 3): `appstarter://product/3`,
+    # `appstarter://search?q=phone`, parseados por `App/DeepLink.swift` y encaminados
+    # por el Coordinator (`onOpenURL`, `AppStarterApp.swift`). `CFBundleURLTypes` no
+    # tiene un `INFOPLIST_KEY_` sintetizado (a diferencia de las claves escalares de
+    # abajo) — xcodegen fusiona este `info.properties` con el Info.plist sintetizado
+    # por `GENERATE_INFOPLIST_FILE: YES`.
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.appstarter.app
+            CFBundleURLSchemes:
+              - appstarter
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app
@@ -60,27 +103,55 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_STRICT_CONCURRENCY: complete
 
-  AppStarterTests:
+  AppTests:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - path: AppStarterTests
+      - path: AppTests
     dependencies:
       - target: AppStarter
-      - package: AppStarterKit
-        product: AppStarterKit
       - package: AppFoundation
         product: AppFoundation
+      - package: Features
+        product: UploadsFeature
+      - package: Features
+        product: GalleryFeature
+      - package: Features
+        product: SettingsFeature
+      - package: Features
+        product: DiagnosticsFeature
+      - package: Platform
+        product: Domain
+      - package: Platform
+        product: Networking
+      - package: Platform
+        product: CameraKit
+      - package: Platform
+        product: AnalyticsAdapters
+      - package: CoreNetworking
+        product: CoreNetworkingTestSupport
+      - package: Features
+        product: LoginFeature
+      - package: Features
+        product: ProductsFeature
+      - package: Features
+        product: ProductDetailFeature
+      - package: Features
+        product: FavoritesFeature
+      - package: Features
+        product: ProfileFeature
+      - package: Features
+        product: SearchFeature
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app.tests
 
-  AppStarterUITests:
+  AppUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
-      - path: AppStarterUITests
+      - path: AppUITests
     dependencies:
       - target: AppStarter
     settings:
@@ -89,32 +160,66 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app.uitests
         TEST_TARGET_NAME: AppStarter
 
+  # PRD-APP-02, Fase 3: Diagnostics/Uploads/Gallery en loading/empty/error/content, con el
+  # tema del kit y el de marca — `@testable import AppStarter` para los cuatro
+  # `Brand…Style` (internos a ese target, igual que `AppTests`/`AppUITests` ya dependen de
+  # él). Un target de Xcode nativo (no un `swift test` de SwiftPM): `swift-snapshot-
+  # testing` renderiza a `UIImage` sobre `UIHostingController`, que necesita un runtime de
+  # UIKit real — el simulador que ya arranca este esquema, no `swift test`'s host macOS.
+  AppSnapshotTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AppSnapshotTests
+        excludes:
+          - "__Snapshots__"   # referencias de swift-snapshot-testing: se leen por ruta, no son recursos del bundle
+    dependencies:
+      - target: AppStarter
+      - package: AppFoundation
+        product: AppFoundation
+      - package: Platform
+        product: Domain
+      - package: Features
+        product: DiagnosticsFeature
+      - package: Features
+        product: UploadsFeature
+      - package: Features
+        product: GalleryFeature
+      - package: SnapshotTesting
+        product: SnapshotTesting
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app.snapshottests
+
 schemes:
   AppStarter:
     build:
       targets:
         AppStarter: all
-        AppStarterTests: [test]
-        AppStarterUITests: [test]
+        AppTests: [test]
+        AppUITests: [test]
+        AppSnapshotTests: [test]
     test:
       config: Debug
       targets:
-        - AppStarterTests
-        - AppStarterUITests
-      # NOTA (docs/INFORME-INTEGRACION.md): el target de tests unitarios de
-      # AppStarterKit (el paquete local, `swift test`) no se puede añadir aquí — xcodegen
-      # 2.46.0 rechaza una referencia de scheme a un test target de un paquete Swift
-      # local ("invalid test target"). Se ejecuta aparte: `cd AppStarterKit && swift
-      # test`. `AppStarterTests` (arriba) es un smoke test del composition root completo,
-      # nativo de Xcode, cubierto por ESTE `xcodebuild test`.
+        - AppTests
+        - AppSnapshotTests
+        - AppUITests
+      # NOTA (docs/INFORME-INTEGRACION.md, vigente tras la migración a modo multi):
+      # xcodegen 2.46.0 rechaza una referencia de scheme a un test target de un paquete
+      # Swift local ("invalid test target") — `swift test --package-path
+      # Packages/Platform`/`Packages/Features` se ejecutan aparte, no desde este esquema.
+      # `AppTests` (arriba) es un smoke test del composition root completo, nativo de
+      # Xcode, cubierto por ESTE `xcodebuild test`.
       #
       # UI_TEST_OFFLINE se hornea en el ESQUEMA (no se lee del entorno de la shell que
       # invoca `xcodebuild test`): confirmado empíricamente que una variable exportada
       # justo antes de `xcodebuild test` no llega de forma fiable al proceso del test
       # runner XCUITest (que el simulador lanza por su cuenta, no como hijo directo de
-      # `xcodebuild`) — con esa variable a veces AppStarterUITests corría offline y a
-      # veces contra red real sin avisar, la causa real de buena parte de la
-      # inestabilidad observada (docs/INFORME-INTEGRACION.md). xcodegen interpola
+      # `xcodebuild`) — con esa variable a veces AppUITests corría offline y a veces
+      # contra red real sin avisar, la causa real de buena parte de la inestabilidad
+      # observada (docs/INFORME-INTEGRACION.md). xcodegen interpola
       # `${UI_TEST_OFFLINE}` desde el entorno DEL PROCESO QUE GENERA EL PROYECTO
       # (`xcodegen generate`), que sí es fiable — por eso `Scripts/bootstrap.sh` la lee y
       # el CI la exporta antes de generar, no antes de testear.
