@@ -1,4 +1,5 @@
 import AppFoundation
+import AppFoundationTestSupport
 import Domain
 import Foundation
 import Observation
@@ -83,7 +84,7 @@ struct GalleryViewModelTests {
 
         viewModel.handle(.scrolled(toIndex: 0))
         viewModel.handle(.scrolled(toIndex: 1))
-        try? await Task.sleep(for: .milliseconds(50))
+        await viewModel.inFlightPrefetch?.value
 
         #expect(viewModel.selectedIndex == 1)
         #expect(mock.prefetchedURLs.contains(Self.images[1]))
@@ -98,9 +99,38 @@ struct GalleryViewModelTests {
         await viewModel.inFlightLoad?.value
 
         viewModel.handle(.scrolled(toIndex: Self.images.count - 1))
-        try? await Task.sleep(for: .milliseconds(50))
 
+        // No prefetch Task is even spawned past the last index (`scrolled(toIndex:)`
+        // returns before reaching `inFlightPrefetch = Task { ... }`) — nothing to await.
+        #expect(viewModel.inFlightPrefetch == nil)
         #expect(mock.prefetchedURLs.isEmpty)
+    }
+
+    @Test("handle(.scrolled) twice within the throttle window prefetches once; past the window, prefetches again")
+    func scrolledRespectsThrottleWindowWithManualClock() async {
+        let clock = ManualClock()
+        let mock = GalleryLogicMock()
+        mock.stateToReturn = GalleryState(title: "Robot Bear", images: Self.images)
+        let viewModel = GalleryViewModel(logic: mock, productID: 3, router: Coordinator(root: .products), clock: clock)
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+
+        // First scroll: `Throttler` is outside any cooldown (`lastExecutionTime == nil`),
+        // so it executes immediately — no clock advance needed.
+        viewModel.handle(.scrolled(toIndex: 0))
+        await viewModel.inFlightPrefetch?.value
+        #expect(mock.prefetchedURLs == [Self.images[1]])
+
+        // Second scroll, still inside the 400ms window: throttled — no new prefetch.
+        viewModel.handle(.scrolled(toIndex: 1))
+        await viewModel.inFlightPrefetch?.value
+        #expect(mock.prefetchedURLs == [Self.images[1]])
+
+        // Advance PAST the window, then scroll again: the throttle allows it through.
+        clock.advance(by: .milliseconds(500))
+        viewModel.handle(.scrolled(toIndex: 0))
+        await viewModel.inFlightPrefetch?.value
+        #expect(mock.prefetchedURLs == [Self.images[1], Self.images[1]])
     }
 
     @Test("handle(.share) sets shareURL to the currently selected image; .dismissShare clears it")

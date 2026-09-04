@@ -28,7 +28,13 @@ public final class GalleryViewModel: LogicViewModel<any GalleryLogicProtocol>, A
     /// images in quick succession, and each settle should still warm the NEXT image
     /// promptly rather than waiting for scrolling to stop entirely — at most one prefetch
     /// per window, not "prefetch only once scrolling stops."
-    private let prefetchThrottler = Throttler(interval: .milliseconds(400))
+    private let prefetchThrottler: Throttler
+
+    /// The prefetch `Task` `scrolled(toIndex:)` last spawned — `internal`, not `public`
+    /// (mirrors `BaseViewModel.inFlightLoad`/`inFlightActivity`'s own visibility): tests
+    /// `await` it instead of a real `Task.sleep`, the same reason those two properties
+    /// exist on the kit's own `BaseViewModel`.
+    private(set) var inFlightPrefetch: Task<Void, Never>?
 
     public enum Action: Sendable {
         case load
@@ -39,9 +45,19 @@ public final class GalleryViewModel: LogicViewModel<any GalleryLogicProtocol>, A
         case dismissShare
     }
 
-    public init(logic: any GalleryLogicProtocol, productID: Int, router: any Router<AppRoute>) {
+    /// - Parameter clock: Forwarded to `Throttler`. Defaults to `ContinuousClock`;
+    ///   `GalleryViewModelTests` injects `AppFoundationTestSupport.ManualClock` so the
+    ///   throttle window advances deterministically instead of a real `Task.sleep`
+    ///   (PRD-APP-02 tramo B item 6: "Throttler/Debouncer con ManualClock").
+    public init(
+        logic: any GalleryLogicProtocol,
+        productID: Int,
+        router: any Router<AppRoute>,
+        clock: any Clock<Duration> = ContinuousClock()
+    ) {
         self.productID = productID
         self.router = router
+        self.prefetchThrottler = Throttler(interval: .milliseconds(400), clock: clock)
         super.init(logic: logic)
     }
 
@@ -83,7 +99,7 @@ public final class GalleryViewModel: LogicViewModel<any GalleryLogicProtocol>, A
         guard images.indices.contains(nextIndex) else { return }
         let nextURL = images[nextIndex]
         let logic = logic
-        Task { [prefetchThrottler] in
+        inFlightPrefetch = Task { [prefetchThrottler] in
             await prefetchThrottler.throttle {
                 await logic.prefetchImage(url: nextURL)
             }
