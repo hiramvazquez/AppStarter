@@ -109,7 +109,7 @@ struct ProductRow: View {
 // MARK: - Preview: a stub, no real network pipeline (never used outside DEBUG)
 
 #if canImport(SwiftUI) && DEBUG
-private final class ProductsPreviewLogic: ProductsLogicProtocol {
+private nonisolated final class ProductsPreviewLogic: ProductsLogicProtocol {
     let pageSize = 20
     func loadPage(skip: Int) async throws -> ProductsPage {
         ProductsPage(

@@ -75,7 +75,7 @@ public struct LoginView: View {
 import AppFoundation
 import Networking
 
-private final class LoginPreviewLogic: LoginLogicProtocol {
+private nonisolated final class LoginPreviewLogic: LoginLogicProtocol {
     func login(username: String, password: String) async throws {}
 }
 

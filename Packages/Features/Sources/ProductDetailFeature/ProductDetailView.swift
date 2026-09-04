@@ -89,7 +89,7 @@ public struct ProductDetailView: View {
 // MARK: - Preview: a stub, no real network/persistence pipeline (never used outside DEBUG)
 
 #if canImport(SwiftUI) && DEBUG
-private final class ProductDetailPreviewLogic: ProductDetailLogicProtocol {
+private nonisolated final class ProductDetailPreviewLogic: ProductDetailLogicProtocol {
     func load(id: Int) async throws -> ProductDetailState {
         ProductDetailState(
             product: Product(

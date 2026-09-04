@@ -28,7 +28,7 @@ packages:
   # deduplican por identidad de paquete, no por duplicar el checkout).
   AppFoundation:
     url: https://github.com/hiramvazquez/AppFoundation.git
-    from: 1.2.2
+    from: 1.2.3
   CoreNetworking:
     url: https://github.com/hiramvazquez/CoreNetworking.git
     from: 1.0.0

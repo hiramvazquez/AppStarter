@@ -1102,3 +1102,27 @@ Las 24 referencias de snapshot se grabaron en el simulador (iPhone 17 Pro) y se 
 ojo: el error del kit frente al de marca (icono con el color de marca), Gallery en `content`
 muestra la barra overlay sobre una imagen negra (el `AsyncImage` no tiene red en un snapshot)
 y Uploads en `content` muestra el banner de éxito y el resultado.
+
+## Abort en iOS 26.2 (CI): `deinit` aislado sintetizado + shim de back-deploy (2026-09-04)
+
+Con la suite verde en local (iOS 26.5), el CI (Xcode 26.3, simulador iOS 26.2) abortaba en los
+snapshot tests de Gallery y Uploads: `SIGABRT` dentro de
+`swift_task_deinitOnExecutorMainActorBackDeploy` con un double free en
+`TaskLocal::StopLookupScope`, al liberar un ViewModel que a su vez liberaba su `Coordinator`
+(y, tras corregir eso, su `Throttler`). Causa: bajo `defaultIsolation(MainActor)` toda clase sin
+`deinit` explícito recibe un `deinit` AISLADO sintetizado que en runtimes anteriores al del
+toolchain pasa por ese shim, y dos anidados lo rompen. Corrección: AppFoundation 1.2.2/1.2.3
+(`deinit {}` en las clases del kit y en la plantilla, regla R16) y aquí `deinit {}` en las 17
+clases `@MainActor` del proyecto, con los `*PreviewLogic` de las Views como `nonisolated`
+(igual que las Logic reales). Repro completo en el paquete:
+`docs/repros/isolated-deinit-backdeploy.md`. Verificación: CI en iOS 26.2 (ver la última
+ejecución en `main`).
+
+## Copias de conflicto « 2» (iCloud) — advertencia de entorno
+
+Durante la Fase 3 aparecieron ficheros y carpetas con sufijo « 2» en sitios que nadie tocó a
+mano (`Domain 2/`, `TemplateEngine 2.swift` dentro de `.build/checkouts`, `.git/index 2`,
+`AppIcon 2.appiconset`…), también en otros repos de la misma carpeta. Es la firma de un
+directorio sincronizado (Escritorio en iCloud Drive). Un repo git bajo sincronización de
+ficheros se corrompe: mover `PROYECTOS` fuera de Escritorio/Documentos o excluirlo de la
+sincronización. Los duplicados se eliminaron; ninguno estaba versionado.

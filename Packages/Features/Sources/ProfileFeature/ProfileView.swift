@@ -82,7 +82,7 @@ public struct ProfileView: View {
 import Domain
 import Networking
 
-private final class ProfilePreviewLogic: ProfileLogicProtocol {
+private nonisolated final class ProfilePreviewLogic: ProfileLogicProtocol {
     func loadProfile() async throws -> UserProfile {
         UserProfile(
             id: 1,

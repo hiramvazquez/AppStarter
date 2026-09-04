@@ -85,7 +85,7 @@ struct ProductRow: View {
 // MARK: - Preview: a stub, no real network pipeline (never used outside DEBUG)
 
 #if canImport(SwiftUI) && DEBUG
-private final class SearchPreviewLogic: SearchLogicProtocol {
+private nonisolated final class SearchPreviewLogic: SearchLogicProtocol {
     func search(query: String) async throws -> [Product] { [] }
 }
 

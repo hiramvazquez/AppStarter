@@ -168,7 +168,7 @@ private struct ExperimentRow: View {
 // MARK: - Preview: a stub, never used outside DEBUG
 
 #if canImport(SwiftUI) && DEBUG
-private final class DiagnosticsPreviewLogic: DiagnosticsLogicProtocol {
+private nonisolated final class DiagnosticsPreviewLogic: DiagnosticsLogicProtocol {
     func run(_ experiment: DiagnosticsExperiment) async -> DiagnosticsResult {
         DiagnosticsResult(
             experiment: experiment,

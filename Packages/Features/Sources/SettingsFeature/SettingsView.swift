@@ -104,7 +104,7 @@ import Networking
 
 /// Stub de `SettingsLogicProtocol` solo para el `#Preview` de abajo. La spy con
 /// contadores para los tests (M9) es `SettingsLogicMock`, en el target de tests.
-private final class SettingsPreviewLogic: SettingsLogicProtocol {
+private nonisolated final class SettingsPreviewLogic: SettingsLogicProtocol {
     func load() async throws -> SettingsScreenState {
         SettingsScreenState(
             settings: AppSettings(),

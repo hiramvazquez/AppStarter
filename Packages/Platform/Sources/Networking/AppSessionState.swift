@@ -48,6 +48,12 @@ public protocol SessionExpiring: Sendable {
 @MainActor
 @Observable
 public final class AppSessionState: SessionExpiring {
+    // Nonisolated on purpose: without an explicit deinit the compiler synthesizes an isolated
+    // one that goes through a back-deploy shim on OS versions older than the toolchain's
+    // runtime; two of those nested aborted on iOS 26.2 (AppFoundation 1.2.2 release notes,
+    // `docs/repros/isolated-deinit-backdeploy.md`). Nothing to clean up here.
+    deinit {}
+
     /// `Coordinator`, not `any Router<AppRoute>`: `setRoot(_:)` — clear the stack AND any
     /// modal, in one call — is a `Coordinator`-specific method, not part of the `Router`
     /// protocol (which only models push/pop/present/dismiss). This is the one legitimate

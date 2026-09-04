@@ -86,7 +86,7 @@ struct ProductRow: View {
 // MARK: - Preview: a stub, no real persistence pipeline (never used outside DEBUG)
 
 #if canImport(SwiftUI) && DEBUG
-private final class FavoritesPreviewLogic: FavoritesLogicProtocol {
+private nonisolated final class FavoritesPreviewLogic: FavoritesLogicProtocol {
     func loadFavorites() async throws -> [Product] { [] }
     func remove(id: Int) async throws {}
     func clearAll() async throws {}

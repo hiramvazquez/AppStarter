@@ -156,7 +156,7 @@ struct GalleryThumbnailsView: View {
 // MARK: - Preview: a stub, no real network pipeline (never used outside DEBUG)
 
 #if canImport(SwiftUI) && DEBUG
-private final class GalleryPreviewLogic: GalleryLogicProtocol {
+private nonisolated final class GalleryPreviewLogic: GalleryLogicProtocol {
     func load(productID: Int) async throws -> GalleryState {
         GalleryState(title: "Producto de ejemplo", images: [])
     }

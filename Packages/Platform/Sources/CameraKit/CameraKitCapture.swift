@@ -69,6 +69,10 @@ public struct DeviceCameraCapture: CameraCapturing {
 /// `UIImagePickerControllerDelegate` callbacks always run on.
 @MainActor
 private final class ImagePickerCoordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    // Explicit, nonisolated deinit (linter rule R16): avoids the synthesized isolated deinit
+    // and its back-deploy shim on older OS versions. Nothing to clean up.
+    deinit {}
+
     private var continuation: CheckedContinuation<Data, any Error>?
 
     func present(sourceType: UIImagePickerController.SourceType) async throws -> Data {

@@ -19,6 +19,12 @@ import Observation
 @MainActor
 @Observable
 public final class UploadsViewModel: LogicViewModel<any UploadsLogicProtocol>, ActionHandling {
+    // Nonisolated on purpose: without an explicit deinit the compiler synthesizes an isolated
+    // one that goes through a back-deploy shim on OS versions older than the toolchain's
+    // runtime; two of those nested aborted on iOS 26.2 (AppFoundation 1.2.2 release notes,
+    // `docs/repros/isolated-deinit-backdeploy.md`). Nothing to clean up here.
+    deinit {}
+
     public private(set) var capturedPhotoData: Data?
     public private(set) var progress: Double = 0
     public private(set) var uploadedProduct: UploadedProduct?

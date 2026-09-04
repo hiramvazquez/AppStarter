@@ -88,7 +88,7 @@ public struct UploadsView: View {
 // MARK: - Preview: a stub, never used outside DEBUG
 
 #if canImport(SwiftUI) && DEBUG
-private final class UploadsPreviewLogic: UploadsLogicProtocol {
+private nonisolated final class UploadsPreviewLogic: UploadsLogicProtocol {
     func capturePhoto() async throws -> Data { Data() }
     func upload(
         title: String,
