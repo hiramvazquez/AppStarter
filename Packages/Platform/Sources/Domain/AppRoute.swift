@@ -34,4 +34,6 @@ public enum AppRoute: Hashable {
     case search(query: String?)
     case diagnostics
     case uploads
+    /// `Settings` (PRD-APP-02 tramo B item 2): pushed from `Profile`.
+    case settings
 }

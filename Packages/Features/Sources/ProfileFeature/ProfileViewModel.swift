@@ -38,6 +38,7 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         case logout
         case openDiagnostics
         case openUploads
+        case openSettings
     }
 
     public init(
@@ -59,6 +60,7 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         case .logout: logout()
         case .openDiagnostics: router.push(.diagnostics)
         case .openUploads: router.push(.uploads)
+        case .openSettings: router.push(.settings)
         }
     }
 

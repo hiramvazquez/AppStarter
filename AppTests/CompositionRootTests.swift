@@ -9,6 +9,7 @@ import ProductDetailFeature
 import ProductsFeature
 import ProfileFeature
 import SearchFeature
+import SettingsFeature
 import Testing
 import UploadsFeature
 
@@ -44,7 +45,8 @@ struct CompositionRootTests {
             ProfileModule(),
             SearchModule(),
             DiagnosticsModule(baseURL: baseURL),
-            UploadsModule()
+            UploadsModule(),
+            SettingsModule(baseURL: baseURL)
         ]
         container.register(modules: modules)
 
@@ -57,6 +59,8 @@ struct CompositionRootTests {
         #expect(container.canResolve(SearchViewModelFactory.self))
         #expect(container.canResolve(DiagnosticsViewModel.self))
         #expect(container.canResolve(UploadsViewModel.self))
+        #expect(container.canResolve(SettingsViewModel.self))
+        #expect(container.canResolve(ThemeSettings.self))
 
         _ = container.resolve(LoginViewModel.self)
         _ = container.resolve(ProductsViewModel.self)
@@ -67,5 +71,6 @@ struct CompositionRootTests {
         _ = container.resolve(SearchViewModelFactory.self)(nil)
         _ = container.resolve(DiagnosticsViewModel.self)
         _ = container.resolve(UploadsViewModel.self)
+        _ = container.resolve(SettingsViewModel.self)
     }
 }

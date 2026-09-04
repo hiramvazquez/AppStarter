@@ -13,6 +13,7 @@ import ProductDetailFeature
 import ProductsFeature
 import ProfileFeature
 import SearchFeature
+import SettingsFeature
 import UploadsFeature
 
 // archinit:imports
@@ -64,7 +65,8 @@ enum AppModule {
                 baseURL: apiBaseURL,
                 offlineTransport: isOffline ? OfflineFixtures.makeDiagnosticsOfflineTransport() : nil
             ),
-            UploadsModule()
+            UploadsModule(),
+            SettingsModule(baseURL: apiBaseURL)
             // archinit:modules
         ]
     }

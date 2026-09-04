@@ -58,6 +58,11 @@ public struct ProfileView: View {
                 }
 
                 Section {
+                    Button("Ajustes") { send(.openSettings) }
+                        .accessibilityIdentifier("profile.settings")
+                }
+
+                Section {
                     Button("Cerrar sesión", role: .destructive) {
                         send(.logoutRequested)
                     }

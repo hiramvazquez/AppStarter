@@ -9,6 +9,7 @@ import ProductDetailFeature
 import ProductsFeature
 import ProfileFeature
 import SearchFeature
+import SettingsFeature
 import SwiftUI
 import UploadsFeature
 
@@ -26,7 +27,27 @@ import UploadsFeature
 struct RootView: View {
     @State private var coordinator = Container.shared.resolve(Coordinator<AppRoute>.self)
 
+    /// `Settings`' "tema de marca" toggle (PRD-APP-02 tramo B item 2), live — the SAME
+    /// `ThemeSettings` singleton `SettingsViewModel` mutates. `@State` over a reference
+    /// this class already IS `@Observable` (`Networking`): reading `.isBrand` in `body`
+    /// below is what makes `RootView` re-render the moment the toggle flips, with no
+    /// restart — unlike the pinning toggle (see `SettingsViewModel`'s doc comment for why
+    /// THAT one needs one).
+    @State private var themeSettings = Container.shared.resolve(ThemeSettings.self)
+
     var body: some View {
+        if themeSettings.isBrand {
+            coordinatorView
+                .loadingViewStyle(BrandLoadingStyle())
+                .errorViewStyle(BrandErrorStyle())
+                .emptyViewStyle(BrandEmptyStyle())
+                .bannerViewStyle(BrandBannerStyle())
+        } else {
+            coordinatorView
+        }
+    }
+
+    private var coordinatorView: some View {
         CoordinatorView(coordinator: coordinator) { route in
             destination(for: route)
                 // `screen_view` on every navigation (PRD-APP-02, `AnalyticsTracking`):
@@ -66,6 +87,8 @@ struct RootView: View {
             DiagnosticsView(viewModel: Container.shared.resolve())
         case .uploads:
             UploadsView(viewModel: Container.shared.resolve())
+        case .settings:
+            SettingsView(viewModel: Container.shared.resolve())
         }
     }
 

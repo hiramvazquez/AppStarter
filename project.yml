@@ -69,6 +69,8 @@ targets:
         product: UploadsFeature
       - package: Features
         product: GalleryFeature
+      - package: Features
+        product: SettingsFeature
       # archinit:products
     # URL scheme para deep links (PRD-APP-02 tramo B item 3): `appstarter://product/3`,
     # `appstarter://search?q=phone`, parseados por `App/DeepLink.swift` y encaminados
