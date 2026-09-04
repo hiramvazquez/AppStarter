@@ -112,6 +112,16 @@ targets:
       - target: AppStarter
       - package: AppFoundation
         product: AppFoundation
+      - package: Features
+        product: UploadsFeature
+      - package: Features
+        product: GalleryFeatureUI
+      - package: Features
+        product: GalleryFeatureCore
+      - package: Features
+        product: SettingsFeature
+      - package: Features
+        product: DiagnosticsFeature
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
