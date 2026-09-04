@@ -18,7 +18,7 @@ final class UploadsSnapshotTests: XCTestCase {
         base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
     )!
 
-    private struct StubLogic: UploadsLogicProtocol {
+    private final class StubLogic: UploadsLogicProtocol, @unchecked Sendable {
         func capturePhoto() async throws -> Data { UploadsSnapshotTests.onePixelPNG }
         func upload(
             title: String,

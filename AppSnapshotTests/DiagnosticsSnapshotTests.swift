@@ -11,7 +11,7 @@ import XCTest
 /// `Diagnostics` row of `App/Theme/BrandErrorStyle.swift`'s doc comment refers to.
 @MainActor
 final class DiagnosticsSnapshotTests: XCTestCase {
-    private struct StubLogic: DiagnosticsLogicProtocol {
+    private final class StubLogic: DiagnosticsLogicProtocol, @unchecked Sendable {
         func run(_ experiment: DiagnosticsExperiment) async -> DiagnosticsResult {
             DiagnosticsResult(
                 experiment: experiment,

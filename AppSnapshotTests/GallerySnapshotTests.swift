@@ -23,7 +23,7 @@ final class GallerySnapshotTests: XCTestCase {
         case failure
     }
 
-    private struct StubLogic: GalleryLogicProtocol {
+    private final class StubLogic: GalleryLogicProtocol, @unchecked Sendable {
         let outcome: StubOutcome
 
         func load(productID: Int) async throws -> GalleryState {
@@ -46,6 +46,9 @@ final class GallerySnapshotTests: XCTestCase {
         }
 
         func prefetchImage(url: URL) async {}
+        init(outcome: StubOutcome) {
+            self.outcome = outcome
+        }
     }
 
     private func makeViewModel(outcome: StubOutcome) -> GalleryViewModel {
