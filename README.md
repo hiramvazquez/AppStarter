@@ -308,7 +308,7 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
 - **`ViewPhase`/`EmptyViewStyle`/`ErrorViewStyle`/`LoadingViewStyle`/`BannerViewStyle`**:
   los cuatro `Brand…Style` en `App/Theme/BrandLoadingStyle.swift`,
   `App/Theme/BrandErrorStyle.swift`, `App/Theme/BrandEmptyStyle.swift`,
-  `App/Theme/BrandBannerStyle.swift`, instalados en `App/RootView.swift:41-44`; las 24
+  `App/Theme/BrandBannerStyle.swift`, instalados en `App/RootView.swift:48-51`; las 24
   capturas de `AppSnapshotTests` (más abajo) son las cuatro fases bajo ambos temas.
 - **`ScreenChrome`/`NavigationBarStyle`/`NavigationBarItem`/`SearchBarConfiguration`**:
   `chrome: .custom` en
@@ -324,7 +324,7 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
   `AppUITests/SwipeBackTests.swift:9` (ProductDetail) y
   `AppUITests/GalleryUITests.swift:9` (Gallery, `.overlay`).
 - **`Coordinator`/`Router`/`CoordinatorView` + `DeepLink`**: `CoordinatorView` en
-  `App/RootView.swift:51`; `DeepLinkType` en `App/DeepLink.swift:13`;
+  `App/RootView.swift:69`; `DeepLinkType` en `App/DeepLink.swift:13`;
   `Coordinator.handle(_:as:map:)` en `App/DeepLink.swift:48`; probado offline en
   `AppUITests/DeepLinkUITests.swift:22,39`.
 - **`Container`** (módulos, `lifecycle`, `Container(parent:)`): registro por defecto
@@ -392,7 +392,7 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
 - `case gallery(productID: Int)` en
   `Packages/Platform/Sources/Domain/AppRoute.swift:27`; `case settings` en
   `Packages/Platform/Sources/Domain/AppRoute.swift:38` (destino en
-  `App/RootView.swift:90`).
+  `App/RootView.swift:108`).
 - `CFBundleURLTypes:` fusionado en el Info.plist sintetizado en `project.yml:89`.
 - `struct AppSettings` en `Packages/Platform/Sources/Networking/AppSettings.swift:17`
   (contrato compartido `Networking`↔`SettingsFeature`); `func loadSynchronously` en
