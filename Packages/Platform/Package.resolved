@@ -1,0 +1,15 @@
+{
+  "originHash" : "81255c161f97aa6a7b42a4d76d9b3f0b7df2fbbe290c94bc6e3b9829193b9f59",
+  "pins" : [
+    {
+      "identity" : "appfoundation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/hiramvazquez/AppFoundation.git",
+      "state" : {
+        "revision" : "11e225875bce6424a02d061774e53070cfd3a385",
+        "version" : "1.2.0"
+      }
+    }
+  ],
+  "version" : 3
+}
