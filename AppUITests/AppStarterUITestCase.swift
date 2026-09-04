@@ -49,7 +49,10 @@ class AppStarterUITestCase: XCTestCase {
 
         let list = app.descendants(matching: .any)["products.list"]
         XCTAssertTrue(list.waitForExistence(timeout: timeout), "Products list did not appear after login")
-        XCTAssertTrue(app.buttons["product.1"].waitForExistence(timeout: timeout), "First product did not appear after login")
+        XCTAssertTrue(
+            app.buttons["product.1"].waitForExistence(timeout: timeout),
+            "First product did not appear after login"
+        )
         return list
     }
 
@@ -80,17 +83,29 @@ class AppStarterUITestCase: XCTestCase {
     /// "Save Password?" sheet both before and after the hittable wait, since it can
     /// appear at any point and silently blocks every tap while it's up.
     @discardableResult
-    func waitAndTap(_ element: XCUIElement, timeout: TimeInterval = 15, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+    func waitAndTap(
+        _ element: XCUIElement,
+        timeout: TimeInterval = 15,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> XCUIElement {
         let app = XCUIApplication()
-        XCTAssertTrue(element.waitForExistence(timeout: timeout), "Element did not appear: \(element)", file: file, line: line)
+        XCTAssertTrue(
+            element.waitForExistence(timeout: timeout),
+            "Element did not appear: \(element)",
+            file: file,
+            line: line
+        )
         dismissSystemAlertIfPresent(app, timeout: 0.5)
 
         let hittable = NSPredicate(format: "isHittable == true")
-        var result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: hittable, object: element)], timeout: timeout)
+        var result = XCTWaiter()
+            .wait(for: [XCTNSPredicateExpectation(predicate: hittable, object: element)], timeout: timeout)
         if result != .completed {
             // One more chance: the sheet may have appeared mid-wait.
             dismissSystemAlertIfPresent(app, timeout: 1)
-            result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: hittable, object: element)], timeout: 5)
+            result = XCTWaiter()
+                .wait(for: [XCTNSPredicateExpectation(predicate: hittable, object: element)], timeout: 5)
         }
         if result != .completed {
             // Evidence for the CI-only "exists but never hittable" case: what covers it?
@@ -126,10 +141,19 @@ class AppStarterUITestCase: XCTestCase {
     /// (no "not hittable", no navigation), which is what made a single-shot tap flaky
     /// here specifically. `docs/INFORME-INTEGRACION.md`.
     @discardableResult
-    func navigateToProductDetail(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+    func navigateToProductDetail(
+        _ app: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> XCUIElement {
         waitAndTap(app.descendants(matching: .any)["product.1"], file: file, line: line)
         let title = app.descendants(matching: .any)["productDetail.title"]
-        XCTAssertTrue(waitForExistenceTolerant(title, in: app, timeout: 15), "ProductDetail did not appear", file: file, line: line)
+        XCTAssertTrue(
+            waitForExistenceTolerant(title, in: app, timeout: 15),
+            "ProductDetail did not appear",
+            file: file,
+            line: line
+        )
         return title
     }
 }

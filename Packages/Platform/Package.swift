@@ -26,11 +26,11 @@ let package = Package(
         // `*FeatureTests` target in `Packages/Features` (PRD-APP-02, Fase 1) — a regular
         // library product, not a `.testTarget`, because a `.testTarget`'s products aren't
         // importable from another package.
-        .library(name: "PlatformTestSupport", targets: ["PlatformTestSupport"]),
+        .library(name: "PlatformTestSupport", targets: ["PlatformTestSupport"])
     ],
     dependencies: [
         .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.2.0"),
-        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.0.0"),
+        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.0.0")
     ],
     targets: [
         .target(
@@ -56,7 +56,7 @@ let package = Package(
             dependencies: [
                 "Domain",
                 .product(name: "AppFoundation", package: "AppFoundation"),
-                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "CoreNetworking", package: "CoreNetworking")
             ],
             path: "Sources/Networking",
             swiftSettings: swiftSettings,
@@ -68,7 +68,7 @@ let package = Package(
                 "Networking",
                 "PlatformTestSupport",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
-                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking")
             ],
             path: "Tests/NetworkingTests",
             swiftSettings: swiftSettings
@@ -79,7 +79,7 @@ let package = Package(
                 "Domain",
                 "Networking",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
-                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "CoreNetworking", package: "CoreNetworking")
             ],
             path: "Sources/PlatformTestSupport",
             swiftSettings: swiftSettings
@@ -97,6 +97,6 @@ let package = Package(
             path: "Sources/AnalyticsAdapters",
             swiftSettings: swiftSettings,
             plugins: [.plugin(name: "ArchitectureLint", package: "AppFoundation")]
-        ),
+        )
     ]
 )

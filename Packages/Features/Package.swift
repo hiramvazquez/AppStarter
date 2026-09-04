@@ -24,7 +24,7 @@ let package = Package(
         .library(name: "ProductDetailFeature", targets: ["ProductDetailFeature"]),
         .library(name: "FavoritesFeature", targets: ["FavoritesFeature"]),
         .library(name: "ProfileFeature", targets: ["ProfileFeature"]),
-        .library(name: "SearchFeature", targets: ["SearchFeature"]),
+        .library(name: "SearchFeature", targets: ["SearchFeature"])
         // archinit:products-end
     ],
     dependencies: [
@@ -40,12 +40,12 @@ let package = Package(
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
                 .product(name: "Domain", package: "Platform"),
-                .product(name: "Networking", package: "Platform"),
+                .product(name: "Networking", package: "Platform")
             ],
             path: "Sources/LoginFeature",
             swiftSettings: swiftSettings,
             plugins: [
-                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
             ]
         ),
         .testTarget(
@@ -54,7 +54,7 @@ let package = Package(
                 "LoginFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
                 .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/LoginFeatureTests",
             swiftSettings: swiftSettings
@@ -65,12 +65,12 @@ let package = Package(
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
                 .product(name: "Domain", package: "Platform"),
-                .product(name: "Networking", package: "Platform"),
+                .product(name: "Networking", package: "Platform")
             ],
             path: "Sources/ProductsFeature",
             swiftSettings: swiftSettings,
             plugins: [
-                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
             ]
         ),
         .testTarget(
@@ -79,7 +79,7 @@ let package = Package(
                 "ProductsFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
                 .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/ProductsFeatureTests",
             swiftSettings: swiftSettings
@@ -90,12 +90,12 @@ let package = Package(
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
                 .product(name: "Domain", package: "Platform"),
-                .product(name: "Networking", package: "Platform"),
+                .product(name: "Networking", package: "Platform")
             ],
             path: "Sources/ProductDetailFeature",
             swiftSettings: swiftSettings,
             plugins: [
-                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
             ]
         ),
         .testTarget(
@@ -104,7 +104,7 @@ let package = Package(
                 "ProductDetailFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
                 .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/ProductDetailFeatureTests",
             swiftSettings: swiftSettings
@@ -115,12 +115,12 @@ let package = Package(
             name: "FavoritesFeature",
             dependencies: [
                 .product(name: "AppFoundation", package: "AppFoundation"),
-                .product(name: "Domain", package: "Platform"),
+                .product(name: "Domain", package: "Platform")
             ],
             path: "Sources/FavoritesFeature",
             swiftSettings: swiftSettings,
             plugins: [
-                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
             ]
         ),
         .testTarget(
@@ -128,7 +128,7 @@ let package = Package(
             dependencies: [
                 "FavoritesFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/FavoritesFeatureTests",
             swiftSettings: swiftSettings
@@ -139,12 +139,12 @@ let package = Package(
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
                 .product(name: "Domain", package: "Platform"),
-                .product(name: "Networking", package: "Platform"),
+                .product(name: "Networking", package: "Platform")
             ],
             path: "Sources/ProfileFeature",
             swiftSettings: swiftSettings,
             plugins: [
-                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
             ]
         ),
         .testTarget(
@@ -153,7 +153,7 @@ let package = Package(
                 "ProfileFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
                 .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/ProfileFeatureTests",
             swiftSettings: swiftSettings
@@ -164,12 +164,12 @@ let package = Package(
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
                 .product(name: "Domain", package: "Platform"),
-                .product(name: "Networking", package: "Platform"),
+                .product(name: "Networking", package: "Platform")
             ],
             path: "Sources/SearchFeature",
             swiftSettings: swiftSettings,
             plugins: [
-                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
             ]
         ),
         .testTarget(
@@ -178,7 +178,7 @@ let package = Package(
                 "SearchFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
                 .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/SearchFeatureTests",
             swiftSettings: swiftSettings
@@ -201,10 +201,10 @@ let package = Package(
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
                 .product(name: "Domain", package: "Platform"),
                 .product(name: "Networking", package: "Platform"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/IntegrationTests",
             swiftSettings: swiftSettings
-        ),
+        )
     ]
 )

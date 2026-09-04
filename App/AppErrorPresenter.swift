@@ -9,14 +9,16 @@ import Foundation
 /// mirrors: `retry` is offered only when `isRetryable` says the operation is worth
 /// repeating.
 ///
+/// Lives in `App/` (the cáscara), not in `Domain`/`Networking`: it is pure composition —
+/// installed once at startup (`AppStarterApp.init()`) — and no feature ever references it
+/// directly.
+///
 /// Registered once at app startup:
 /// ```swift
 /// BaseViewModel.errorPresenter = AppErrorPresenter()
 /// ```
-public struct AppErrorPresenter: ErrorPresenting {
-    public init() {}
-
-    public func screenError(for error: any Error, fallbackTitle: String, retry: Action?) -> ScreenError {
+struct AppErrorPresenter: ErrorPresenting {
+    func screenError(for error: any Error, fallbackTitle: String, retry: Action?) -> ScreenError {
         guard let domainError = error as? any DomainError else {
             return DefaultErrorPresenter().screenError(for: error, fallbackTitle: fallbackTitle, retry: retry)
         }

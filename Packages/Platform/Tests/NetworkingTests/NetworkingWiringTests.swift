@@ -24,7 +24,7 @@ struct NetworkingWiringTests {
     private static let pingURL = baseURL.appendingPathComponent("ping")
     private static let refreshURL = baseURL.appendingPathComponent("auth/refresh")
 
-    private static let pingBody = Data(#"{"ok":true}"#.utf8)
+    private static let pingBody = Data(#"{"status":true}"#.utf8)
     private static let refreshBody = Data(
         """
         {"accessToken":"new-access","refreshToken":"new-refresh"}
@@ -33,7 +33,7 @@ struct NetworkingWiringTests {
     )
 
     private struct PingRequest: BaseRequest {
-        struct Response: Decodable, Sendable { let ok: Bool }
+        struct Response: Decodable, Sendable { let status: Bool }
         let path = "/ping"
         let method = HTTPMethod.get
     }
@@ -85,7 +85,7 @@ struct NetworkingWiringTests {
         clock.advance(by: .seconds(1))
         let response = try await task.value
 
-        #expect(response.ok)
+        #expect(response.status)
         #expect(await sessionStore.savedSessions.count == 1)
         #expect(await sessionStore.currentSession()?.accessToken == "new-access")
         #expect(refreshLog.refreshCount == 1)

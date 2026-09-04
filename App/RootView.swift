@@ -1,5 +1,13 @@
 import AppFoundation
+import Domain
+import FavoritesFeature
+import LoginFeature
+import ProductDetailFeature
+import ProductsFeature
+import ProfileFeature
+import SearchFeature
 import SwiftUI
+
 // archinit:imports
 
 /// The app's navigation shell: `CoordinatorView` over the `Coordinator<AppRoute>`
@@ -7,9 +15,10 @@ import SwiftUI
 /// never constructs one directly (the composition root already did that work).
 ///
 /// `generate-feature` (modo multi) never edits this file: it adds the `case` to
-/// `AppRoute` automatically (marker `// archinit:routes`) but always prints the matching
-/// `switch` arm to add here by hand — the same manual step single-module `archinit`
-/// already documents.
+/// `AppRoute` automatically (marker `// archinit:routes` — best-effort here, since
+/// `AppRoute` lives in `Domain`, not `App/AppRoute.swift`; see `Domain/AppRoute.swift`'s
+/// doc comment and `docs/INFORME-MULTI.md`) but always prints the matching `switch` arm
+/// to add here by hand — the same manual step single-module `archinit` already documents.
 struct RootView: View {
     @State private var coordinator = Container.shared.resolve(Coordinator<AppRoute>.self)
 
@@ -17,24 +26,20 @@ struct RootView: View {
         CoordinatorView(coordinator: coordinator) { route in
             switch route {
             // archinit:destinations
-            case .placeholder:
-                PlaceholderView()
+            case .login:
+                LoginView(viewModel: Container.shared.resolve())
+            case .products:
+                ProductsView(viewModel: Container.shared.resolve())
+            case .productDetail(let id):
+                let factory = Container.shared.resolve(ProductDetailViewModelFactory.self)
+                ProductDetailView(viewModel: factory(id))
+            case .favorites:
+                FavoritesView(viewModel: Container.shared.resolve())
+            case .profile:
+                ProfileView(viewModel: Container.shared.resolve())
+            case .search:
+                SearchView(viewModel: Container.shared.resolve())
             }
         }
-    }
-}
-
-/// Shown until the first feature exists. Once `generate-feature` adds a real root
-/// screen, point `.placeholder` at it (or drop the case and route straight to the new
-/// screen as the coordinator's root).
-private struct PlaceholderView: View {
-    var body: some View {
-        ContentUnavailableView(
-            "AppStarter",
-            systemImage: "hammer",
-            description: Text(
-                "Genera tu primer feature: swift package --allow-writing-to-package-directory generate-feature <Nombre> --api"
-            )
-        )
     }
 }

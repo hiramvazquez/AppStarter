@@ -73,31 +73,36 @@ enum OfflineFixtures {
     private static let loginBody = Data(
         """
         {"accessToken":"offline-access","refreshToken":"offline-refresh","id":1,"username":"emilys","email":"emily.johnson@x.dummyjson.com","firstName":"Emily","lastName":"Johnson","image":"https://dummyjson.com/icon/emilys/128"}
-        """.utf8
+        """
+        .utf8
     )
 
     private static let productsPageBody = Data(
         """
         {"products":[{"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"}],"total":1,"skip":0,"limit":20}
-        """.utf8
+        """
+        .utf8
     )
 
     private static let productBody = Data(
         """
         {"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"}
-        """.utf8
+        """
+        .utf8
     )
 
     private static let searchBody = Data(
         """
         {"products":[{"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"}]}
-        """.utf8
+        """
+        .utf8
     )
 
     private static let meBody = Data(
         """
         {"id":1,"username":"emilys","email":"emily.johnson@x.dummyjson.com","firstName":"Emily","lastName":"Johnson","image":"https://dummyjson.com/icon/emilys/128"}
-        """.utf8
+        """
+        .utf8
     )
 }
 
