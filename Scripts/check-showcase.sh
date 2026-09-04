@@ -17,9 +17,22 @@ fi
 
 # Extracts every `Symbol` en `file:line` citation from the README's escaparate section —
 # the format every row of the two PRD-APP-02 tables uses (see README.md § Escaparate).
-# One match per line: SYMBOL<TAB>FILE<TAB>LINE.
-citations=$(grep -oE '`[^`]+` en `[^`]+:[0-9]+(-[0-9]+)?`' "$README" \
-    | sed -E 's/^`([^`]+)` en `([^`]+):([0-9]+)(-[0-9]+)?`$/\1\t\2\t\3/')
+# One match per line: SYMBOL<TAB>FILE<TAB>LINE. `perl -0777` (whole file, `\s` spans
+# newlines) on purpose: markdown hard-wraps long bullets, so a citation's closing
+# `` `file:line` `` often lands on the line AFTER its opening `` `Symbol` `` — a
+# single-line `grep -oE` would silently skip every wrapped citation.
+citations=$(perl -0777 -ne '
+    while (/`([^`]+)`\s+en\s+`([^`]+):([0-9]+)(?:-[0-9]+)?`/gs) {
+        my ($symbol, $file, $line) = ($1, $2, $3);
+        # Markdown hard-wraps mid-citation sometimes (a `Symbol` or `file:line` span
+        # itself broken across two lines) — collapse any embedded whitespace/newlines to
+        # a single space so this prints as ONE clean tab-separated record; an un-collapsed
+        # newline here would make the `while read` loop below see it as two records.
+        $symbol =~ s/\s+/ /g;
+        $file =~ s/\s+/ /g;
+        print "$symbol\t$file\t$line\n";
+    }
+' "$README")
 
 if [ -z "$citations" ]; then
     echo "check-showcase.sh: no se encontró ninguna cita 'Símbolo' en 'fichero:línea' en $README" >&2

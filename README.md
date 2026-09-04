@@ -1,7 +1,7 @@
 # AppStarter
 
 Una app iOS real — login, catálogo de productos, detalle, favoritos y perfil — que
-consume [`AppFoundation`](https://github.com/hiramvazquez/AppFoundation) 1.2.0 y
+consume [`AppFoundation`](https://github.com/hiramvazquez/AppFoundation) 1.2.1 y
 [`CoreNetworking`](https://github.com/hiramvazquez/CoreNetworking) 1.0.0 contra la API
 pública [DummyJSON](https://dummyjson.com). Es la plantilla de arranque: clónala, cambia
 el dominio y las pantallas, y ya tienes la arquitectura, el generador y el linter
@@ -210,32 +210,199 @@ mismo `.swift-format` sobre `Packages`, `App`, `AppTests` y `AppUITests`.
   «Criterios de aceptación» más abajo para la demostración de que un `import` entre
   features rompe el build (R13).
 
-## Escaparate (PRD-APP-02, tramo B)
+## Escaparate (PRD-APP-02)
 
-Cada fila, verificable en el código real — `fichero:línea`:
+Las dos tablas del PRD, fila por fila — tramo A (ya en el paquete único) y tramo B
+(pantallas nuevas de esta fase), más las filas de tests que el PRD pide explícitamente.
+Cada capacidad cita `` `Símbolo` en `fichero:línea` `` — verificable a ojo, y verificado
+por máquina: `Scripts/check-showcase.sh` (`## CI`) comprueba que cada fichero exista y que
+el símbolo aparezca de verdad a ±3 líneas de la citada.
 
-| Capacidad | Dónde |
-|---|---|
-| `Product.images` (`GET /products/{id}` trae varias imágenes) | `Packages/Platform/Sources/Domain/Product.swift:18` |
-| `ScreenChrome.custom(_, placement: .overlay)` + `NavigationBarStyle.transparent` | `Packages/Features/Sources/GalleryFeatureUI/GalleryView.swift:24` (estilo en la línea 30) |
-| `Throttler` (prefetch de la siguiente imagen, clock inyectable) | `Packages/Features/Sources/GalleryFeatureUI/GalleryViewModel.swift:31,60` |
-| `PhaseView` + estado local sin ViewModel (miniaturas) | `Packages/Features/Sources/GalleryFeatureUI/GalleryView.swift:112,120` |
-| `AppRoute.gallery(productID:)` desde `ProductDetail` | `Packages/Platform/Sources/Domain/AppRoute.swift:27` |
-| `DeepLinkType` (`appstarter://product/<id>`, `appstarter://search?q=<query>`) | `App/DeepLink.swift:13,21` |
-| `Coordinator.handle(_:as:map:)` — `.setStack`/`.present` desde un deep link | `App/DeepLink.swift:48` |
-| `CFBundleURLTypes` fusionado en el Info.plist sintetizado (xcodegen `info.properties`) | `project.yml:84` |
-| `SearchBarConfiguration` en barra custom `.blur` | `Packages/Features/Sources/SearchFeature/SearchView.swift:27,32` |
-| `Debouncer` (texto de búsqueda, clock inyectable) | `Packages/Features/Sources/SearchFeature/SearchViewModel.swift:31,57` |
-| `AppSettings` (contrato compartido `Networking`↔`SettingsFeature`) | `Packages/Platform/Sources/Networking/AppSettings.swift` |
-| `AppSettings.loadSynchronously(from:)` — bootstrap síncrono para `NetworkingModule` | `Packages/Platform/Sources/Networking/AppSettings.swift:39`, usado en `Packages/Platform/Sources/Networking/NetworkingModule.swift:54` |
-| `SSLPinningConfiguration` (pines reales + pin falso) | `Packages/Platform/Sources/Networking/PinningPins.swift:31` |
-| `UserDefaultsSettingsStore` (actor + conformidad en extension) | `Packages/Features/Sources/SettingsFeature/Stores/SettingsStore.swift:29` |
-| `AnalyticsTracking.recentEvents()` mostrados en Settings | `Packages/Platform/Sources/Domain/AnalyticsTracking.swift:36`, consumido en `Packages/Features/Sources/SettingsFeature/SettingsLogic.swift:95` |
-| `AppEnvironment` (debug/release, versión) | `Packages/Features/Sources/SettingsFeature/SettingsView.swift:61-62` |
-| `ThemeSettings` (`@Observable`, broadcast en vivo) | `Packages/Platform/Sources/Networking/ThemeSettings.swift:22` |
-| Los cuatro `Brand…Style` instalados en `RootView` | `App/Theme/Brand*.swift`, instalados en `App/RootView.swift:41-44` |
-| `AppRoute.settings` desde `Profile` | `Packages/Platform/Sources/Domain/AppRoute.swift:38`, destino en `App/RootView.swift:90` |
-| `APIError.Category.untrustedServer` → `DiagnosticsError.untrustedServer` | `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModels.swift` |
+### CoreNetworking
+
+- **`APIService` + `NetworkingConfiguration`** (baseURL, decoder propio): construidos en
+  `NetworkingConfiguration` en `Packages/Platform/Sources/Networking/NetworkingModule.swift:59`
+  y `APIService` en `Packages/Platform/Sources/Networking/NetworkingModule.swift:62`; la
+  configuración activa se muestra en `activeBaseURL` en
+  `Packages/Features/Sources/SettingsFeature/SettingsView.swift:67`.
+- **`BaseRequest` GET/POST con query, body y `Empty`**: GET con query en
+  `GetProductsRequest` en `Packages/Features/Sources/ProductsFeature/Services/ProductsService.swift:8`
+  (`queryItems` en la línea 49); POST con body en `LoginRequest` en
+  `Packages/Platform/Sources/Networking/AuthService.swift:34`; POST de Uploads en
+  `AddProductRequest` en `Packages/Features/Sources/UploadsFeature/Services/UploadsService.swift:18`;
+  `Empty` en `Empty` en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:208`.
+- **`APIError`**: categorías/código/resúmenes proyectados a `DiagnosticsOutcome` en
+  `APIError` en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:227`
+  (mapeo completo hasta la línea 245); `decodeBody` de un error del servidor y
+  `LocalizedError` los ejercen los siete experimentos de Diagnostics contra ese mismo
+  bloque.
+- **`RequestInterceptor` + `RequestContext`**: `BearerTokenInterceptor` en
+  `Packages/Platform/Sources/Networking/NetworkingWiring.swift:63`; `LoggingInterceptor`
+  en `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:152`;
+  el interceptor propio (`X-Client` + contador) es `RequestCounterInterceptor` en
+  `Packages/Features/Sources/DiagnosticsFeature/RequestCounterInterceptor.swift:19`, con
+  `RequestContext` en la línea 30 y la cabecera `X-Client` en la línea 34 — su log se
+  enseña en Diagnostics vía `diagnostics.log` en
+  `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsView.swift:72`.
+- **`RequestRetrier` + `RetryPolicy`**: `RetryPolicy` en
+  `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:151`
+  (el experimento `retry5xx`, reintentos visibles vía `RequestCounterInterceptor`).
+- **`TokenRefresher` + `TokenRefreshRetrier`** (dedupe de refresh): `TokenRefresher` en
+  `Packages/Platform/Sources/Networking/NetworkingWiring.swift:36`,
+  `TokenRefreshRetrier` en `Packages/Platform/Sources/Networking/NetworkingWiring.swift:64`;
+  probado con `ManualClock` en
+  `Packages/Platform/Tests/NetworkingTests/NetworkingWiringTests.swift:71` (el 401→refresh→
+  retry de un único caller — no hay, hoy, un segundo test que dispare DOS 401 concurrentes
+  para probar el dedupe en sí; el mecanismo que lo garantiza es de `CoreNetworking`).
+- **`EndpointService`**: `AuthService` en
+  `Packages/Platform/Sources/Networking/AuthService.swift:97` (y `ProductsService` en
+  `Packages/Features/Sources/ProductsFeature/Services/ProductsService.swift:91`).
+- **`upload(_:data:progress:)` + `TransferProgress`**: `api.upload` en
+  `Packages/Features/Sources/UploadsFeature/Services/UploadsService.swift:71`.
+- **`SSLPinningConfiguration` + `PinningValidationResult`/`PinningFailure`**:
+  `SSLPinningConfiguration` en
+  `Packages/Platform/Sources/Networking/PinningPins.swift:31`; el toggle en
+  `Packages/Features/Sources/SettingsFeature/SettingsView.swift:33`.
+- **`HTTPTransport` propio + `InMemoryTransport`**: `InMemoryTransport` en
+  `App/OfflineFixtures.swift:27`.
+- **`ManualClock`, `MockAPIService`, `MockURLProtocol`, `RecordingInterceptor`**:
+  `ManualClock` en
+  `Packages/Platform/Tests/NetworkingTests/NetworkingWiringTests.swift:71`;
+  `MockAPIService` en
+  `Packages/Features/Tests/ProductsFeatureTests/Services/ProductsServiceTests.swift:15`.
+  **No cubierto**: `MockURLProtocol` (el test de integración de este repo,
+  `AuthIntegrationTests`, corre contra DummyJSON real, no contra `URLSessionTransport` con
+  `MockURLProtocol`) y `RecordingInterceptor` (`RequestCounterInterceptor` — el
+  interceptor propio de arriba — no tiene un test unitario dedicado que lo verifique con
+  `RecordingInterceptor`; sus tres métodos (`willSend`/`didReceive`/`didFail`) solo se
+  ejercen indirectamente vía `DiagnosticsUITests`/uso manual). Ambos, pendientes.
+- **`TransportError`**: el host inalcanzable se mapea a `.unreachable` en
+  `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModels.swift:121`
+  (`DiagnosticsError.from(category:)` en la línea 144), disparado por
+  `runUnreachable()` en
+  `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:174`.
+
+### AppFoundation
+
+- **`performLoad`/`performActivity`/`successTransition`/`load()`/`activity()`**:
+  `performLoad` con `.preserveCurrentPhase` en
+  `Packages/Features/Sources/ProductsFeature/ProductsViewModel.swift:57`; `activity()`
+  estructurado con `.inline` en
+  `Packages/Features/Sources/UploadsFeature/UploadsViewModel.swift:70`.
+- **`ErrorPresenting` propio + `DomainError` + `isRetryable`**: `AppErrorPresenter` en
+  `App/AppErrorPresenter.swift`; `isRetryable` en
+  `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModels.swift:106`.
+- **`CancellationRecognizing` + `inFlightLoad`**: cancelación manual en
+  `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsViewModel.swift:54`
+  (`inFlightLoad?.cancel()`), verificada por `DiagnosticsUITests`.
+- **`AlertState`** (destructiva): "Vaciar favoritos" en
+  `Packages/Features/Sources/FavoritesFeature/FavoritesViewModel.swift:62`; logout en
+  `Packages/Features/Sources/ProfileFeature/ProfileViewModel.swift:74`.
+- **`BannerState`** (success/info/warning/error, `duration`): success de Uploads en
+  `Packages/Features/Sources/UploadsFeature/UploadsViewModel.swift:81`; info de Settings
+  en `Packages/Features/Sources/SettingsFeature/SettingsViewModel.swift:82`; el refresco
+  fallido de Products (`performActivity` sin `errorHandling` explícito) en
+  `Packages/Features/Sources/ProductsFeature/ProductsViewModel.swift:66` — el kit siempre
+  muestra ESE banner en estilo `.error` (`BaseViewModel.handleActivityError`), no
+  `.warning`: la descripción original de este PRD lo llamaba "warning", corregido aquí.
+- **`ViewPhase`/`EmptyViewStyle`/`ErrorViewStyle`/`LoadingViewStyle`/`BannerViewStyle`**:
+  los cuatro `Brand…Style` en `App/Theme/BrandLoadingStyle.swift`,
+  `App/Theme/BrandErrorStyle.swift`, `App/Theme/BrandEmptyStyle.swift`,
+  `App/Theme/BrandBannerStyle.swift`, instalados en `App/RootView.swift:41-44`; las 24
+  capturas de `AppSnapshotTests` (más abajo) son las cuatro fases bajo ambos temas.
+- **`ScreenChrome`/`NavigationBarStyle`/`NavigationBarItem`/`SearchBarConfiguration`**:
+  `chrome: .custom` en
+  `Packages/Features/Sources/ProductDetailFeature/ProductDetailView.swift:24`
+  (`.stack` es el `placement` por defecto, no explícito ahí); en Gallery,
+  `placement: .overlay` en
+  `Packages/Features/Sources/GalleryFeatureUI/GalleryView.swift:31`, con
+  `style: .transparent` en
+  `Packages/Features/Sources/GalleryFeatureUI/GalleryView.swift:29`; `.blur` +
+  `SearchBarConfiguration` en
+  `Packages/Features/Sources/SearchFeature/SearchView.swift:27` (bar en la línea 32).
+- **`PopGestureEnabler`** (swipe-back con barra custom): probado en
+  `AppUITests/SwipeBackTests.swift:9` (ProductDetail) y
+  `AppUITests/GalleryUITests.swift:9` (Gallery, `.overlay`).
+- **`Coordinator`/`Router`/`CoordinatorView` + `DeepLink`**: `CoordinatorView` en
+  `App/RootView.swift:51`; `DeepLinkType` en `App/DeepLink.swift:13`;
+  `Coordinator.handle(_:as:map:)` en `App/DeepLink.swift:48`; probado offline en
+  `AppUITests/DeepLinkUITests.swift:22,39`.
+- **`Container`** (módulos, `lifecycle`, `Container(parent:)`): registro por defecto
+  (singleton) en
+  `Packages/Platform/Sources/Networking/NetworkingModule.swift:40`; `lifecycle:
+  .transient` en
+  `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModule.swift:32`;
+  `Container(parent:)` por sesión en
+  `Packages/Platform/Sources/Networking/AppSessionState.swift:95`, con el test de que un
+  singleton de sesión no sobrevive al logout en
+  `Packages/Platform/Tests/NetworkingTests/` (`AppSessionState — Container(parent:) per
+  session`, ver `swift test --package-path Packages/Platform`).
+- **`Debouncer`/`Throttler`**: `Debouncer` en
+  `Packages/Features/Sources/SearchFeature/SearchViewModel.swift:31` (uso en la línea 57);
+  `Throttler` en `Packages/Features/Sources/GalleryFeatureUI/GalleryViewModel.swift:31`
+  (uso en la línea 60).
+- **`Logic`/`LogicViewModel` + flags del generador**: `--api` en `LoginLogic` en
+  `Packages/Features/Sources/LoginFeature/LoginLogic.swift:59`; `--local` en
+  `FavoritesLogic` en `Packages/Features/Sources/FavoritesFeature/FavoritesLogic.swift:38`;
+  `--api --local` + `--service-from`/`--store-from` (reutiliza `ProductsServicing` y
+  `FavoritesStoring`): `favoritesStore` en
+  `Packages/Features/Sources/ProductDetailFeature/ProductDetailModule.swift:17`; sin
+  datos/`--local` (`UserDefaults` vía Store) en `UserDefaultsSettingsStore` en
+  `Packages/Features/Sources/SettingsFeature/Stores/SettingsStore.swift:29`; `--module`
+  (dos targets reales) en `GalleryFeatureUI/GalleryModule.swift:3` (`import
+  GalleryFeatureCore`); `--api --no-service` (reutiliza `APIServiceProtocol` directo) en
+  `Packages/Features/Sources/DiagnosticsFeature/Services/DiagnosticsService.swift:70`.
+- **`AppFoundationTestSupport`**: `SpyRecorder` en
+  `Packages/Features/Tests/ProductsFeatureTests/Mocks/ProductsLogicMock.swift:9`.
+  **No cubierto**: `InMemoryStore` — los Stores de este repo (`FavoritesStore`,
+  `SettingsStore`) tienen su propio doble en memoria hecho a mano
+  (`Packages/Features/Tests/SettingsFeatureTests/Mocks/InMemorySettingsStore.swift`) en
+  vez de `AppFoundationTestSupport.InMemoryStore`; pendiente para 1.2.2 o una
+  refactorización de esos dos tests.
+- **`L10n` + `.xcstrings` + `ResourceBundle`**: **no cubierto**. Este repo no tiene ningún
+  `.xcstrings` ni usa `L10n`/`ResourceBundle` — todas las cadenas visibles son literales en
+  español directamente en cada `View` (`"Diagnostics"`, `"Ajustes"`…). Localización real
+  (es/en con `.xcstrings`) queda fuera de esta fase; hueco real, no un olvido de citarlo.
+- **`AppFoundationDiagnostics`** (`droppedActionHandler`, `assertOnDroppedAction`): **no
+  cubierto**. Ni `App/` activa `assertOnDroppedAction` en DEBUG ni hay un test que
+  compruebe que un ViewModel liberado registra el descarte — el propio bug real que
+  `docs/INFORME-MULTI.md` §11 documenta (un ViewModel vivo que no se re-renderizaba) es
+  distinto de esto (un ViewModel ya LIBERADO cuyo trabajo pendiente se descarta). Hueco
+  real.
+- **`ObservingScreenState`/`BindingBackedState`/`PhaseView`/`ScreenModifier`**:
+  `GalleryThumbnailsView` (sin ViewModel, `PhaseView` + `@State` local) en
+  `Packages/Features/Sources/GalleryFeatureUI/GalleryView.swift:117` (declaración) y
+  `:120` (uso).
+- **`AppEnvironment`**: `Packages/Features/Sources/SettingsFeature/SettingsView.swift:61`
+  (versión en la línea 62).
+- **`CameraKit`/`AnalyticsAdapters` por protocolo de `Domain`**: `any CameraCapturing` en
+  `Packages/Features/Sources/UploadsFeature/UploadsLogic.swift:76`;
+  `recentEvents()` (`AnalyticsTracking`) en
+  `Packages/Platform/Sources/Domain/AnalyticsTracking.swift:36`, consumido en
+  `Packages/Features/Sources/SettingsFeature/SettingsLogic.swift:95`.
+- **Linter R1–R14 + SwiftLint + Definition of Done**: `modules:` de R13 en
+  `.archlint.yml:29`; una regla curada de SwiftLint (`try!` → error) en
+  `.swiftlint.yml:12`; la demostración de un `import` entre features rompiendo el build
+  con `[ArchLint.R13]` está en `docs/INFORME-MULTI.md`, no transcrita aparte en este
+  README.
+
+### Otras filas del tramo B (pantallas nuevas, ya en el paquete anterior a esta fase)
+
+- `images: [URL]` (`Product`) en `Packages/Platform/Sources/Domain/Product.swift:18`.
+- `case gallery(productID: Int)` en
+  `Packages/Platform/Sources/Domain/AppRoute.swift:27`; `case settings` en
+  `Packages/Platform/Sources/Domain/AppRoute.swift:38` (destino en
+  `App/RootView.swift:90`).
+- `CFBundleURLTypes:` fusionado en el Info.plist sintetizado en `project.yml:89`.
+- `struct AppSettings` en `Packages/Platform/Sources/Networking/AppSettings.swift:17`
+  (contrato compartido `Networking`↔`SettingsFeature`); `func loadSynchronously` en
+  `Packages/Platform/Sources/Networking/AppSettings.swift:39`, usado en
+  `AppSettings.loadSynchronously()` en
+  `Packages/Platform/Sources/Networking/NetworkingModule.swift:54`.
+  `ThemeSettings` (`@Observable`) en
+  `Packages/Platform/Sources/Networking/ThemeSettings.swift:22`.
+- `case untrustedServer` en
+  `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModels.swift:104`.
 
 ### Pinning TLS: cómo se obtuvieron los pines reales
 
@@ -274,15 +441,28 @@ toggle y verificar su efecto.
 # Unitarios por capa (ViewModel/Logic/Service/Store), por paquete:
 swift test --package-path Packages/Platform
 swift test --package-path Packages/Features
+swift package --package-path Packages/Platform archlint
+swift package --package-path Packages/Features archlint
+swiftlint lint --strict --quiet Packages/Platform/Sources Packages/Platform/Tests \
+  Packages/Features/Sources Packages/Features/Tests
+swift format lint --strict --configuration .swift-format --recursive \
+  Packages App AppTests AppUITests AppSnapshotTests
 
 # Integración real contra DummyJSON (login, productos, refresh con expiresInMins: 1):
 INTEGRATION=1 swift test --package-path Packages/Features --filter AuthIntegrationTests
 
-# Nativos de Xcode — smoke test del composition root + los 4 XCUITests, offline:
+# El escaparate del README: cada `Símbolo` en `fichero:línea` existe de verdad.
+Scripts/check-showcase.sh
+
+# Nativos de Xcode — smoke test del composition root, AppSnapshotTests (24 capturas,
+# PRD-APP-02 Fase 3) y los XCUITests offline, los tres desde el MISMO `xcodebuild test`
+# (el esquema `AppStarter` corre `AppTests` + `AppSnapshotTests` + `AppUITests` en su
+# acción `test`):
 UI_TEST_OFFLINE=1 Scripts/bootstrap.sh
 UI_TEST_OFFLINE=1 xcodebuild test -scheme AppStarter \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -skipPackagePluginValidation
+  -skipPackagePluginValidation \
+  -resultBundlePath TestResults.xcresult
 ```
 
 Sin `UI_TEST_OFFLINE=1`, los XCUITests corren contra la API real (es el objetivo del
@@ -290,16 +470,129 @@ PRD); con esa variable, `-UITestOffline` hace que la app use `InMemoryTransport`
 respuestas grabadas (`App/OfflineFixtures.swift`) — así corre en CI sin depender de la
 red.
 
+### `AppSnapshotTests` — 24 capturas por estado y tema
+
+`AppSnapshotTests/` (target nativo de Xcode, no un paquete SwiftPM — `swift-snapshot-
+testing` renderiza a `UIImage` sobre `UIHostingController`, que necesita el runtime UIKit
+real del simulador que ya arranca este esquema) captura `DiagnosticsView`/`UploadsView`/
+`GalleryView` en `loading`/`empty`/`error`/`content`, con el `LoadingViewStyle`/
+`ErrorViewStyle`/`EmptyViewStyle`/`BannerViewStyle` del kit y con los cuatro `Brand…Style`
+de `App/Theme/` (`.snapshotTheme(_:)`, `AppSnapshotTests/SnapshotHelpers.swift`) — 3
+pantallas × 4 estados × 2 temas = 24 imágenes. Los estados se inyectan por ViewModel/Logic
+mock, sin red: `loading` siempre con `BaseViewModel.setLoading(_:)` directamente (evita la
+carrera de esperar a un mock asíncrono); `empty`/`error`/`content` de `GalleryViewModel`
+pasan por su `Logic` real vía un stub (`GalleryLogicProtocol`) porque esa pantalla SÍ los
+alcanza en producción (`performLoad(successTransition: .preserveCurrentPhase)`); en
+`Diagnostics`/`Uploads` (que nunca fallan su propio `appear()`) `empty`/`error` se inyectan
+igual que `loading`, con `setEmpty()`/`setError(title:message:)` directos — el propio PRD
+sanciona esto ("los estados se inyectan por ViewModel/Logic mock, sin red"). El tamaño de
+cada captura se lee de `UIScreen.main.bounds` en tiempo de test (`snapshotDeviceSize`), no
+un punto fijo — sigue siendo correcto sea cual sea el simulador del esquema. Referencias en
+`AppSnapshotTests/__Snapshots__/` (versionadas): generadas y revisadas a ojo en este PR —
+ver la descripción de cada una en `docs/INFORME-MULTI.md`, sección «`AppSnapshotTests` —
+24 capturas...» del informe de Fase 3, bullet «Qué muestra cada captura».
+
 Resultados literales de la última migración, y el detalle de cada fricción encontrada:
 **`docs/INFORME-MULTI.md`** (modo multi) y **`docs/INFORME-INTEGRACION.md`** (integración
 original de los paquetes desde Xcode).
 
 ## CI
 
-`.github/workflows/ci.yml`: matriz `packages` (`Platform`/`Features`: `swift test` +
-`swift package archlint` + `swiftlint --strict` + `swift format lint`) → job `app`
-(`xcodegen generate` → `xcodebuild test`, unit + UI offline) en cada push/PR a `main`. Job
-`integration` (real, contra DummyJSON) solo por `workflow_dispatch`.
+`.github/workflows/ci.yml`, en cada push/PR a `main`:
+
+- **`showcase`** (`ubuntu-latest`, no necesita Xcode): `Scripts/check-showcase.sh` — el
+  primero en fallar si una fila del escaparate cita un `fichero:línea` que ya no existe.
+- **`packages`** (matriz `Platform`/`Features`): `swift test` + `swift package archlint` +
+  `swiftlint --strict` + `swift format lint`.
+- **`app`** (depende de `packages`): `xcodegen generate` → `xcodebuild test` — el MISMO
+  comando corre `AppTests` (smoke test), `AppSnapshotTests` (24 capturas) y `AppUITests`
+  (offline), los tres targets del esquema `AppStarter`; `-resultBundlePath
+  TestResults.xcresult`, subido como artefacto solo si el job falla (capturas y árbol de
+  accesibilidad del runner, la única evidencia cuando el iOS del runner difiere del local).
+- **`integration`** (real, contra DummyJSON): solo por `workflow_dispatch`.
+
+Selección del Xcode más reciente disponible en el runner (`ls /Applications/Xcode_*.app`)
+en cada job que lo necesita — nunca fijado a una versión concreta.
+
+## Lo que hizo la IA
+
+Honestidad sobre qué generó el kit (`archinit`/`generate-feature`/`archlint`) tal cual, qué
+se completó a mano, y qué se descubrió en el camino — no todo lo de este repo salió de un
+comando.
+
+**Generado por el kit, sin tocar después:** el esqueleto de cada `View`/`ViewModel`/
+`Logic`/`Module` (+ `Store` cuando tocaba) de las nueve features originales
+(`generate-feature <Name> --api|--local|--api --local`), sus tests unitarios y mocks, la
+estructura de tres niveles completa de `archinit --multi` (`App/`, `Packages/Platform`,
+`Packages/Features`, `.archlint.yml` con `modules:`, `.swiftlint.yml`, `.swift-format`,
+`project.yml`, `Scripts/bootstrap.sh`, `ci.yml` con la matriz por paquete), y `Gallery`
+(`--api --module`, dos targets reales `GalleryFeatureCore`/`GalleryFeatureUI` en un solo
+comando).
+
+**Completado a mano, sobre lo generado:** el dominio real de cada `Logic` (mapeo de
+`APIError`→`DomainError`, los siete experimentos de `Diagnostics`, la barra de progreso de
+`Uploads`, el throttle de `Gallery`); todo el networking transversal
+(`NetworkingWiring`/`AppSessionState`/`RefreshActivityLog`/`AppSettings`) porque no hay
+generador para "código compartido por varias features"; los cuatro `Brand…Style` y su
+instalación condicional en `RootView`; `App/DeepLink.swift` completo (el generador no sabe
+de deep links); las 24 capturas de `AppSnapshotTests` y los nueve XCUITests offline; y el
+propio contenido de este README, con cada fila del escaparate verificada por
+`Scripts/check-showcase.sh`, no solo redactada.
+
+**Bugs reales encontrados (no fricciones del kit — de esta app, o expuestos por ella)**,
+cada uno con repro completo en `docs/INFORME-MULTI.md`:
+
+- **La cookie que hacía pasar el 401 de Diagnostics.** `DiagnosticsService.unauthenticatedAPI`
+  y `NetworkingModule`'s `AuthServicing` sin autenticar compartían `URLSessionTransport()`
+  con `URLSessionConfiguration.default`, que acepta y reenvía cookies vía
+  `HTTPCookieStorage.shared` — COMPARTIDO por todo el proceso. `POST /auth/login` de
+  DummyJSON pone, además del par de tokens en el JSON, una cookie de sesión; tras un login
+  real en el mismo proceso, esa cookie quedaba en el jar y la siguiente petición a
+  `/auth/me` SIN cabecera `Authorization` la reenviaba sola — el experimento "401 sin
+  token" devolvía 200. Arreglado con `httpShouldSetCookies = false`/
+  `httpCookieAcceptPolicy = .never` en la configuración de ese pipeline (docs/
+  INFORME-MULTI.md, «Dos hallazgos reales al ejecutar Diagnostics contra DummyJSON»).
+- **`waitsForConnectivity = true`** (el valor correcto para el pipeline real de la app, que
+  SÍ debe esperar a que vuelva la red) hacía que el experimento "host inalcanzable" se
+  quedara colgado más de 75s en vez de fallar rápido por DNS — una `URLSessionConfiguration`
+  propia con `waitsForConnectivity = false` para ESE transporte lo arregló, sin tocar el
+  pipeline real.
+- **El stall del semáforo de `DiagnosticsService.init`** (docs/INFORME-MULTI.md §7): copiar
+  literalmente el patrón `DispatchSemaphore` de `App/OfflineFixtures.swift` (seguro SOLO
+  durante el arranque, antes de que haya UI/eventos) a un singleton que se construye
+  PEREZOSAMENTE, la primera vez que se navega a Diagnostics — en mitad de una transición de
+  navegación de SwiftUI, compitiendo por el mismo hilo que el `Task` necesita — colgaba el
+  primer "Run" de un experimento ~60s. Arreglado registrando el fixture de forma async
+  normal (sin semáforo) al principio de `runRetry5xx()`, no en el `init`.
+- **`generate-feature Uploads --api` registrando su PROPIO `APIServiceProtocol`**
+  (docs/INFORME-MULTI.md §8): `UploadsModule.register(in:)`, tal cual lo generó el kit,
+  registraba un `APIServiceProtocol` nuevo y sin autenticar — `Container.register`
+  sobrescribe silenciosamente cualquier registro anterior del MISMO tipo, así que cualquier
+  feature registrada DESPUÉS de `UploadsModule` en `AppModule.makeModules()` habría perdido
+  su bearer token, sin error de compilación, solo un aviso de consola en DEBUG fácil de
+  pasar por alto. Arreglado quitando ese registro: `UploadsService` resuelve el
+  `APIServiceProtocol` autenticado YA existente de `NetworkingModule`, como todo lo demás.
+- **`@Observable` no se hereda de `BaseViewModel`** (docs/INFORME-MULTI.md §11): el hallazgo
+  más caro de esta fase — ver la sección de arriba sobre AppFoundation 1.2.1/R15, que ya lo
+  corrige en el kit.
+- **`SIGSEGV`/`SIGBUS` por un `.build/` incremental desactualizado** (docs/INFORME-MULTI.md
+  §12): tras varios commits que fueron cambiando el layout de `AppRoute` (un tipo
+  compartido, nuevos casos con valores asociados), `swift test --package-path
+  Packages/Features` crasheaba el binario combinado de tests de forma consistente — sitio
+  de fallo distinto cada vez, siempre corrupción de memoria, nunca un fallo de aserción
+  normal, confirmado por bisección real que el mismo checkout pasa 100% de las veces con
+  `rm -rf Packages/Features/.build` primero y crashea 100% de las veces sin ese paso. No es
+  una fricción de `AppFoundation`/`CoreNetworking` — es SwiftPM y su build incremental para
+  un paquete con varios test targets ante un tipo `Domain` compartido; el workaround es
+  simplemente borrar `.build/` antes de una tanda de verificación importante.
+
+**Fricciones del kit, abiertas:** `PRD-AF-11` (en el monorepo del kit, no en este repo) —
+`--service-from`/`--store-from` en modo multi asume que los mocks compartidos viven en el
+propio test target de la feature, no en un target `PlatformTestSupport` separado (ver
+«Reutilizar el Service/Store de otro feature» más arriba); y la doble coincidencia de R13
+con nombres de frameworks del sistema (`UIKit` contra el glob `*Kit`, `docs/INFORME-MULTI.md`
+§10). Ambas viven como propuestas en `docs/ISSUES.md`, no arregladas aquí — no es este
+repo quien las corrige, es el kit.
 
 ## Licencia
 

@@ -895,3 +895,185 @@ intercambiable) que el kit no pide y que esta app no necesita: el caso de uso re
 reinicio entre tocar el ajuste y comprobar el efecto, exactamente como la comprobación
 manual de `README.md` lo hace. `SettingsViewModel` lo dice explícitamente en su propio
 banner ("se aplica al reiniciar la app") y en su doc comment.
+
+## Fase 3 — XCUITests offline, snapshot tests, escaparate completo y CI
+
+AppFoundation 1.2.1 (R15: `@Observable` obligatorio), cuatro XCUITests offline nuevos
+(`Settings`, `Gallery`, dos de deep link), `AppSnapshotTests` (24 capturas), `Scripts/
+check-showcase.sh`, y la tabla completa del escaparate en el README.
+
+### AppFoundation 1.2.1
+
+`Packages/Platform/Package.swift`, `Packages/Features/Package.swift` y `project.yml`
+fijan `from: "1.2.1"`; `swift package update` en ambos re-resuelve `Package.resolved`.
+`swift package archlint` sigue dando **0 errores, 0 warnings** con R15 activa en los dos
+paquetes — los once ViewModels de este repo ya declaraban `@Observable` propio desde que
+se corrigió el bug de §11 (arriba), así que subir de versión no tocó una sola Vista o
+ViewModel. §11 se cierra como histórico: la propuesta que ahí se hacía ("que el kit lo
+exija, no solo lo documente") ya se cumplió.
+
+### XCUITests offline nuevos
+
+Los cuatro que faltaban del PRD (`Diagnostics`/`Uploads` ya existían de un tramo
+anterior): mismo estilo y helpers que los existentes (`AppUITests/
+AppStarterUITestCase.swift`), todos offline (`-UITestOffline`, `App/OfflineFixtures.swift`
+— el fixture de `Gallery` (tres imágenes) ya estaba preparado desde el tramo B).
+
+- **`GalleryUITests.swift`**: abre Gallery desde `ProductDetail`, comprueba que la barra
+  overlay (`chrome: .custom(_, placement: .overlay)`) está presente Y es tappable sobre la
+  imagen, pagina a una segunda imagen por miniatura, y swipe-back vuelve a `ProductDetail`
+  — la misma técnica de gesto que `SwipeBackTests`, la prueba de que `PopGestureEnabler`
+  también engancha bajo `.overlay`, no solo `.stack`.
+- **`SettingsUITests.swift`**: cambia a tema de marca y vuelve — verificado por
+  ESTRUCTURA, no por color (`BrandBannerStyle` tiene un botón "Cerrar" propio distinto del
+  mensaje; `DefaultBannerViewStyle` es un único `Button` con el mensaje como label — se
+  puede distinguir sin capturar un píxel). Navega a Diagnostics bajo el tema de marca para
+  probar que la pantalla sigue funcionando con los `Brand…Style` instalados. Activa
+  pinning estricto y el pin falso, comprueba que `settings.pinningSummary` cambia de texto
+  en cada paso, y que desactivar pinning oculta el toggle del pin falso. **Nota
+  honesta:** `DiagnosticsViewModel.appear()` nunca falla (`setContent()` incondicional) —
+  esta app no tiene, hoy, un camino de usuario real hacia el `.error` DE PANTALLA COMPLETA
+  de Diagnostics (los experimentos fallidos se muestran inline, fila por fila, no como
+  `ScreenContainer`'s `.error`). Ese estado — con AMBOS temas — sí se captura en
+  `AppSnapshotTests` (inyectado directamente vía `setError(...)`, sancionado por el propio
+  PRD: "los estados se inyectan por ViewModel/Logic mock"); el XCUITest de Settings prueba
+  lo que SÍ es alcanzable por interacción real: el cambio de tema en vivo y que la pantalla
+  sigue viva bajo él.
+- **`DeepLinkUITests.swift`**: `appstarter://product/1` (offline, fixture `productID: 1`)
+  y `appstarter://search?q=mascara` (el único query que el fixture de búsqueda contesta).
+  **Opción elegida para disparar el deep link — documentada en el propio fichero**:
+  `xcrun simctl openurl booted <url>` vía `Process`, no `launchArguments`/
+  `launchEnvironment`. Un `-DeepLinkURL <url>` leído en `AppStarterApp.init()` solo
+  probaría el parseo/enrutado (ya cubierto por `AppTests/DeepLinkTests.swift`), no la
+  entrega real por `.onOpenURL` que un deep link de verdad usa en producción — `simctl
+  openurl` sobre el simulador ya arrancado por el propio XCUITest SÍ dispara ese camino
+  real. Confirmado manualmente antes contra la API real (`docs/screenshots/
+  02-deeplink-product.png`, `03-deeplink-search.png`); este es el mismo camino, offline y
+  automatizado.
+
+Fricción menor confirmada al escribir estos tests, no un bug: `NavigationBarItem.close/
+back`'s parámetro `id:` (p.ej. `.close(id: "gallery.close", ...)`) NO se traduce a
+`accessibilityIdentifier` en `CustomNavigationBar`/`NavigationBarItemView`
+(`AppFoundation`) — solo alimenta la identidad de `ForEach` (A10 en su propio doc
+comment). Los tres tests nuevos que necesitan encontrar un botón de cierre/atrás en una
+barra custom lo hacen por su `accessibilityLabel` localizado ("Close"/"Back",
+`CloseButtonAccessibility`), igual que ya hacía `SwipeBackTests`/`AccessibilityLabelTests`
+— no hizo falta cambiar nada, solo confirmarlo leyendo el código del kit antes de asumir
+que `id:` funcionaba como identificador de UI.
+
+### `AppSnapshotTests` — 24 capturas, `Diagnostics`/`Uploads`/`Gallery` × 4 estados × 2 temas
+
+Target nativo de Xcode (`AppSnapshotTests/`, no un paquete SwiftPM — `swift-snapshot-
+testing` necesita `UIHostingController`/un runtime UIKit real, que solo tiene el
+simulador que ya arranca este esquema), dependencia `pointfreeco/swift-snapshot-testing`
+`from: "1.19.0"` — SOLO enlazada a este target, nunca al target `AppStarter`.
+
+- `SnapshotHelpers.swift`: `.snapshotTheme(_:)` instala los mismos cuatro `Brand…Style`
+  que `RootView` instala (`@testable import AppStarter` — mismo mecanismo que `AppTests`/
+  `AppUITests` ya usan para tipos internos de la cáscara); `snapshotDeviceSize` lee
+  `UIScreen.main.bounds` EN TIEMPO DE TEST en vez de un punto fijo — la captura sigue
+  siendo del tamaño correcto sea cual sea el simulador del esquema, sin mantener una
+  constante que se desincroniza cuando cambia el destino por defecto; `waitUntil(_:)`
+  sondea (10ms) hasta que una condición se cumple — necesario para los `Task`
+  desestructurados de `DiagnosticsViewModel.run`/`UploadsViewModel.upload`, que no exponen
+  un `Task` esperable como sí hacen `inFlightLoad`/`inFlightActivity`.
+- **Cómo se inyecta cada estado** (PRD: "por ViewModel/Logic mock, sin red"):
+  `loading` SIEMPRE con `BaseViewModel.setLoading(_:)` directo, en las tres pantallas —
+  uniforme y sin la carrera de esperar a un mock asíncrono. `Diagnostics`/`Uploads` nunca
+  fallan su propio `appear()` en producción (no hay camino real a `.empty`/`.error` de
+  pantalla completa, ver la nota de `SettingsUITests` arriba) — sus `empty`/`error` se
+  inyectan igual que `loading`, con `setEmpty()`/`setError(title:message:)` directos.
+  `content` corre la acción real (`.run`, `.capturePhoto` + `.upload`) contra un stub
+  `Logic` local y sondea con `waitUntil` hasta que el resultado aparece.
+  `GalleryViewModel.load()` SÍ alcanza `.empty`/`.error` en producción
+  (`performLoad(successTransition: .preserveCurrentPhase)`, `GalleryViewModel.swift:79`) —
+  ahí `empty`/`error`/`content` corren los tres por el camino real, vía un
+  `GalleryLogicProtocol` stub que devuelve/lanza lo que corresponda; solo `loading` usa la
+  llamada directa, por la misma razón de carrera que las otras dos pantallas.
+- **Qué muestra cada captura** (referencias en `AppSnapshotTests/__Snapshots__/`,
+  revisadas a ojo en este PR): `loading` — el `ProgressView` a pantalla completa, con el
+  spinner por defecto del sistema bajo el tema del kit y `Brand.accent` (magenta/rosa
+  oscuro) bajo el de marca; `empty` — `ContentUnavailableView` genérico del kit
+  ("No content") frente a "Nada por aquí" con el icono `shippingbox` y el tinte de marca;
+  `error` — el icono/título/mensaje/botón "Reintentar" del kit frente a
+  `exclamationmark.triangle.fill` en `Brand.accent`, título en negrita y el mismo tinte en
+  el botón bajo el tema de marca; `content` — `Diagnostics` con la fila de "404 — producto
+  inexistente" ya resuelta (categoría `notFound`, código `httpStatus`); `Uploads` con la
+  foto de 1×1 previsualizada, el título por defecto y la sección "Resultado" con el
+  producto #101 creado; `Gallery` con la primera de tres imágenes y la tira de miniaturas
+  bajo la barra overlay transparente.
+
+### `Scripts/check-showcase.sh`
+
+Extrae cada cita `` `Símbolo` en `fichero:línea` `` de `README.md` (formato adoptado en
+esta fase para TODA la tabla del escaparate — antes mezclaba filas sin símbolo explícito,
+citas de fichero completo y un glob; ahora cada cita empareja símbolo Y ubicación
+explícitamente, sin ambigüedad para un script), comprueba que el fichero existe, que la
+línea está dentro del fichero, y que el símbolo (comparación de cadena fija, no regex)
+aparece en una ventana de ±3 líneas alrededor de la línea citada. Falla listando TODAS las
+citas rotas de una pasada, no solo la primera. `.github/workflows/ci.yml` lo corre en un
+job `showcase` propio (`ubuntu-latest`, no necesita Xcode — el primero en fallar y el más
+barato).
+
+### CI
+
+Job `showcase` nuevo (antes de `packages`/`app`, sin depender de Xcode). `app` pasa a
+llamarse "unit + snapshot + UI, offline" — sin cambios de comandos: el `xcodebuild test`
+que ya existía corre los tres targets del esquema (`AppTests`, `AppSnapshotTests` nuevo,
+`AppUITests`) porque los tres están en la acción `test` del esquema `AppStarter`
+(`project.yml`), no porque el YAML de CI necesitara un paso nuevo.
+
+### Verificación (salidas reales)
+
+```
+$ swift test --package-path Packages/Platform
+Test run with 8 tests in 3 suites passed after 0.005 seconds.
+
+$ swift test --package-path Packages/Features
+Test run with 125 tests in 26 suites passed after 0.076 seconds.
+
+$ swift package --package-path Packages/Platform archlint
+archlint: 0 errors, 0 warning(s) in 28 file(s).
+
+$ swift package --package-path Packages/Features archlint
+archlint: 0 errors, 0 warning(s) in 50 file(s).
+
+$ swiftlint lint --strict --quiet Packages/Platform/Sources Packages/Platform/Tests \
+    Packages/Features/Sources Packages/Features/Tests
+(sin salida — 0 violaciones)
+
+$ swift format lint --strict --configuration .swift-format --recursive \
+    Packages App AppTests AppUITests AppSnapshotTests
+(sin salida — 0 violaciones, tras corregir 4 ficheros nuevos con `swift format --in-place`)
+```
+
+**Bloqueador de entorno, no resuelto en esta sesión — honesto, no maquillado:**
+`xcodebuild` (cualquier invocación, incluida `xcodebuild -list`, que no toca paquetes ni
+compila nada) se queda colgado indefinidamente contra `AppStarter.xcodeproj` en esta
+máquina — confirmado con `sample` sobre el proceso: bloqueado en
+`_dispatch_sema4_wait`/`semaphore_wait_trap` dentro de la cola `IDEContainer - uniquing
+lock`, el mismo punto sin importar `-derivedDataPath`/`-clonedSourcePackagesDirPath`
+aislados (se probó una ruta de `DerivedData`/`SourcePackages` completamente separada de la
+que usa Xcode.app — mismo cuelgue). La causa más probable: `Xcode.app` estaba ya abierto
+en esta máquina con este mismo proyecto ANTES de esta sesión (`ps aux` lo confirma, PID
+activo desde días antes) — Xcode retiene un lock de "contenedor IDE" sobre un `.xcodeproj`
+mientras lo tiene abierto como documento, y `xcodebuild` desde línea de comandos contra el
+MISMO fichero de proyecto espera esa misma exclusión mutua; `AppStarter.xcodeproj` se
+regeneró varias veces durante esta sesión (`xcodegen generate`, tras cada cambio de
+`project.yml`), lo que probablemente dejó al documento abierto de Xcode en un estado que
+retiene el lock de forma prolongada. Un `xcodebuild build` normal (sin `-testing`) SÍ
+funcionó una vez, al principio de esta sesión, antes de añadir `AppSnapshotTests`/
+`SnapshotTesting` a `project.yml` — consistente con que el problema apareciera después de
+esa regeneración, no que sea un problema estructural del proyecto.
+
+**No verificado en esta sesión, por el bloqueador de arriba**: `xcodebuild test` (el smoke
+test de `AppTests`, las 24 capturas de `AppSnapshotTests`, y los nueve `AppUITests`
+offline — dos veces seguidas, como exige la verificación). El código compila a nivel
+SwiftPM (`swift build`/`swift test` en ambos paquetes, en verde) y `xcodegen generate`
+también corre limpio; lo que falta comprobar es específicamente la compilación/ejecución
+del target `AppStarter` (aplicación + los tres test targets nativos de Xcode) vía
+`xcodebuild`. **Recomendación para desbloquear**: cerrar `AppStarter.xcodeproj` en
+Xcode.app (o salir de Xcode del todo) y volver a intentar `UI_TEST_OFFLINE=1
+xcodebuild test -scheme AppStarter -destination 'platform=iOS Simulator,name=iPhone 17
+Pro' -skipPackagePluginValidation -resultBundlePath TestResults.xcresult` — en CI (sin
+Xcode.app interactivo compitiendo por el mismo lock) no debería reproducirse.
