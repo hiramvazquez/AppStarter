@@ -34,8 +34,23 @@ class AppStarterUITestCase: XCTestCase {
     /// Logs in with DummyJSON's published test account and waits for the products list.
     @discardableResult
     func loginAndWaitForProducts(_ app: XCUIApplication, timeout: TimeInterval = 20) -> XCUIElement {
+        submitLogin(app, timeout: timeout)
+
+        let list = app.descendants(matching: .any)["products.list"]
+        XCTAssertTrue(list.waitForExistence(timeout: timeout), "Products list did not appear after login")
+        XCTAssertTrue(
+            app.buttons["product.1"].waitForExistence(timeout: timeout),
+            "First product did not appear after login"
+        )
+        return list
+    }
+
+    /// Types the fixture credentials and submits the login form, without waiting for any
+    /// particular destination: a pending deep link (see `App/PendingDeepLink.swift`) may
+    /// replace Products right after login, so callers wait for what they expect.
+    func submitLogin(_ app: XCUIApplication, timeout: TimeInterval = 20) {
         let username = app.textFields["login.username"]
-        XCTAssertTrue(username.waitForExistence(timeout: timeout))
+        XCTAssertTrue(username.waitForExistence(timeout: timeout), "Login screen did not appear")
         username.tap()
         username.typeText("emilys")
 
@@ -46,14 +61,6 @@ class AppStarterUITestCase: XCTestCase {
 
         app.buttons["login.submit"].tap()
         dismissSystemAlertIfPresent(app, timeout: 3)
-
-        let list = app.descendants(matching: .any)["products.list"]
-        XCTAssertTrue(list.waitForExistence(timeout: timeout), "Products list did not appear after login")
-        XCTAssertTrue(
-            app.buttons["product.1"].waitForExistence(timeout: timeout),
-            "First product did not appear after login"
-        )
-        return list
     }
 
     /// Dismisses the simulator's own "Save Password?" sheet if present — an iOS system

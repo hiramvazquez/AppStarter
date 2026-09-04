@@ -16,6 +16,9 @@ final class SettingsUITests: AppStarterUITestCase {
         waitAndTap(app.buttons["products.profile"])
         waitAndTap(app.buttons["profile.settings"])
 
+        // A SwiftUI `Toggle` row exposes an outer Switch (the whole row, identifier on it) and
+        // the inner control; tapping the row's centre lands on the label, which does not flip
+        // it — the inner switch does.
         let themeToggle = app.switches["settings.themeToggle"]
         XCTAssertTrue(themeToggle.waitForExistence(timeout: 15), "Settings screen did not appear")
         XCTAssertEqual(themeToggle.value as? String, "0", "Theme should start on the kit's own style")
@@ -31,7 +34,7 @@ final class SettingsUITests: AppStarterUITestCase {
 
         // Brand ON: toggle, wait for the save's info banner, confirm it is the BRAND
         // style (a distinct "Cerrar" button next to the message, not one big button).
-        waitAndTap(themeToggle)
+        waitAndTap(themeToggle.switches.firstMatch)
         XCTAssertTrue(
             waitForExistenceTolerant(brandCerrarButton, in: app),
             "Brand theme's banner (with its own \"Cerrar\" button) never appeared after toggling on"
@@ -58,7 +61,7 @@ final class SettingsUITests: AppStarterUITestCase {
 
         // Back in Settings: brand OFF returns to the kit's own banner style.
         XCTAssertTrue(themeToggle.waitForExistence(timeout: 15))
-        waitAndTap(themeToggle)
+        waitAndTap(themeToggle.switches.firstMatch)
         XCTAssertTrue(
             waitForExistenceTolerant(kitStyleBanner, in: app),
             "Kit-style banner never appeared after toggling brand theme off"
@@ -71,7 +74,7 @@ final class SettingsUITests: AppStarterUITestCase {
         // state and its visible summary, not a live TLS handshake.
         let pinningToggle = app.switches["settings.pinningToggle"]
         XCTAssertTrue(pinningToggle.waitForExistence(timeout: 10))
-        waitAndTap(pinningToggle)
+        waitAndTap(pinningToggle.switches.firstMatch)
 
         let summary = app.descendants(matching: .any)["settings.pinningSummary"]
         XCTAssertTrue(waitForExistenceTolerant(summary, in: app), "Pinning summary did not appear")
@@ -92,7 +95,7 @@ final class SettingsUITests: AppStarterUITestCase {
         // Turning pinning back off also clears the fake pin (`SettingsViewModel.handle`)
         // — the fake-pin toggle disappears, and a fresh strict-on wouldn't silently carry
         // it over.
-        waitAndTap(pinningToggle)
+        waitAndTap(pinningToggle.switches.firstMatch)
         XCTAssertFalse(
             waitForExistenceTolerant(fakePinToggle, in: app, timeout: 3),
             "Fake-pin toggle should be hidden once pinning is off"

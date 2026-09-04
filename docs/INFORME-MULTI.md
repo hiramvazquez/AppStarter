@@ -1077,3 +1077,25 @@ Xcode.app (o salir de Xcode del todo) y volver a intentar `UI_TEST_OFFLINE=1
 xcodebuild test -scheme AppStarter -destination 'platform=iOS Simulator,name=iPhone 17
 Pro' -skipPackagePluginValidation -resultBundlePath TestResults.xcresult` — en CI (sin
 Xcode.app interactivo compitiendo por el mismo lock) no debería reproducirse.
+
+## Fase 3, verificación con Xcode desde un clon (orquestador, 2026-09-04)
+
+`xcodebuild` se colgaba en la ruta del repo porque Xcode.app tenía el proyecto abierto
+(`IDEContainer - uniquing lock`); un clon de la rama en otra ruta no comparte ese lock y ahí
+corrió todo. Lo que la primera ejecución real destapó, y su corrección:
+
+| Hallazgo | Corrección |
+|---|---|
+| `Process` no existe en Foundation de iOS: el test de deep links no compilaba | `XCUIApplication.open(_:)` |
+| Los stubs de Logic de los snapshot tests eran `struct` (`Logic: AnyObject`): no compilaban | `final class … @unchecked Sendable`, como los mocks reales |
+| `AppTests` importa las features pero solo enlazaba la app: símbolos sin definir | `AppTests` enlaza los mismos productos que la app (`project.yml`); un test bundle no hereda los de la app (misma fricción que los transitivos) |
+| xcodegen copiaba las PNG de `__Snapshots__` como recursos: nombres duplicados | `excludes: ["__Snapshots__"]` en el target |
+| El toggle de tema recreaba el `CoordinatorView` y su pila (`if isBrand { … } else { … }`) | `Themed*Style` instalados una vez que conmutan por dentro (`App/Theme/ThemedStyles.swift`) |
+| En un `Toggle` de SwiftUI, tocar el centro de la fila no cambia el valor | El test toca el `switches.firstMatch` interno |
+| El swipe-back en Gallery no gana al `TabView` paginado (precedencia de gestos de UIKit) | El test vuelve por el botón de cerrar de la barra overlay; el swipe-back se prueba en ProductDetail |
+| `XCUIApplication.open(_:)` relanza la app: el deep link llegaba con la app en Login, la sheet de búsqueda se presentaba sobre el login y al cerrarla quedaba allí | Comportamiento nuevo y real: `RootView` guarda el deep link si la raíz es `.login` y lo aplica cuando el login cambia la raíz (`pendingDeepLink`) |
+
+Las 24 referencias de snapshot se grabaron en el simulador (iPhone 17 Pro) y se revisaron a
+ojo: el error del kit frente al de marca (icono con el color de marca), Gallery en `content`
+muestra la barra overlay sobre una imagen negra (el `AsyncImage` no tiene red en un snapshot)
+y Uploads en `content` muestra el banner de éxito y el resultado.

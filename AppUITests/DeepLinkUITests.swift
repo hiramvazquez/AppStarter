@@ -23,7 +23,12 @@ final class DeepLinkUITests: AppStarterUITestCase {
         let app = launchApp()
         loginAndWaitForProducts(app)
 
+        // `XCUIApplication.open(_:)` RELAUNCHES the app with the URL (the xcodebuild activity
+        // log shows Terminate + Launch), exactly like a cold start from a link. The app comes
+        // up on Login and keeps the link pending (`RootView.pendingDeepLink`) until the
+        // login succeeds — which is the behaviour a real user would get.
         openURL("appstarter://product/1", in: app)
+        submitLogin(app)
 
         let title = app.descendants(matching: .any)["productDetail.title"]
         XCTAssertTrue(waitForExistenceTolerant(title, in: app, timeout: 15), "Deep link did not open ProductDetail")
@@ -44,6 +49,7 @@ final class DeepLinkUITests: AppStarterUITestCase {
         // (`App/OfflineFixtures.swift`) — the same query the manual verification
         // screenshot (`docs/screenshots/03-deeplink-search.png`) used against the real API.
         openURL("appstarter://search?q=mascara", in: app)
+        submitLogin(app)  // relaunch → Login; the link applies right after (see the product test)
 
         let results = app.descendants(matching: .any)["search.results"]
         XCTAssertTrue(waitForExistenceTolerant(results, in: app, timeout: 15), "Search sheet did not open")

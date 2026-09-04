@@ -35,6 +35,12 @@ struct RootView: View {
     /// THAT one needs one).
     @State private var themeSettings = Container.shared.resolve(ThemeSettings.self)
 
+    /// A deep link that arrived while the app was on `.login` (cold launch from a URL,
+    /// expired session…). Applying it over the login screen would present, say, the
+    /// search sheet on top of Login and drop the user back there on close; instead it
+    /// waits here and fires the moment the root moves off `.login` (login succeeded).
+    @State private var pendingDeepLink: URL?
+
     var body: some View {
         // Same view identity whatever the theme (see `App/Theme/ThemedStyles.swift`): the
         // styles switch inside, the `CoordinatorView` and its navigation stack stay put.
@@ -43,6 +49,20 @@ struct RootView: View {
             .errorViewStyle(ThemedErrorStyle(isBrand: themeSettings.isBrand))
             .emptyViewStyle(ThemedEmptyStyle(isBrand: themeSettings.isBrand))
             .bannerViewStyle(ThemedBannerStyle(isBrand: themeSettings.isBrand))
+            // `Coordinator<AppRoute>` is the `.singleton` this view resolves, so a URL
+            // handled here is reflected on screen. Not logged in yet → keep it for later.
+            .onOpenURL { url in
+                if coordinator.mainStack.root == .login {
+                    pendingDeepLink = url
+                } else {
+                    coordinator.handleAppDeepLink(url)
+                }
+            }
+            .onChange(of: coordinator.mainStack.root) { _, root in
+                guard root != .login, let url = pendingDeepLink else { return }
+                pendingDeepLink = nil
+                coordinator.handleAppDeepLink(url)
+            }
     }
 
     private var coordinatorView: some View {

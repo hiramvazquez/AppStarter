@@ -26,13 +26,7 @@ struct AppStarterApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                // `Coordinator<AppRoute>` is a `.singleton` registration (`Container`'s
-                // default lifecycle) — the same instance `RootView` resolves for its
-                // `CoordinatorView`, so a URL handled here is reflected on screen.
-                .onOpenURL { url in
-                    Container.shared.resolve(Coordinator<AppRoute>.self).handleAppDeepLink(url)
-                }
+            RootView()  // `.onOpenURL` lives there: it needs the coordinator's root to defer a link
         }
     }
 }
