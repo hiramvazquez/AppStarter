@@ -115,9 +115,7 @@ targets:
       - package: Features
         product: UploadsFeature
       - package: Features
-        product: GalleryFeatureUI
-      - package: Features
-        product: GalleryFeatureCore
+        product: GalleryFeature
       - package: Features
         product: SettingsFeature
       - package: Features
