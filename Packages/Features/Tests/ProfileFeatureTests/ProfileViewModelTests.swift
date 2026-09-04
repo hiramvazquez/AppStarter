@@ -35,6 +35,32 @@ struct ProfileViewModelTests {
         #expect(router.mainStack.root == .login)
     }
 
+    @Test("handle(.logoutRequested) shows a destructive confirmation alert, without logging out yet")
+    func logoutRequestedShowsAlert() async {
+        let mock = ProfileLogicMock()
+        let router = Coordinator<AppRoute>(root: .profile)
+        let viewModel = ProfileViewModel(logic: mock, router: router, refreshLog: RefreshActivityLog())
+
+        viewModel.handle(.logoutRequested)
+
+        #expect(viewModel.alert != nil)
+        #expect(await mock.logoutCalls.isEmpty)
+    }
+
+    @Test("Confirming the alert's primary button calls logic.logout and routes back to .login")
+    func confirmingLogoutAlertLogsOut() async {
+        let mock = ProfileLogicMock()
+        let router = Coordinator<AppRoute>(root: .profile)
+        let viewModel = ProfileViewModel(logic: mock, router: router, refreshLog: RefreshActivityLog())
+
+        viewModel.handle(.logoutRequested)
+        viewModel.alert?.primaryButton.action()
+        await viewModel.inFlightActivity?.value
+
+        #expect(await mock.logoutCalls.wasCalled)
+        #expect(router.mainStack.root == .login)
+    }
+
     @Test("refreshCount/lastRefreshDate mirror RefreshActivityLog")
     func refreshInfoMirrorsLog() {
         let log = RefreshActivityLog()

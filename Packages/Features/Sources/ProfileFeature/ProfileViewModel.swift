@@ -22,6 +22,10 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
 
     public enum Action: Sendable {
         case load
+        /// Shows the confirmation alert (A15) — `.logout` (below) is what actually signs
+        /// out. Ending a session is hard to undo mid-task, so it never fires from a bare
+        /// tap.
+        case logoutRequested
         case logout
     }
 
@@ -34,6 +38,7 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
     public func handle(_ action: Action) {
         switch action {
         case .load: load()
+        case .logoutRequested: requestLogout()
         case .logout: logout()
         }
     }
@@ -42,6 +47,18 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         performLoad { vm in
             vm.profile = try await vm.logic.loadProfile()
         }
+    }
+
+    private func requestLogout() {
+        showAlert(
+            .destructive(
+                title: "Cerrar sesión",
+                message: "Tendrás que volver a iniciar sesión para continuar.",
+                confirm: "Cerrar sesión",
+                cancel: "Cancelar",
+                onConfirm: { [weak self] in self?.handle(.logout) }
+            )
+        )
     }
 
     private func logout() {

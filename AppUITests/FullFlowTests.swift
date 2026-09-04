@@ -44,8 +44,9 @@ final class FullFlowTests: AppStarterUITestCase {
         waitAndTap(app.buttons["products.profile"])
         XCTAssertTrue(waitForExistenceTolerant(app.descendants(matching: .any)["profile.content"], in: app))
 
-        // Logout → back to Login.
+        // Logout → confirmation alert (PRD-APP-02: AlertState.destructive) → back to Login.
         waitAndTap(app.buttons["profile.logout"])
+        waitAndTap(app.alerts.buttons["Cerrar sesión"])
         let username = app.textFields["login.username"]
         XCTAssertTrue(username.waitForExistence(timeout: 10), "Logout did not return to the login screen")
     }

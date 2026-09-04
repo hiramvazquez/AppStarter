@@ -52,7 +52,7 @@ public struct ProfileView: View {
 
                 Section {
                     Button("Cerrar sesión", role: .destructive) {
-                        send(.logout)
+                        send(.logoutRequested)
                     }
                     .accessibilityIdentifier("profile.logout")
                 }
