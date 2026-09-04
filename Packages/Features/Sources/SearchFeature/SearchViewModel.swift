@@ -22,6 +22,14 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
 
     private let router: any Router<AppRoute>
 
+    /// Debounces auto-search as the user types (PRD-APP-02 tramo B item 4 —
+    /// `SearchBarConfiguration` in the custom `.blur` bar drives `.updateQuery` on every
+    /// keystroke): only the LAST keystroke within the window actually calls `logic.search`.
+    /// `Gallery` gets `Throttler` instead for its prefetch — both documented in
+    /// `Utilities.md`, deliberately different tools for different jobs (coalesce rapid
+    /// typing vs. cap a repeating action's rate).
+    private let debouncer: Debouncer
+
     public enum Action: Sendable {
         case appear
         case updateQuery(String)
@@ -30,29 +38,48 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
         case close
     }
 
-    /// - Parameter initialQuery: Pre-fills `query` when the screen opens already carrying
-    ///   one — a deep link (`appstarter://search?q=…`, PRD-APP-02 tramo B item 3) via
-    ///   `AppRoute.search(query:)`. `nil` (the plain "open search" case,
-    ///   `ProductsViewModel.openSearch`) leaves `query` empty, exactly as before.
-    public init(logic: any SearchLogicProtocol, router: any Router<AppRoute>, initialQuery: String? = nil) {
+    /// - Parameters:
+    ///   - initialQuery: Pre-fills `query` when the screen opens already carrying one — a
+    ///     deep link (`appstarter://search?q=…`, PRD-APP-02 tramo B item 3) via
+    ///     `AppRoute.search(query:)`. `nil` (the plain "open search" case,
+    ///     `ProductsViewModel.openSearch`) leaves `query` empty, exactly as before.
+    ///   - clock: Forwarded to the `Debouncer`. Defaults to `ContinuousClock`;
+    ///     `SearchViewModelTests` injects `AppFoundationTestSupport.ManualClock` so the
+    ///     debounce window advances deterministically (PRD-APP-02 tramo B item 6).
+    public init(
+        logic: any SearchLogicProtocol,
+        router: any Router<AppRoute>,
+        initialQuery: String? = nil,
+        clock: any Clock<Duration> = ContinuousClock()
+    ) {
         self.router = router
         self.query = initialQuery ?? ""
+        self.debouncer = Debouncer(delay: .milliseconds(300), clock: clock)
         super.init(logic: logic)
     }
 
     public func handle(_ action: Action) {
         switch action {
         case .appear:
-            // Only a deep link's pre-filled query auto-submits — the plain "open search"
+            // Only a deep link's pre-filled query auto-searches — the plain "open search"
             // sheet (`query` empty) never calls the Logic on appear.
-            if !query.isEmpty, results.isEmpty { submit() }
+            if !query.isEmpty, results.isEmpty { search() }
         case .updateQuery(let query):
             self.query = query
             if query.isEmpty {
+                debouncer.cancel()
                 results = []
                 setIdle()
+            } else {
+                debouncer.debounce { [weak self] in
+                    self?.search()
+                }
             }
-        case .submit: submit()
+        case .submit:
+            // Explicit submit (Return key, `SearchBarConfiguration.onSubmit`) bypasses the
+            // debounce entirely — the user asked for it NOW, not 300ms from now.
+            debouncer.cancel()
+            search()
         case .selectProduct(let id):
             router.dismiss()
             router.push(.productDetail(id: id))
@@ -60,7 +87,7 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
         }
     }
 
-    private func submit() {
+    private func search() {
         guard !query.isEmpty else { return }
         performLoad(successTransition: .preserveCurrentPhase) { vm in
             let results = try await vm.logic.search(query: vm.query)

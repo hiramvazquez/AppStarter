@@ -142,23 +142,35 @@ enum OfflineFixtures {
         .utf8
     )
 
+    /// Three images (`Gallery`, PRD-APP-02 tramo B item 1) — the real
+    /// `essence-mascara-lash-princess` product only has one on DummyJSON today, but the
+    /// Gallery UITest (Fase 3) needs at least two to swipe between; `2.webp`/`3.webp`
+    /// follow the CDN's own naming convention (verified against other real products,
+    /// e.g. `/products/10`), so they read as genuine even though this exact product
+    /// doesn't have them server-side.
+    private static let productImagesJSON = """
+        ["https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/1.webp",\
+        "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/2.webp",\
+        "https://cdn.dummyjson.com/product-images/beauty/essence-mascara-lash-princess/3.webp"]
+        """
+
     private static let productsPageBody = Data(
         """
-        {"products":[{"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"}],"total":1,"skip":0,"limit":20}
+        {"products":[{"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png","images":\(productImagesJSON)}],"total":1,"skip":0,"limit":20}
         """
         .utf8
     )
 
     private static let productBody = Data(
         """
-        {"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"}
+        {"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png","images":\(productImagesJSON)}
         """
         .utf8
     )
 
     private static let searchBody = Data(
         """
-        {"products":[{"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png"}]}
+        {"products":[{"id":\(productID),"title":"\(productTitle)","description":"A popular mascara known for its volumizing and lengthening effects.","price":9.99,"rating":2.56,"thumbnail":"https://cdn.dummyjson.com/products/images/beauty/Essence%20Mascara%20Lash%20Princess/thumbnail.png","images":\(productImagesJSON)}]}
         """
         .utf8
     )
