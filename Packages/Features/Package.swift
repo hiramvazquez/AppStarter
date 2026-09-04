@@ -24,6 +24,7 @@ let package = Package(
         .library(name: "ProductDetailFeature", targets: ["ProductDetailFeature"]),
         .library(name: "FavoritesFeature", targets: ["FavoritesFeature"]),
         .library(name: "ProfileFeature", targets: ["ProfileFeature"]),
+        .library(name: "SearchFeature", targets: ["SearchFeature"]),
         // archinit:products-end
     ],
     dependencies: [
@@ -157,6 +158,53 @@ let package = Package(
             path: "Tests/ProfileFeatureTests",
             swiftSettings: swiftSettings
         ),
+        .target(
+            name: "SearchFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform"),
+                .product(name: "Networking", package: "Platform"),
+            ],
+            path: "Sources/SearchFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+            ]
+        ),
+        .testTarget(
+            name: "SearchFeatureTests",
+            dependencies: [
+                "SearchFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "PlatformTestSupport", package: "Platform"),
+            ],
+            path: "Tests/SearchFeatureTests",
+            swiftSettings: swiftSettings
+        ),
         // archinit:features-end
+        // No generado por archinit --multi/generate-feature — añadido a mano (PRD-APP-02,
+        // Fase 1): la prueba de integración real contra DummyJSON necesita AuthService
+        // (Networking), ProductsService (ProductsFeature) y ProfileService (ProfileFeature)
+        // a la vez, algo que ningún *FeatureTests individual puede expresar sin importar
+        // otro feature (R13 lo prohibiría en producción; en Tests/** la regla no aplica,
+        // pero un target de integración aparte, fuera de los markers, es más claro que
+        // forzar esa dependencia dentro de LoginFeatureTests).
+        .testTarget(
+            name: "IntegrationTests",
+            dependencies: [
+                "LoginFeature",
+                "ProductsFeature",
+                "ProfileFeature",
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform"),
+                .product(name: "Networking", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform"),
+            ],
+            path: "Tests/IntegrationTests",
+            swiftSettings: swiftSettings
+        ),
     ]
 )
