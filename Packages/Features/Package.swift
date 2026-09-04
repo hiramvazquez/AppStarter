@@ -19,6 +19,7 @@ let package = Package(
     ],
     products: [
         // archinit:products-begin
+        .library(name: "LoginFeature", targets: ["LoginFeature"]),
         // archinit:products-end
     ],
     dependencies: [
@@ -28,6 +29,31 @@ let package = Package(
     ],
     targets: [
         // archinit:features-begin
+        .target(
+            name: "LoginFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform"),
+                .product(name: "Networking", package: "Platform"),
+            ],
+            path: "Sources/LoginFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+            ]
+        ),
+        .testTarget(
+            name: "LoginFeatureTests",
+            dependencies: [
+                "LoginFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "PlatformTestSupport", package: "Platform"),
+            ],
+            path: "Tests/LoginFeatureTests",
+            swiftSettings: swiftSettings
+        ),
         // archinit:features-end
     ]
 )

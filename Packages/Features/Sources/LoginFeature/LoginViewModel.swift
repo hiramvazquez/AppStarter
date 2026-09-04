@@ -1,0 +1,58 @@
+import AppFoundation
+import Domain
+import Foundation
+import Networking
+
+/// Orchestrates between `LoginView` and `LoginLogic`: receives an `Action`, calls
+/// `logic`, updates `username`/`password`, and moves to `.products` on success. Never
+/// imports CoreNetworking, never references `AuthService`/`SessionStore` directly — only
+/// `logic`.
+@MainActor
+public final class LoginViewModel: LogicViewModel<any LoginLogicProtocol>, ActionHandling {
+    public private(set) var username = ""
+    public private(set) var password = ""
+
+    /// `Coordinator`, not `any Router<AppRoute>` — `setRoot(.products)` on success needs
+    /// `Coordinator`'s own API (see `AppSessionState`'s doc comment for why).
+    private let router: Coordinator<AppRoute>
+    private let sessionState: AppSessionState
+
+    /// Every action `LoginView` recognizes.
+    public enum Action: Sendable {
+        case appear
+        case updateUsername(String)
+        case updatePassword(String)
+        case login
+    }
+
+    public init(logic: any LoginLogicProtocol, router: Coordinator<AppRoute>, sessionState: AppSessionState) {
+        self.router = router
+        self.sessionState = sessionState
+        super.init(logic: logic)
+    }
+
+    public func handle(_ action: Action) {
+        switch action {
+        case .appear: appear()
+        case .updateUsername(let username): self.username = username
+        case .updatePassword(let password): self.password = password
+        case .login: login()
+        }
+    }
+
+    /// A fresh `LoginViewModel` is resolved every time the coordinator routes back to
+    /// `.login` (`Container.register(... lifecycle: .transient)`) — including the one
+    /// `AppSessionState.sessionDidExpire()` produces after a failed refresh. Consuming the
+    /// flag here (once) is what turns that into a one-shot banner instead of a sticky one.
+    private func appear() {
+        guard sessionState.consumeExpiryBanner() else { return }
+        showBanner(.warning("Tu sesión ha caducado. Inicia sesión de nuevo."))
+    }
+
+    private func login() {
+        performLoad { vm in
+            try await vm.logic.login(username: vm.username, password: vm.password)
+            vm.router.setRoot(.products)
+        }
+    }
+}
