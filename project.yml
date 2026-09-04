@@ -32,6 +32,11 @@ packages:
   CoreNetworking:
     url: https://github.com/hiramvazquez/CoreNetworking.git
     from: 1.0.0
+  # Solo para AppSnapshotTests (PRD-APP-02, Fase 3) — nunca enlazado al target
+  # `AppStarter` en sí.
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing.git
+    from: 1.19.0
 targets:
   AppStarter:
     type: application
@@ -125,6 +130,36 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app.uitests
         TEST_TARGET_NAME: AppStarter
 
+  # PRD-APP-02, Fase 3: Diagnostics/Uploads/Gallery en loading/empty/error/content, con el
+  # tema del kit y el de marca — `@testable import AppStarter` para los cuatro
+  # `Brand…Style` (internos a ese target, igual que `AppTests`/`AppUITests` ya dependen de
+  # él). Un target de Xcode nativo (no un `swift test` de SwiftPM): `swift-snapshot-
+  # testing` renderiza a `UIImage` sobre `UIHostingController`, que necesita un runtime de
+  # UIKit real — el simulador que ya arranca este esquema, no `swift test`'s host macOS.
+  AppSnapshotTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AppSnapshotTests
+    dependencies:
+      - target: AppStarter
+      - package: AppFoundation
+        product: AppFoundation
+      - package: Platform
+        product: Domain
+      - package: Features
+        product: DiagnosticsFeature
+      - package: Features
+        product: UploadsFeature
+      - package: Features
+        product: GalleryFeature
+      - package: SnapshotTesting
+        product: SnapshotTesting
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app.snapshottests
+
 schemes:
   AppStarter:
     build:
@@ -132,10 +167,12 @@ schemes:
         AppStarter: all
         AppTests: [test]
         AppUITests: [test]
+        AppSnapshotTests: [test]
     test:
       config: Debug
       targets:
         - AppTests
+        - AppSnapshotTests
         - AppUITests
       # NOTA (docs/INFORME-INTEGRACION.md, vigente tras la migración a modo multi):
       # xcodegen 2.46.0 rechaza una referencia de scheme a un test target de un paquete
