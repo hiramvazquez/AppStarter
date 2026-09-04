@@ -27,30 +27,48 @@ struct RootView: View {
 
     var body: some View {
         CoordinatorView(coordinator: coordinator) { route in
-            switch route {
-            // archinit:destinations
-            case .login:
-                LoginView(viewModel: Container.shared.resolve())
-            case .products:
-                ProductsView(viewModel: Container.shared.resolve())
-            case .productDetail(let id):
-                let factory = Container.shared.resolve(ProductDetailViewModelFactory.self)
-                ProductDetailView(viewModel: factory(id))
-            case .favorites:
-                FavoritesView(viewModel: Container.shared.resolve())
-            case .profile:
-                // Session-scoped (PRD-APP-02, `Container(parent:)`): `ProfileModule` is
-                // registered into `AppSessionState.sessionContainer`, not
-                // `Container.shared` — see `AppModule.makeSessionModules()`.
-                let sessionState = Container.shared.resolve(AppSessionState.self)
-                ProfileView(viewModel: sessionState.sessionContainer.resolve())
-            case .search:
-                SearchView(viewModel: Container.shared.resolve())
-            case .diagnostics:
-                DiagnosticsView(viewModel: Container.shared.resolve())
-            case .uploads:
-                UploadsView(viewModel: Container.shared.resolve())
-            }
+            destination(for: route)
+                // `screen_view` on every navigation (PRD-APP-02, `AnalyticsTracking`):
+                // the coordinator is the one place that sees every route, so this is the
+                // one place that tracks it — no feature calls `AnalyticsTracking` for its
+                // own navigation.
+                .onAppear { trackScreenView(route) }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for route: AppRoute) -> some View {
+        switch route {
+        // archinit:destinations
+        case .login:
+            LoginView(viewModel: Container.shared.resolve())
+        case .products:
+            ProductsView(viewModel: Container.shared.resolve())
+        case .productDetail(let id):
+            let factory = Container.shared.resolve(ProductDetailViewModelFactory.self)
+            ProductDetailView(viewModel: factory(id))
+        case .favorites:
+            FavoritesView(viewModel: Container.shared.resolve())
+        case .profile:
+            // Session-scoped (PRD-APP-02, `Container(parent:)`): `ProfileModule` is
+            // registered into `AppSessionState.sessionContainer`, not
+            // `Container.shared` — see `AppModule.makeSessionModules()`.
+            let sessionState = Container.shared.resolve(AppSessionState.self)
+            ProfileView(viewModel: sessionState.sessionContainer.resolve())
+        case .search:
+            SearchView(viewModel: Container.shared.resolve())
+        case .diagnostics:
+            DiagnosticsView(viewModel: Container.shared.resolve())
+        case .uploads:
+            UploadsView(viewModel: Container.shared.resolve())
+        }
+    }
+
+    private func trackScreenView(_ route: AppRoute) {
+        let analytics = Container.shared.resolve(AnalyticsTracking.self)
+        let event = AnalyticsEvent(name: "screen_view", parameters: ["screen": String(describing: route)])
+        Task {
+            await analytics.track(event)
         }
     }
 }
