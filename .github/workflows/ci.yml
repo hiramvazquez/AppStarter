@@ -1,5 +1,8 @@
 name: CI
 
+# NOTA para quien edite esto a mano: este fichero NO pasa por el motor de plantillas
+# {{...}} de GenerateFeatureSupport (colisiona con la sintaxis ${{ }} de GitHub Actions).
+
 on:
   push:
     branches: [main]
@@ -7,10 +10,49 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    name: Unit + UI (offline)
+  packages:
+    name: ${{ matrix.package }} (swift test + archlint)
+    runs-on: macos-15
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        package: [Platform, Features]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select the newest available Xcode (swift-tools 6.2 mínimo)
+        run: |
+          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
+          if [ -z "$LATEST" ]; then
+            LATEST=/Applications/Xcode.app
+          fi
+          echo "Usando $LATEST"
+          sudo xcode-select -s "$LATEST"
+          swift --version
+
+      - name: swift test (Packages/${{ matrix.package }})
+        working-directory: Packages/${{ matrix.package }}
+        run: swift test
+
+      - name: swift package archlint (Packages/${{ matrix.package }})
+        working-directory: Packages/${{ matrix.package }}
+        run: swift package archlint
+
+      # Calidad de código (PRD-AF-09): SwiftLint --strict promueve los warning a error;
+      # swift-format valida el formato con la misma configuración que la raíz del repo.
+      - name: SwiftLint --strict + swift-format lint (Packages/${{ matrix.package }})
+        working-directory: Packages/${{ matrix.package }}
+        run: |
+          brew install swiftlint
+          swiftlint version
+          swiftlint lint --strict --quiet --config ../../.swiftlint.yml Sources Tests
+          swift format lint --strict --configuration ../../.swift-format --recursive Sources Tests
+
+  app:
+    name: App (xcodebuild test, offline)
     runs-on: macos-15
     timeout-minutes: 30
+    needs: packages
     env:
       # Horneada en el .xcscheme por xcodegen AL GENERAR (no leída del entorno del test
       # runner de XCUITest en tiempo de test — no llega ahí de forma fiable, ver
@@ -29,32 +71,12 @@ jobs:
           echo "Usando $LATEST"
           sudo xcode-select -s "$LATEST"
           xcodebuild -version
-          swift --version
 
       - name: Install xcodegen
         run: brew install xcodegen
 
       - name: Generate Xcode project (Scripts/bootstrap.sh)
         run: ./Scripts/bootstrap.sh
-
-      - name: ArchitectureLint (AppStarterKit/Sources)
-        working-directory: AppStarterKit
-        run: swift package archlint
-
-      # Calidad de código (PRD-AF-09): el plugin ya corre SwiftLint en cada build, pero solo
-      # los `error` bloquean; `--strict` promueve los `warning` a error en CI. swift-format
-      # valida el formato con la misma configuración que los paquetes del kit.
-      - name: SwiftLint --strict + swift-format lint (AppStarterKit)
-        working-directory: AppStarterKit
-        run: |
-          brew install swiftlint
-          swiftlint version
-          swiftlint lint --strict --quiet Sources Tests
-          swift format lint --strict --configuration ../.swift-format --recursive Sources Tests
-
-      - name: AppStarterKit unit tests (swift test)
-        working-directory: AppStarterKit
-        run: swift test
 
       - name: Pick a simulator (iPhone 17 Pro if available, else newest iPhone)
         id: sim
@@ -74,7 +96,7 @@ jobs:
           echo "Simulador elegido: $NAME"
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
 
-      - name: xcodebuild test (unit + UI, -UITestOffline)
+      - name: xcodebuild test (AppStarter, unit + UI, -UITestOffline)
         run: |
           xcodebuild -scheme AppStarter \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
@@ -109,8 +131,8 @@ jobs:
           sudo xcode-select -s "$LATEST"
           swift --version
 
-      - name: AppStarterKit integration tests (real DummyJSON)
-        working-directory: AppStarterKit
+      - name: Packages/Features integration tests (real DummyJSON)
+        working-directory: Packages/Features
         env:
           INTEGRATION: "1"
         run: swift test --filter AuthIntegrationTests
