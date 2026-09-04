@@ -1093,6 +1093,9 @@ corrió todo. Lo que la primera ejecución real destapó, y su corrección:
 | El toggle de tema recreaba el `CoordinatorView` y su pila (`if isBrand { … } else { … }`) | `Themed*Style` instalados una vez que conmutan por dentro (`App/Theme/ThemedStyles.swift`) |
 | En un `Toggle` de SwiftUI, tocar el centro de la fila no cambia el valor | El test toca el `switches.firstMatch` interno |
 | El swipe-back en Gallery no gana al `TabView` paginado (precedencia de gestos de UIKit) | El test vuelve por el botón de cerrar de la barra overlay; el swipe-back se prueba en ProductDetail |
+| `UserDefaults` (Store de Settings) sobrevive entre lanzamientos en el simulador: el tema quedaba encendido de la ejecución anterior | En `-UITestOffline` la cáscara vacía el dominio de defaults al arrancar (`AppModule`) |
+| El banner de «Ajustes guardados» (3 s) se cerraba antes de la primera comprobación del helper tolerante | Banner de 6 s (dos frases y un aviso de reinicio: justificado) y espera inmediata en el test |
+| El test de Settings buscaba `profile.diagnostics` desde Settings | Vuelve a Profile, entra en Diagnostics, y reentra en Settings |
 | `XCUIApplication.open(_:)` relanza la app: el deep link llegaba con la app en Login, la sheet de búsqueda se presentaba sobre el login y al cerrarla quedaba allí | Comportamiento nuevo y real: `RootView` guarda el deep link si la raíz es `.login` y lo aplica cuando el login cambia la raíz (`pendingDeepLink`) |
 
 Las 24 referencias de snapshot se grabaron en el simulador (iPhone 17 Pro) y se revisaron a
