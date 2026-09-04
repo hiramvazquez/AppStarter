@@ -48,6 +48,8 @@ final class SettingsUITests: AppStarterUITestCase {
         // marca") — the per-theme visual states themselves (loading/empty/error/content)
         // are what `AppSnapshotTests` captures pixel-for-pixel; this only proves the
         // brand-themed screen is reachable and still works end to end.
+        // Diagnostics hangs off Profile, not Settings: back to Profile first.
+        waitAndTap(app.navigationBars.buttons.element(boundBy: 0))
         waitAndTap(app.buttons["profile.diagnostics"])
         XCTAssertTrue(
             waitForExistenceTolerant(app.descendants(matching: .any)["diagnostics.list"], in: app),
@@ -61,7 +63,8 @@ final class SettingsUITests: AppStarterUITestCase {
         )
         waitAndTap(app.navigationBars.buttons.element(boundBy: 0))
 
-        // Back in Settings: brand OFF returns to the kit's own banner style.
+        // Back on Profile: re-enter Settings; brand OFF returns to the kit's own banner style.
+        waitAndTap(app.buttons["profile.settings"])
         XCTAssertTrue(themeToggle.waitForExistence(timeout: 15))
         waitAndTap(themeToggle.switches.firstMatch)
         XCTAssertTrue(
