@@ -24,6 +24,7 @@ public final class ProductDetailViewModel: LogicViewModel<any ProductDetailLogic
         case load
         case toggleFavorite
         case back
+        case openGallery
     }
 
     public init(logic: any ProductDetailLogicProtocol, productID: Int, router: any Router<AppRoute>) {
@@ -37,6 +38,7 @@ public final class ProductDetailViewModel: LogicViewModel<any ProductDetailLogic
         case .load: load()
         case .toggleFavorite: toggleFavorite()
         case .back: router.pop()
+        case .openGallery: router.push(.gallery(productID: productID))
         }
     }
 

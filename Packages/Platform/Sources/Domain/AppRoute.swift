@@ -2,8 +2,8 @@ import Foundation
 
 /// Every screen AppStarter can navigate to, resolved by `RootView`'s `CoordinatorView`
 /// (`AppFoundation`, `Coordinator<AppRoute>`). `.search` is presented as a sheet
-/// (`router.present(.search, as: .sheet)`); every other route is pushed onto the main
-/// stack. See `docs/prd/PRD-APP-01.md` for the navigation diagram this mirrors.
+/// (`router.present(.search(query:), as: .sheet)`); every other route is pushed onto the
+/// main stack. See `docs/prd/PRD-APP-01.md` for the navigation diagram this mirrors.
 ///
 /// Lives in `Domain`, not in `App/` (where `archinit --multi` scaffolds a starter
 /// `AppRoute.swift` for a brand-new, feature-less project): every `*Feature` target
@@ -21,9 +21,17 @@ public enum AppRoute: Hashable {
     case login
     case products
     case productDetail(id: Int)
+    /// `Gallery` (PRD-APP-02 tramo B item 1): pushed from `ProductDetail`, never a sheet —
+    /// swipe-back (`PopGestureEnabler`, automatic for `chrome: .custom`) is how the user
+    /// leaves it.
+    case gallery(productID: Int)
     case favorites
     case profile
-    case search
+    /// `query`, not a default-valued parameter (enum cases can't have one): `nil` for a
+    /// plain "open search" (`ProductsViewModel.openSearch`), a value when a deep link
+    /// (`appstarter://search?q=…`, PRD-APP-02 tramo B item 3) wants it pre-filled and
+    /// submitted on appear.
+    case search(query: String?)
     case diagnostics
     case uploads
 }

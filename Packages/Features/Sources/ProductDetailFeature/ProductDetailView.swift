@@ -26,14 +26,21 @@ public struct ProductDetailView: View {
             ScrollView {
                 if let product = viewModel.product {
                     VStack(alignment: .leading, spacing: 16) {
-                        AsyncImage(url: product.thumbnailURL) { image in
-                            image.resizable().scaledToFit()
-                        } placeholder: {
-                            Color.gray.opacity(0.2)
+                        Button {
+                            send(.openGallery)
+                        } label: {
+                            AsyncImage(url: product.thumbnailURL) { image in
+                                image.resizable().scaledToFit()
+                            } placeholder: {
+                                Color.gray.opacity(0.2)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 220)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 220)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Ver galería de imágenes")
+                        .accessibilityIdentifier("productDetail.openGallery")
 
                         HStack {
                             Text(product.title)

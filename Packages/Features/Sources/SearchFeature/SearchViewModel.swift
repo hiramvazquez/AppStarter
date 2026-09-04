@@ -23,19 +23,29 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
     private let router: any Router<AppRoute>
 
     public enum Action: Sendable {
+        case appear
         case updateQuery(String)
         case submit
         case selectProduct(id: Int)
         case close
     }
 
-    public init(logic: any SearchLogicProtocol, router: any Router<AppRoute>) {
+    /// - Parameter initialQuery: Pre-fills `query` when the screen opens already carrying
+    ///   one — a deep link (`appstarter://search?q=…`, PRD-APP-02 tramo B item 3) via
+    ///   `AppRoute.search(query:)`. `nil` (the plain "open search" case,
+    ///   `ProductsViewModel.openSearch`) leaves `query` empty, exactly as before.
+    public init(logic: any SearchLogicProtocol, router: any Router<AppRoute>, initialQuery: String? = nil) {
         self.router = router
+        self.query = initialQuery ?? ""
         super.init(logic: logic)
     }
 
     public func handle(_ action: Action) {
         switch action {
+        case .appear:
+            // Only a deep link's pre-filled query auto-submits — the plain "open search"
+            // sheet (`query` empty) never calls the Logic on appear.
+            if !query.isEmpty, results.isEmpty { submit() }
         case .updateQuery(let query):
             self.query = query
             if query.isEmpty {

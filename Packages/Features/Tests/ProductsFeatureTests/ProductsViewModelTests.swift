@@ -64,7 +64,7 @@ struct ProductsViewModelTests {
 
         viewModel.handle(.openSearch)
 
-        #expect(router.sheetStack?.root == .search)
+        #expect(router.sheetStack?.root == .search(query: nil))
     }
 
     @Test(".loadMore appends the next page when canLoadMore")

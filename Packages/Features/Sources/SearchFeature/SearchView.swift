@@ -5,8 +5,9 @@ import Domain
 import SwiftUI
 
 /// `ScreenContainer` bound to `SearchViewModel`, presented as a sheet from `Products`
-/// (`router.present(.search, as: .sheet)`). Native chrome + `.searchable` — never
-/// references `SearchLogic`/`ProductsService` directly.
+/// (`router.present(.search(query: nil), as: .sheet)`) or opened pre-filled by a deep
+/// link (`appstarter://search?q=…`, PRD-APP-02 tramo B item 3). Native chrome +
+/// `.searchable` — never references `SearchLogic`/`ProductsService` directly.
 public struct SearchView: View {
     @State private var viewModel: SearchViewModel
 
@@ -30,6 +31,10 @@ public struct SearchView: View {
                 prompt: "Buscar productos"
             )
             .onSubmit(of: .search) { send(.submit) }
+            // Same rule as `ProductDetailView`'s `.task { send(.load) }` (R12): a deep
+            // link's pre-filled query auto-submits once, here — never on a plain "open
+            // search" (empty `query`, a no-op inside `.appear`'s handler).
+            .task { send(.appear) }
         }
         .navigationTitle("Buscar")
         .toolbar {

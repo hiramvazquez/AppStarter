@@ -26,7 +26,8 @@ let package = Package(
         .library(name: "ProfileFeature", targets: ["ProfileFeature"]),
         .library(name: "SearchFeature", targets: ["SearchFeature"]),
         .library(name: "DiagnosticsFeature", targets: ["DiagnosticsFeature"]),
-        .library(name: "UploadsFeature", targets: ["UploadsFeature"])
+        .library(name: "UploadsFeature", targets: ["UploadsFeature"]),
+        .library(name: "GalleryFeature", targets: ["GalleryFeatureCore", "GalleryFeatureUI"])
         // archinit:products-end
     ],
     dependencies: [
@@ -237,6 +238,43 @@ let package = Package(
                 .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/UploadsFeatureTests",
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "GalleryFeatureCore",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform")
+            ],
+            path: "Sources/GalleryFeatureCore",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
+            ]
+        ),
+        .target(
+            name: "GalleryFeatureUI",
+            dependencies: [
+                "GalleryFeatureCore",
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform")
+            ],
+            path: "Sources/GalleryFeatureUI",
+            swiftSettings: swiftSettings
+        ),
+        .testTarget(
+            name: "GalleryFeatureTests",
+            dependencies: [
+                "GalleryFeatureCore",
+                "GalleryFeatureUI",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
+            ],
+            path: "Tests/GalleryFeatureTests",
             swiftSettings: swiftSettings
         ),
         // archinit:features-end

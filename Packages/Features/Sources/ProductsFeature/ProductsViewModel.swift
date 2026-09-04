@@ -43,7 +43,7 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
         case .refresh: refresh()
         case .loadMore: loadMore()
         case .selectProduct(let id): router.push(.productDetail(id: id))
-        case .openSearch: router.present(.search, as: .sheet)
+        case .openSearch: router.present(.search(query: nil), as: .sheet)
         case .openFavorites: router.push(.favorites)
         case .openProfile: router.push(.profile)
         }

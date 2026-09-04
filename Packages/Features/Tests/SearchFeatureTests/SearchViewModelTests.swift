@@ -37,11 +37,37 @@ struct SearchViewModelTests {
         #expect(viewModel.results.isEmpty)
     }
 
+    @Test("An initialQuery seeds query and handle(.appear) submits it once")
+    func initialQueryAutoSubmits() async {
+        let mock = SearchLogicMock()
+        let product = Product(id: 1, title: "Phone", description: "", price: 1, rating: 1, thumbnailURL: nil)
+        mock.resultsToReturn = [product]
+        let viewModel = SearchViewModel(logic: mock, router: Coordinator(root: .products), initialQuery: "phone")
+
+        #expect(viewModel.query == "phone")
+        viewModel.handle(.appear)
+        await viewModel.inFlightLoad?.value
+
+        #expect(await mock.searchCalls.calls == ["phone"])
+        #expect(viewModel.results == [product])
+    }
+
+    @Test("A nil initialQuery (plain \"open search\") never auto-submits on appear")
+    func nilInitialQueryDoesNotAutoSubmit() {
+        let mock = SearchLogicMock()
+        let viewModel = SearchViewModel(logic: mock, router: Coordinator(root: .products))
+
+        viewModel.handle(.appear)
+
+        #expect(viewModel.query.isEmpty)
+        #expect(viewModel.phase == .idle)
+    }
+
     @Test("handle(.selectProduct) dismisses the sheet and pushes the detail")
     func selectProductDismissesAndPushes() {
         let mock = SearchLogicMock()
         let router = Coordinator<AppRoute>(root: .products)
-        router.present(.search, as: .sheet)
+        router.present(.search(query: nil), as: .sheet)
         let viewModel = SearchViewModel(logic: mock, router: router)
 
         viewModel.handle(.selectProduct(id: 5))

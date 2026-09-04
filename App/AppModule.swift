@@ -6,6 +6,7 @@ import DiagnosticsFeature
 import Domain
 import FavoritesFeature
 import Foundation
+import GalleryFeatureUI
 import LoginFeature
 import Networking
 import ProductDetailFeature
@@ -56,6 +57,7 @@ enum AppModule {
             LoginModule(),
             ProductsModule(),
             ProductDetailModule(),
+            GalleryModule(),
             favoritesModule,
             SearchModule(),
             DiagnosticsModule(

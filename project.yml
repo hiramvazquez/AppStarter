@@ -67,6 +67,8 @@ targets:
         product: DiagnosticsFeature
       - package: Features
         product: UploadsFeature
+      - package: Features
+        product: GalleryFeature
       # archinit:products
     settings:
       base:

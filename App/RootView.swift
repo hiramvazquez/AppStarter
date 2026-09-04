@@ -2,6 +2,7 @@ import AppFoundation
 import DiagnosticsFeature
 import Domain
 import FavoritesFeature
+import GalleryFeatureUI
 import LoginFeature
 import Networking
 import ProductDetailFeature
@@ -47,6 +48,9 @@ struct RootView: View {
         case .productDetail(let id):
             let factory = Container.shared.resolve(ProductDetailViewModelFactory.self)
             ProductDetailView(viewModel: factory(id))
+        case .gallery(let productID):
+            let factory = Container.shared.resolve(GalleryViewModelFactory.self)
+            GalleryView(viewModel: factory(productID))
         case .favorites:
             FavoritesView(viewModel: Container.shared.resolve())
         case .profile:
@@ -55,8 +59,9 @@ struct RootView: View {
             // `Container.shared` — see `AppModule.makeSessionModules()`.
             let sessionState = Container.shared.resolve(AppSessionState.self)
             ProfileView(viewModel: sessionState.sessionContainer.resolve())
-        case .search:
-            SearchView(viewModel: Container.shared.resolve())
+        case .search(let query):
+            let factory = Container.shared.resolve(SearchViewModelFactory.self)
+            SearchView(viewModel: factory(query))
         case .diagnostics:
             DiagnosticsView(viewModel: Container.shared.resolve())
         case .uploads:
