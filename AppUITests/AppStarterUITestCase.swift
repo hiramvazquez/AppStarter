@@ -108,11 +108,14 @@ class AppStarterUITestCase: XCTestCase {
         let hittable = NSPredicate(format: "isHittable == true")
         var result = XCTWaiter()
             .wait(for: [XCTNSPredicateExpectation(predicate: hittable, object: element)], timeout: timeout)
-        if result != .completed {
-            // One more chance: the sheet may have appeared mid-wait.
+        var retries = 0
+        while result != .completed && retries < 3 {
+            // The system "Save Password?" sheet can land at any moment after a login (and a
+            // deep-link relaunch logs in again): dismiss it and give the element another chance.
             dismissSystemAlertIfPresent(app, timeout: 1)
             result = XCTWaiter()
                 .wait(for: [XCTNSPredicateExpectation(predicate: hittable, object: element)], timeout: 5)
+            retries += 1
         }
         if result != .completed {
             // Evidence for the CI-only "exists but never hittable" case: what covers it?

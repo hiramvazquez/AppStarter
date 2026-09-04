@@ -77,13 +77,13 @@ enum OfflineFixtures {
                 InMemoryTransport.Exchange(
                     method: .get,
                     url: baseURL.appendingPathComponent("products").withQuery([("delay", "3000")]),
-                    // 4s, deliberately longer than the real 3s delay it stands in for:
+                    // 20s, deliberately far longer than the real 3s delay it stands in for:
                     // `DiagnosticsUITests` needs a comfortable window to find AND tap
                     // "Cancelar" (each XCUITest query round-trip alone can take several
                     // hundred ms) before the fixture would resolve on its own — a shorter
                     // latency made the test race the fixture and occasionally tap into a
                     // result that had already landed.
-                    response: .response(status: 200, body: productsPageBody, latency: .seconds(4))
+                    response: .response(status: 200, body: productsPageBody, latency: .seconds(20))
                 )
             )
             // Uploads (PRD-APP-02): `POST /products/add`, uploaded (not `execute`d) with
