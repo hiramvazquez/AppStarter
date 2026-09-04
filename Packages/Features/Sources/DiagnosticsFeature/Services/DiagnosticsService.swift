@@ -91,18 +91,45 @@ public final class DiagnosticsService: DiagnosticsServicing, @unchecked Sendable
     public init(baseURL: URL, authenticatedAPI: any APIServiceProtocol, offlineTransport: (any HTTPTransport)? = nil) {
         self.authenticatedAPI = authenticatedAPI
 
+        // `URLSessionTransport(configuration: NetworkingConfiguration
+        // .defaultSessionConfiguration())`, NOT bare `URLSessionTransport()`: the latter's
+        // default `URLSessionConfiguration.default` accepts and resends cookies through
+        // the process-wide `HTTPCookieStorage.shared` — and DummyJSON's `/auth/login`
+        // response ALSO sets a session cookie alongside the JSON tokens. A real run of
+        // this experiment, right after a real login in the SAME process, found the "401
+        // without a token" request coming back 200 (`succeeded: true`) — the shared
+        // cookie jar was silently authenticating a request this experiment exists to
+        // prove is unauthenticated. `defaultSessionConfiguration()` disables cookies
+        // entirely (`httpShouldSetCookies = false`, `httpCookieAcceptPolicy = .never`),
+        // the same way the app's own authenticated pipeline already does.
+        let noCookiesTransport = {
+            URLSessionTransport(configuration: NetworkingConfiguration.defaultSessionConfiguration())
+        }
+
         let configuration = NetworkingConfiguration(baseURL: baseURL)
         self.unauthenticatedAPI = APIService(
             configuration: configuration,
-            transport: offlineTransport ?? URLSessionTransport()
+            transport: offlineTransport ?? noCookiesTransport()
         )
 
         let unreachableConfiguration = NetworkingConfiguration(
             baseURL: URL(string: "https://unreachable.invalid") ?? baseURL
         )
+        // NOT `noCookiesTransport()`/`defaultSessionConfiguration()` here:
+        // `waitsForConnectivity = true` (deliberate for the app's REAL pipelines — "wait
+        // for the network to come back" is the right call for a transient drop) makes
+        // `URLSession` sit and wait rather than fail fast for a host that will NEVER
+        // resolve — a real run against `unreachable.invalid` never came back within 75s.
+        // This pipeline exists SPECIFICALLY to demonstrate an unreachable host failing,
+        // so it disables cookies (same reasoning as `noCookiesTransport`) WITHOUT
+        // `waitsForConnectivity`.
+        let unreachableSessionConfiguration = URLSessionConfiguration.default
+        unreachableSessionConfiguration.waitsForConnectivity = false
+        unreachableSessionConfiguration.httpShouldSetCookies = false
+        unreachableSessionConfiguration.httpCookieAcceptPolicy = .never
         self.unreachableAPI = APIService(
             configuration: unreachableConfiguration,
-            transport: offlineTransport ?? URLSessionTransport()
+            transport: offlineTransport ?? URLSessionTransport(configuration: unreachableSessionConfiguration)
         )
 
         let counter = RequestCounterInterceptor()

@@ -680,3 +680,45 @@ Mejor aún: que `generate-feature` añada `@Observable` a CADA ViewModel que gen
 defecto — no cuesta nada cuando SÍ hace falta (dos macros en la misma cadena de herencia
 no chocan) y evita este bug de raíz para cualquier pantalla con estado propio que no viaje
 siempre pegado a `phase`/`activity`.
+
+### Dos hallazgos reales al ejecutar Diagnostics contra DummyJSON de verdad (no fricciones
+del kit — de esta app, expuestos precisamente porque Diagnostics se usó para lo que existe)
+
+Al verificar los seis experimentos contra la API real (sin `-UITestOffline`, la
+comprobación manual que exige este PRD), dos de ellos NO se comportaron como el diseño
+esperaba a la primera:
+
+1. **"401 sin token" devolvía 200 (`succeeded: true`) si se ejecutaba tras un login real
+   en el mismo proceso.** `DiagnosticsService.unauthenticatedAPI` se construyó con
+   `URLSessionTransport()` (el `init` con `configuration:` por defecto,
+   `URLSessionConfiguration.default`) — que acepta y reenvía cookies a través de
+   `HTTPCookieStorage.shared`, COMPARTIDO por todo el proceso. `NetworkingModule`'s propia
+   `AuthServicing` (usada por el login real) también usa `URLSessionTransport()` sin
+   configuración propia para su API sin autenticar — y `POST /auth/login` de DummyJSON
+   pone, ADEMÁS del par de tokens en el JSON, una cookie de sesión
+   (`Set-Cookie: accessToken=...`, verificado con `curl -i`). Esa cookie queda en el jar
+   compartido del proceso; la siguiente petición a `/auth/me` sin cabecera
+   `Authorization` la reenvía automáticamente y el servidor la acepta igual — autenticando
+   por accidente una petición que el experimento existe para demostrar que NO lo está.
+   Arreglado construyendo `unauthenticatedAPI` con
+   `URLSessionTransport(configuration:)` y una configuración que desactiva cookies
+   (`httpShouldSetCookies = false`, `httpCookieAcceptPolicy = .never`) — la MISMA que ya
+   usa el pipeline autenticado de la app, vía `NetworkingConfiguration
+   .defaultSessionConfiguration()`. Verificado con `curl -i https://dummyjson.com/auth/me`
+   (sin cookie): `401`, confirma que el comportamiento correcto es el que ahora se ve.
+2. **"Host inalcanzable" no resolvía nunca (colgado más de 75s) usando esa misma
+   configuración por defecto.** `defaultSessionConfiguration()` activa
+   `waitsForConnectivity = true` — correcto para el pipeline REAL de la app (esperar a que
+   vuelva la red en una caída transitoria, documentado en su propio doc comment), pero
+   equivocado para un host que NUNCA va a resolver: `URLSession` se queda esperando en vez
+   de fallar rápido por DNS. Arreglado con una `URLSessionConfiguration` propia para este
+   pipeline (cookies desactivadas, `waitsForConnectivity = false`) — el experimento vuelve
+   a fallar en segundos, como se espera de `TransportError` → `.unreachable`.
+
+No es una fricción del kit (es esta app usando `URLSessionTransport`/`URLSessionConfiguration`
+sin pensar en cookies compartidas ni en `waitsForConnectivity` para un caso adversarial) —
+pero es exactamente el tipo de comportamiento sutil que una pantalla de Diagnostics real
+contra la API real, no solo contra fixtures, está pensada para sacar a la luz. Capturas
+reales de los seis experimentos, ya con ambos arreglos: `docs/screenshots/
+diagnostics-real-network.png` (los seis resultados) y `docs/screenshots/
+diagnostics-slow-running.png` (el séptimo, cancelable, a mitad de vuelo).
