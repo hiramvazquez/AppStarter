@@ -171,6 +171,8 @@ targets:
     platform: iOS
     sources:
       - path: AppSnapshotTests
+        excludes:
+          - "__Snapshots__"   # referencias de swift-snapshot-testing: se leen por ruta, no son recursos del bundle
     dependencies:
       - target: AppStarter
       - package: AppFoundation
