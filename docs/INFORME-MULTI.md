@@ -671,15 +671,19 @@ propiedades — y arregla el problema de raíz. `experimentTasks`/`Task<Void, Ne
 `@ObservationIgnored` (un `deinit` a mano que lee una propiedad `@MainActor`-aislada desde
 un contexto `nonisolated` no compila si esa propiedad pasa a estar detrás del macro).
 
-**Propuesta para AppFoundation 1.2.1:** documentar esto EXPLÍCITAMENTE en el doc comment
-de `BaseViewModel`/`LogicViewModel` (hoy no se menciona en absoluto) — algo como: "Cualquier
-propiedad `@Published`-like que añadas en tu subclase necesita su PROPIO `@Observable` en
-esa subclase si alguna vez la mutas sin acompañarla de un cambio a `phase`/`activity`/
-`alert`/`banner` en la misma operación; de lo contrario SwiftUI nunca sabrá que cambió."
-Mejor aún: que `generate-feature` añada `@Observable` a CADA ViewModel que genera, por
-defecto — no cuesta nada cuando SÍ hace falta (dos macros en la misma cadena de herencia
-no chocan) y evita este bug de raíz para cualquier pantalla con estado propio que no viaje
-siempre pegado a `phase`/`activity`.
+**Propuesta hecha para AppFoundation 1.2.1 — ya corregida (histórico):** cuando se
+encontró este bug, el kit no exigía `@Observable` en cada subclase de `BaseViewModel` ni
+lo documentaba: la propuesta de esta sección era que `AppFoundation` lo exigiera con una
+regla de `ArchitectureLint`, no solo que lo mencionara en un doc comment. Desde
+`AppFoundation` 1.2.1 (2026-09-04, `CHANGELOG.md` de ese paquete) el kit SÍ lo exige: la
+regla **R15** (error) rompe `swift build` si una `class` cuyo nombre termina en
+`ViewModel` no lleva `@Observable`. Este repo ya cumplía la regla en todos sus
+ViewModels desde que se aplicó la solución de más arriba — al subir a 1.2.1
+(`Package.swift`/`project.yml` de ambos paquetes, `swift package update`), `swift
+package archlint` sigue dando **0 errores, 0 warnings** con R15 activa, sin tocar una
+sola línea de las Views/ViewModels existentes. Lo que queda de esta sección, arriba, es
+el repro y la solución que se aplicaron ANTES de que el kit lo exigiera — se deja tal
+cual por valor histórico (por qué hacía falta, no solo que hacía falta).
 
 ### Dos hallazgos reales al ejecutar Diagnostics contra DummyJSON de verdad (no fricciones
 del kit — de esta app, expuestos precisamente porque Diagnostics se usó para lo que existe)
