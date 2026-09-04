@@ -35,8 +35,10 @@ final class SettingsUITests: AppStarterUITestCase {
         // Brand ON: toggle, wait for the save's info banner, confirm it is the BRAND
         // style (a distinct "Cerrar" button next to the message, not one big button).
         waitAndTap(themeToggle.switches.firstMatch)
+        // The banner auto-dismisses (6 s): wait for it right away, without the tolerant
+        // helper's own preamble, or it can be gone before the first check.
         XCTAssertTrue(
-            waitForExistenceTolerant(brandCerrarButton, in: app),
+            brandCerrarButton.waitForExistence(timeout: 6),
             "Brand theme's banner (with its own \"Cerrar\" button) never appeared after toggling on"
         )
         XCTAssertEqual(themeToggle.value as? String, "1", "Theme toggle should reflect the saved value")
@@ -63,7 +65,7 @@ final class SettingsUITests: AppStarterUITestCase {
         XCTAssertTrue(themeToggle.waitForExistence(timeout: 15))
         waitAndTap(themeToggle.switches.firstMatch)
         XCTAssertTrue(
-            waitForExistenceTolerant(kitStyleBanner, in: app),
+            kitStyleBanner.waitForExistence(timeout: 6),
             "Kit-style banner never appeared after toggling brand theme off"
         )
         XCTAssertEqual(themeToggle.value as? String, "0")
@@ -85,7 +87,7 @@ final class SettingsUITests: AppStarterUITestCase {
 
         let fakePinToggle = app.switches["settings.fakePinToggle"]
         XCTAssertTrue(waitForExistenceTolerant(fakePinToggle, in: app), "Fake-pin toggle did not appear")
-        waitAndTap(fakePinToggle)
+        waitAndTap(fakePinToggle.switches.firstMatch)
         XCTAssertTrue(waitForExistenceTolerant(summary, in: app))
         XCTAssertTrue(
             summary.label.contains("pin FALSO"),

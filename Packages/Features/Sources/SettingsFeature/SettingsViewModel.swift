@@ -79,7 +79,15 @@ public final class SettingsViewModel: LogicViewModel<any SettingsLogicProtocol>,
             let state = try await vm.logic.save(newSettings)
             vm.apply(state)
             vm.themeSettings.setBrand(state.settings.themeIsBrand)
-            vm.showBanner(.info("Ajustes guardados. El pinning se aplica al reiniciar la app."))
+            // A longer-than-default duration on purpose: two sentences to read, and the
+            // pinning half only takes effect on the next launch, which the user must notice.
+            vm.showBanner(
+                BannerState(
+                    message: "Ajustes guardados. El pinning se aplica al reiniciar la app.",
+                    style: .info,
+                    duration: .seconds(6)
+                )
+            )
         }
     }
 
