@@ -45,6 +45,12 @@ enum AppModule {
     @MainActor
     static func makeModules() throws -> [DependencyModule] {
         let isOffline = ProcessInfo.processInfo.arguments.contains("-UITestOffline")
+        if isOffline, let domain = Bundle.main.bundleIdentifier {
+            // XCUITests must start from a clean slate: `UserDefaults` (the Settings store)
+            // outlives the app between launches on the simulator, so a run that ended with
+            // the brand theme on would leak into the next one.
+            UserDefaults.standard.removePersistentDomain(forName: domain)
+        }
         let transport = isOffline ? OfflineFixtures.makeTransport() : nil
 
         // A broken `ModelContainer` at startup is a programmer error (bad schema), not a
