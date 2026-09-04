@@ -21,6 +21,7 @@ let package = Package(
         // archinit:products-begin
         .library(name: "LoginFeature", targets: ["LoginFeature"]),
         .library(name: "ProductsFeature", targets: ["ProductsFeature"]),
+        .library(name: "ProductDetailFeature", targets: ["ProductDetailFeature"]),
         // archinit:products-end
     ],
     dependencies: [
@@ -78,6 +79,31 @@ let package = Package(
                 .product(name: "PlatformTestSupport", package: "Platform"),
             ],
             path: "Tests/ProductsFeatureTests",
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "ProductDetailFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform"),
+                .product(name: "Networking", package: "Platform"),
+            ],
+            path: "Sources/ProductDetailFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+            ]
+        ),
+        .testTarget(
+            name: "ProductDetailFeatureTests",
+            dependencies: [
+                "ProductDetailFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "PlatformTestSupport", package: "Platform"),
+            ],
+            path: "Tests/ProductDetailFeatureTests",
             swiftSettings: swiftSettings
         ),
         // archinit:features-end
