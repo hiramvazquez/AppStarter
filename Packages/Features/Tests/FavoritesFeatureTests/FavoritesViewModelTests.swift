@@ -47,4 +47,33 @@ struct FavoritesViewModelTests {
 
         #expect(router.mainStack.path == [.productDetail(id: 3)])
     }
+
+    @Test("handle(.clearAllRequested) shows a destructive confirmation alert, without clearing yet")
+    func clearAllRequestedShowsAlert() async {
+        let mock = FavoritesLogicMock()
+        let viewModel = FavoritesViewModel(logic: mock, router: Coordinator(root: .favorites))
+
+        viewModel.handle(.clearAllRequested)
+
+        #expect(viewModel.alert != nil)
+        #expect(await mock.clearAllCalls.isEmpty)
+    }
+
+    @Test("Confirming the alert's primary button calls logic.clearAll() and empties the list")
+    func confirmingClearAllAlertClearsList() async {
+        let mock = FavoritesLogicMock()
+        let product = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
+        mock.itemsToReturn = [product]
+        let viewModel = FavoritesViewModel(logic: mock, router: Coordinator(root: .favorites))
+
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+        viewModel.handle(.clearAllRequested)
+        viewModel.alert?.primaryButton.action()
+        await viewModel.inFlightActivity?.value
+
+        #expect(await mock.clearAllCalls.calls.count == 1)
+        #expect(viewModel.items.isEmpty)
+        #expect(viewModel.phase == .empty)
+    }
 }

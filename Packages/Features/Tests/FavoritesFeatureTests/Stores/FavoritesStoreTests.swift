@@ -48,4 +48,16 @@ struct FavoritesStoreTests {
 
         #expect(fetched == [product])
     }
+
+    @Test("removeAll() empties the store")
+    func removeAllEmptiesStore() async throws {
+        let store = try makeStore()
+        try await store.toggle(Product(id: 1, title: "A", description: "d", price: 1, rating: 1, thumbnailURL: nil))
+        try await store.toggle(Product(id: 2, title: "B", description: "d", price: 2, rating: 2, thumbnailURL: nil))
+
+        try await store.removeAll()
+
+        let fetched = try await store.fetchAll()
+        #expect(fetched.isEmpty)
+    }
 }

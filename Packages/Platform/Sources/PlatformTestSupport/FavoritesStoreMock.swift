@@ -43,4 +43,9 @@ public actor FavoritesStoreMock: FavoritesStoring {
         if let errorToThrow { throw errorToThrow }
         allToReturn.removeAll { $0.id == id }
     }
+
+    public func removeAll() async throws {
+        if let errorToThrow { throw errorToThrow }
+        allToReturn.removeAll()
+    }
 }

@@ -28,6 +28,7 @@ public enum FavoritesError: DomainError, Equatable {
 public protocol FavoritesLogicProtocol: Logic {
     func loadFavorites() async throws -> [Product]
     func remove(id: Int) async throws
+    func clearAll() async throws
 }
 
 /// ALL of the Favorites feature's business logic: reads/removes through
@@ -52,6 +53,14 @@ public nonisolated final class FavoritesLogic: FavoritesLogicProtocol {
     public func remove(id: Int) async throws {
         do {
             try await favoritesStore.remove(id: id)
+        } catch {
+            throw FavoritesError.storageFailure
+        }
+    }
+
+    public func clearAll() async throws {
+        do {
+            try await favoritesStore.removeAll()
         } catch {
             throw FavoritesError.storageFailure
         }

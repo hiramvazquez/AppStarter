@@ -69,6 +69,11 @@ public actor SwiftDataFavoritesStore: FavoritesStoring {
         try modelContext.save()
     }
 
+    public func removeAll() async throws {
+        try modelContext.delete(model: FavoriteProductRecord.self)
+        try modelContext.save()
+    }
+
     private func fetchRecord(id: Int) throws -> FavoriteProductRecord? {
         var descriptor = FetchDescriptor<FavoriteProductRecord>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1

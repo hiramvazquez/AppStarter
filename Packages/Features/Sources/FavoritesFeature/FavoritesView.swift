@@ -34,6 +34,18 @@ public struct FavoritesView: View {
             .listStyle(.plain)
             .accessibilityIdentifier("favorites.list")
             .onAppear { send(.load) }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(role: .destructive) {
+                        send(.clearAllRequested)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .disabled(viewModel.items.isEmpty)
+                    .accessibilityLabel("Vaciar favoritos")
+                    .accessibilityIdentifier("favorites.clearAll")
+                }
+            }
         }
         .navigationTitle("Favoritos")
     }
@@ -77,6 +89,7 @@ struct ProductRow: View {
 private final class FavoritesPreviewLogic: FavoritesLogicProtocol {
     func loadFavorites() async throws -> [Product] { [] }
     func remove(id: Int) async throws {}
+    func clearAll() async throws {}
 }
 
 #Preview {

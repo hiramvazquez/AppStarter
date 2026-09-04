@@ -17,4 +17,8 @@ public protocol FavoritesStoring: Sendable {
     func fetchAll() async throws -> [Product]
 
     func remove(id: Int) async throws
+
+    /// Removes every favorited product. Backs Favorites' "Vaciar favoritos" destructive
+    /// action (PRD-APP-02, Fase 2).
+    func removeAll() async throws
 }
