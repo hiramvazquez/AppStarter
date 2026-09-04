@@ -29,6 +29,11 @@ ignore:
 modules:
   Domain:
     allowedImports: [Foundation]
+  # No generado por `archinit --multi` (que solo conoce Domain/<Cap>Kit/<Sdk>Adapters) —
+  # añadido a mano (PRD-APP-02, Fase 1): el wiring de red/sesión transversal que necesita
+  # CoreNetworking, compartido por varias features (AuthServicing, ProductsServicing).
+  Networking:
+    forbiddenImports: ["*Feature", "*Kit", "*Adapters", "Analytics*"]
   CameraKit:
     forbiddenImports: ["*Feature", "*Adapters", "Analytics*"]
   AnalyticsAdapters:
