@@ -422,3 +422,261 @@ flakiness del runner ya documentada en `docs/INFORME-INTEGRACION.md` (misma clas
 fallo: un XCUITest se cuelga en el simulador sin relación con el código fuente). En la
 ejecución completa que se pega arriba, los 4 XCUITests pasaron limpio. No se investigó más
 a fondo por quedar fuera del alcance de esta migración (Fase 1: sin funcionalidad nueva).
+
+## Fase 2, tramo A — fricciones nuevas (Diagnostics, Uploads, sesión, alertas)
+
+Escaparate de CoreNetworking/AppFoundation (PRD-APP-02): Diagnostics (`generate-feature
+Diagnostics --api --no-service`), Uploads (`generate-feature Uploads --api`),
+`Container(parent:)` por sesión, alertas destructivas en Favorites/Profile,
+`AnalyticsTracking`/`CameraCapturing`. Cinco fricciones nuevas, más una reaparición
+confirmada de una ya conocida.
+
+### 6. La coma colgante antes de los markers (fricción 4, Fase 1) reaparece en cada
+`generate-feature` posterior
+
+Ya documentada arriba con `AppModule.swift`/`Package.swift`'s `targets:` — reaparece EN
+CADA `generate-feature` que se ejecuta después de un `swift format format -i`, no solo la
+primera vez: `Diagnostics` la reprodujo en `products:` de `Package.swift` y en el array de
+`AppModule.makeModules()`; `Uploads`, otra vez, en ambos sitios; la prueba de
+`--service-from`/`--store-from` de más abajo, una CUARTA vez. Sin excepción, en cada caso
+el síntoma es idéntico: `error: static member 'library'/'target' cannot be used on
+instance of type 'Product'/'Target'` (falta la coma antes del elemento nuevo) o, en
+`AppModule.swift`, un error de sintaxis en el array literal. La propuesta de la Fase 1
+(que las plantillas inserten la coma DELANTE de la entrada nueva, en vez de asumir que la
+anterior ya termina en una) sigue siendo la única solución robusta — confirmado que
+`swift format` reformatea sin avisar cada vez que alguien lo corre sobre `App/`/los dos
+`Package.swift`, así que la fricción es estructural, no un accidente de una sola vez.
+
+### 7. `DiagnosticsService.init` bloqueaba el hilo principal ~60s: el patrón
+`DispatchSemaphore` de `OfflineFixtures.makeTransport()` no es seguro fuera del arranque
+
+**Repro:** `DiagnosticsService` necesita un fixture `InMemoryTransport` con una secuencia
+503→503→200 para el experimento "5xx con reintentos" (PRD-APP-02). Copiando literalmente
+el patrón de `App/OfflineFixtures.swift` (`Task { await transport.register(...) };
+semaphore.wait()` dentro de un `init` síncrono):
+
+```swift
+public init(baseURL: URL, authenticatedAPI: any APIServiceProtocol, offlineTransport: (any HTTPTransport)? = nil) {
+    ...
+    self.retryAPI = APIService(configuration: configuration, transport: Self.makeRetryFixtureTransport(baseURL: baseURL), ...)
+}
+private static func makeRetryFixtureTransport(baseURL: URL) -> InMemoryTransport {
+    let transport = InMemoryTransport()
+    let semaphore = DispatchSemaphore(value: 0)
+    Task { await transport.register(...); semaphore.signal() }
+    semaphore.wait()
+    return transport
+}
+```
+
+`DiagnosticsServicing` se registra como singleton perezoso — se construye la PRIMERA vez
+que `DiagnosticsViewModel` se resuelve, es decir, exactamente cuando el usuario navega a
+Diagnostics (no al arrancar la app, como `OfflineFixtures.makeTransport()`). Navegar a
+Diagnostics real y offline se quedó colgado — el "Run" de un experimento tardaba ~60s en
+reaccionar, reproducido de forma determinista con `DiagnosticsUITests` contra el
+Simulador (`t = 18.73s` tras el tap, siguiente log a `t = 79.10s`).
+
+**Causa:** el patrón `DispatchSemaphore` que bloquea el hilo que llama es seguro SOLO
+cuando ese hilo es el principal DURANTE EL ARRANQUE, antes de que la app tenga UI/eventos
+pendientes — exactamente la doc del propio `OfflineFixtures.makeTransport()` ya lo advertía
+("safe here because nothing the Task does needs the main actor"). Construir un objeto así
+de forma perezosa, en mitad de una transición de navegación de SwiftUI (con el runloop
+principal ya ocupado con la propia animación/transacción de push), compite por el mismo
+hilo que el `Task` necesita para progresar — no es un deadlock estricto (el `Task` no
+necesita el actor principal), pero la contención real observada fue de ~60s.
+
+**Solución aplicada:** no registrar el fixture en `init` — registrarlo (de forma async
+normal, sin semáforo) al principio de `runRetry5xx()`, cada vez que se ejecuta ese
+experimento. Efecto colateral bueno: el experimento vuelve a ser determinista en
+repeticiones (antes solo el primer tap partía de intento 1).
+
+**Propuesta para AppFoundation/CoreNetworking 1.2.1**: documentar explícitamente, en el
+propio doc comment de `InMemoryTransport.register(_:)` o en el artículo `Testing.md`, que
+el patrón `DispatchSemaphore`-para-puentear-async-en-un-init-síncrono NO es seguro fuera
+del arranque de la app — o, mejor, ofrecer una variante `InMemoryTransport(exchanges:)`
+con un `init` síncrono que acepte las respuestas directamente (sin pasar por `register`
+async) para este caso de uso exacto (fixtures conocidas de antemano, no dependientes de
+E/S real).
+
+### 8. `generate-feature --api` registra su PROPIO `APIServiceProtocol` — sobrescribe
+silenciosamente el autenticado de toda la app si el feature nuevo no es el primero
+
+**Repro:** `generate-feature Uploads --api` generó, dentro de `UploadsModule.register(in:)`:
+
+```swift
+container.register(APIServiceProtocol.self) { [baseURL] _ in
+    APIService(configuration: NetworkingConfiguration(baseURL: baseURL))
+}
+```
+
+Este proyecto YA tiene un `APIServiceProtocol` autenticado (`NetworkingModule`, con
+`BearerTokenInterceptor` + `TokenRefreshRetrier`) que TODAS las demás features resuelven.
+`UploadsModule()` se añade al final de `AppModule.makeModules()` — `Container.register`
+sobrescribe silenciosamente cualquier registro anterior del MISMO tipo en el MISMO
+contenedor (documentado: "Registering the same type twice overwrites... in DEBUG builds
+this logs a warning"). Si `UploadsModule` se hubiera dejado tal cual, cualquier feature
+registrada DESPUÉS de él en la lista habría perdido su bearer token — sin error de
+compilación, sin test que lo detecte a menos que ejercite ESE feature contra la API real
+tras ese punto del arranque, solo el aviso de consola en DEBUG (`AppFoundationLogger.di:
+"Re-registering... Overwriting previous registration"`), fácil de pasar por alto entre
+cientos de líneas de log de `xcodebuild`.
+
+**Causa:** el generador no tiene forma de saber, al generar UN feature aislado, que el
+proyecto que lo aloja ya tiene wiring de red compartido — es el comportamiento CORRECTO
+para el primer feature `--api` de un proyecto nuevo (el caso que `archinit`/`Generator.md`
+documentan), pero peligroso en un proyecto con `NetworkingModule` transversal como este.
+
+**Solución aplicada:** eliminado el registro de `APIServiceProtocol` de `UploadsModule`;
+`UploadsService` resuelve el YA EXISTENTE vía `c.resolve()`, igual que `ProductsModule`/
+`ProfileModule`/etc.
+
+**Propuesta para 1.2.1:** que `generate-feature --api`, en modo multi, compruebe si YA
+existe un target `Networking` (o cualquier target cuyo nombre coincida con un patrón
+conocido) en el propio paquete `Platform` antes de generar su propio wiring de
+`APIServiceProtocol` — y si existe, genere el Service asumiendo que se resuelve del
+`Container` en lugar de construir su propia configuración. Alternativa más simple: que el
+mensaje de éxito de `generate-feature --api` en modo multi imprima una advertencia
+explícita ("si tu proyecto ya registra `APIServiceProtocol` en otro módulo, BORRA este
+registro — la última llamada a `container.register` para el mismo tipo gana en
+silencio") en vez de asumir que cada feature es el primero.
+
+### 9. `--service-from`/`--store-from` en modo multi: el mock reutilizado no es visible
+desde el test target nuevo — confirmado con una prueba real
+
+**Repro** (ejecutado en este repo, revertido tras capturar la evidencia — nunca llegó a
+compilar, no se dejó en el árbol):
+
+```bash
+cd Packages/Features
+swift package --disable-sandbox --allow-writing-to-package-directory \
+  generate-feature ProductDetailProbe --api --local --service-from Products --store-from Favorites
+```
+
+Salida real del generador (además de la fricción 6, la coma colgante, que también
+reapareció):
+
+```
+--service-from Products: ProductDetailProbeLogic depende de 'any ProductsServicing'. En modo
+multi cada feature tiene su propio target de tests — si ProductsServiceMock no es
+visible desde ProductDetailProbeFeatureTests, hazlo público o genera ProductDetailProbeLogicTests a mano.
+
+--store-from Favorites: ProductDetailProbeLogic depende de 'any FavoritesStoring'. Misma nota que
+--service-from sobre la visibilidad del mock entre targets de tests distintos en modo multi.
+```
+
+El generador YA AVISA de la fricción — pero el aviso genérico no basta para saber qué
+hacer: inspeccionando el `ProductDetailProbeLogicTests.swift` generado, usa
+`ProductsServiceMock()` DIRECTAMENTE (sin `import PlatformTestSupport`), y el
+`Package.swift` generado para `ProductDetailProbeFeatureTests` NO añade
+`PlatformTestSupport` a sus `dependencies:`. En ESTE repo, `ProductsServiceMock`/
+`FavoritesStoreMock` viven en `PlatformTestSupport` (`Packages/Platform`) — la solución
+que la Fase 1 de esta migración ya adoptó precisamente para este problema (ver «
+`PlatformTestSupport` (nuevo...)» más arriba) — así que el fichero generado NO
+COMPILARÍA tal cual: `ProductsServiceMock` es un símbolo indefinido en ese target hasta
+que alguien, a mano, (a) añade `.product(name: "PlatformTestSupport", package: "Platform")`
+a las `dependencies:` de `ProductDetailProbeFeatureTests` en `Package.swift`, y (b) añade
+`import PlatformTestSupport` al fichero de test generado.
+
+**Causa:** `generate-feature` en modo multi genera un test target POR feature (a
+diferencia del modo single-package, donde un único target de tests ve todos los mocks
+libremente) — el generador conoce el NOMBRE del mock que necesita (`<Feature>ServiceMock`/
+`InMemory<Feature>Store`) pero no sabe DÓNDE vive ese tipo en el proyecto que lo aloja: no
+tiene forma de detectar que este repo lo movió a un target compartido (`PlatformTestSupport`)
+en vez de dejarlo en `<Feature>FeatureTests` (su ubicación por defecto fuera de modo multi).
+
+**Propuesta para 1.2.1:** dado que el propio `AGENTS.md`/`Generator.md` que instala
+`archinit --multi` YA recomienda el patrón `PlatformTestSupport`/`DomainTestSupport` para
+mocks compartidos entre features (`AGENTS.md` de AppFoundation 1.2.0, citado en el propio
+informe de Fase 1 de este repo), `generate-feature --service-from`/`--store-from` en modo
+multi debería, por defecto, asumir que el mock vive en un producto de test-support
+compartido y añadirlo como dependencia — con un flag (`--mock-in <Feature>Tests` o similar)
+para el caso, ahora poco común pero legítimo, de que el mock siga en el target de tests
+original. Alternativa más simple y más robusta a nombres: que el generador, tras escribir
+el fichero de test, intente `swift build` y si falla por símbolo indefinido, imprima un
+mensaje MÁS ESPECÍFICO señalando exactamente qué falta (dependencia + import), en vez del
+aviso genérico actual.
+
+### 10. R13 bloquea `import UIKit` en un `*Feature` — el glob `*Kit` no distingue el
+`CameraKit` propio del framework del sistema
+
+**Repro:** `Uploads` necesita decodificar la foto capturada (`Data`) para previsualizarla
+con `Image`. La forma obvia, `UIImage(data:)` + `Image(uiImage:)`, requiere `import UIKit`
+en `UploadsFeature` (un `*Feature`). `.archlint.yml` (raíz) declara
+`"*Feature": forbiddenImports: ["*Feature", "*Kit", "*Adapters", "Analytics*"]` — pensado
+para bloquear `import CameraKit`/futuros `<Cap>Kit` propios del proyecto, pero el glob
+`*Kit` coincide LÉXICAMENTE con `UIKit` también:
+
+```
+error: [ArchLint.R13] 'UploadsFeature' no puede importar 'UIKit': entra por un protocolo
+de Domain implementado en un Adapter/Kit.
+```
+
+**Causa:** R13 compara el nombre del módulo importado contra el patrón glob sin distinguir
+frameworks del sistema (que empiezan por mayúscula y son de Apple) de los Kits propios del
+proyecto (que este starter también nombra con el sufijo `Kit`) — una coincidencia de
+nomenclatura, no un error conceptual del linter, pero con un efecto práctico real: CUALQUIER
+`*Feature` que necesite `UIKit` (`UIImage`, `UIColor`, `UIPasteboard`, lo que sea) para algo
+que no pasa por un Kit propio queda bloqueado.
+
+**Solución aplicada aquí:** decodificar con `ImageIO`/`CoreGraphics`
+(`CGImageSourceCreateWithData` + `Image(decorative:scale:orientation:)`) en vez de
+`UIImage(data:)` — ninguno de los dos coincide con el glob `*Kit`, y el resultado es
+además más portable (compila igual en macOS, sin `#if canImport(UIKit)`).
+
+**Propuesta para 1.2.1:** que R13 excluya explícitamente los frameworks del sistema
+conocidos (`UIKit`, `AppKit`, `WatchKit`, `TVUIKit`…) de cualquier glob `*Kit`/`*Adapters`
+definido en `modules:` — o que la sintaxis de glob de `.archlint.yml` permita anclar el
+patrón a módulos LOCALES del propio paquete (p. ej. un prefijo implícito o una lista
+explícita de módulos del proyecto en vez de un glob abierto), para que un nombre de
+Kit propio nunca choque por coincidencia con un framework del sistema.
+
+### 11. `@Observable` de `AppFoundation.BaseViewModel` no se propaga a subclases —
+cualquier ViewModel cuyas propiedades propias cambien SIN acompañar a `phase`/`activity`
+nunca dispara un re-render
+
+Este es el hallazgo más caro de este tramo (varias horas de depuración), y no es,
+estrictamente, una fricción DEL KIT — es una combinación real entre cómo Swift's
+`@Observable` funciona (el macro solo instrumenta las propiedades declaradas EN LA CLASE a
+la que se aplica, no las de sus subclases) y el patrón `LogicViewModel<L>: BaseViewModel`
+que el kit recomienda para toda pantalla.
+
+**Repro:** `DiagnosticsViewModel` (subclase de `LogicViewModel<any
+DiagnosticsLogicProtocol>`, a su vez subclase de `BaseViewModel`, el único marcado
+`@Observable`) declara sus propias `results`/`runningExperiments`/`logLines`. Cada
+experimento (salvo el cancelable, que usa `performLoad`) corre en un `Task` propio que
+muta SOLO esas tres propiedades — nunca toca `phase`/`activity`/`alert`/`banner` (las
+únicas realmente trackeadas, por estar declaradas en `BaseViewModel`). Resultado: tras
+tocar "Run", la fila nunca mostraba el resultado — ni siquiera el cambio SÍNCRONO e
+inmediato de `runningExperiments.insert(experiment)` (antes de cualquier `await`) se
+reflejaba en el botón "Run"→`ProgressView`. Confirmado añadiendo un contador de renders
+vía `os.Logger` dentro de `DiagnosticsView.body`: se ejecutó exactamente DOS veces al
+arrancar la pantalla (`.idle` → `.content`, ambas con `results`/`runningExperiments`
+vacíos) y NUNCA MÁS, sin importar cuántos experimentos terminaran.
+
+**Por qué otras features "funcionan" sin este problema:** `ProductsViewModel.items`
+también es una propiedad propia de la subclase, no trackeada — pero SIEMPRE se muta DENTRO
+de un `performLoad`/`performActivity`, que TAMBIÉN cambia `phase`/`activity` (SÍ
+trackeadas) en la MISMA operación. SwiftUI re-renderiza por el cambio de `phase`, y en
+ESE momento lee `items` con su valor ya actualizado — la propiedad "funciona" por
+casualidad de sincronía, no porque esté realmente trackeada. Diagnostics fue el primer
+caso de este proyecto con experimentos INDEPENDIENTES que nunca tocan `phase`/`activity`
+en absoluto, lo que expuso el problema.
+
+**Solución aplicada:** añadir `@Observable` (además del heredado) directamente sobre
+`DiagnosticsViewModel` y `UploadsViewModel` (este último por una versión más leve del
+mismo bug: el progreso intermedio de la barra de subida nunca se vería, solo el salto
+final a 100%, coincidiendo con `stopActivity()`). Aplicar `@Observable` dos veces en la
+misma cadena de herencia compila sin conflicto — cada clase instrumenta solo sus propias
+propiedades — y arregla el problema de raíz. `experimentTasks`/`Task<Void, Never>` necesitó
+`@ObservationIgnored` (un `deinit` a mano que lee una propiedad `@MainActor`-aislada desde
+un contexto `nonisolated` no compila si esa propiedad pasa a estar detrás del macro).
+
+**Propuesta para AppFoundation 1.2.1:** documentar esto EXPLÍCITAMENTE en el doc comment
+de `BaseViewModel`/`LogicViewModel` (hoy no se menciona en absoluto) — algo como: "Cualquier
+propiedad `@Published`-like que añadas en tu subclase necesita su PROPIO `@Observable` en
+esa subclase si alguna vez la mutas sin acompañarla de un cambio a `phase`/`activity`/
+`alert`/`banner` en la misma operación; de lo contrario SwiftUI nunca sabrá que cambió."
+Mejor aún: que `generate-feature` añada `@Observable` a CADA ViewModel que genera, por
+defecto — no cuesta nada cuando SÍ hace falta (dos macros en la misma cadena de herencia
+no chocan) y evita este bug de raíz para cualquier pantalla con estado propio que no viaje
+siempre pegado a `phase`/`activity`.
