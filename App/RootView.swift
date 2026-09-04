@@ -2,6 +2,7 @@ import AppFoundation
 import Domain
 import FavoritesFeature
 import LoginFeature
+import Networking
 import ProductDetailFeature
 import ProductsFeature
 import ProfileFeature
@@ -36,7 +37,11 @@ struct RootView: View {
             case .favorites:
                 FavoritesView(viewModel: Container.shared.resolve())
             case .profile:
-                ProfileView(viewModel: Container.shared.resolve())
+                // Session-scoped (PRD-APP-02, `Container(parent:)`): `ProfileModule` is
+                // registered into `AppSessionState.sessionContainer`, not
+                // `Container.shared` — see `AppModule.makeSessionModules()`.
+                let sessionState = Container.shared.resolve(AppSessionState.self)
+                ProfileView(viewModel: sessionState.sessionContainer.resolve())
             case .search:
                 SearchView(viewModel: Container.shared.resolve())
             }

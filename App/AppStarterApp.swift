@@ -1,4 +1,5 @@
 import AppFoundation
+import Networking
 import SwiftUI
 
 /// AppStarter's composition root. `@main` does exactly two things
@@ -14,6 +15,12 @@ struct AppStarterApp: App {
         } catch {
             preconditionFailure("Composition root failed: \(error)")
         }
+
+        // `Container(parent:)` per session (PRD-APP-02): the only place that can see both
+        // `AppSessionState` (`Networking`) and the session-scoped `*Feature` module types
+        // it registers on every login — `Networking` itself can't (R13).
+        let sessionState = Container.shared.resolve(AppSessionState.self)
+        sessionState.makeSessionModules = { AppModule.makeSessionModules() }
     }
 
     var body: some Scene {

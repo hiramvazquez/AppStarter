@@ -12,8 +12,8 @@ struct ProfileViewModelTests {
     @Test("handle(.load) calls logic.loadProfile and reaches .content")
     func loadReachesContent() async {
         let mock = ProfileLogicMock()
-        let router = Coordinator<AppRoute>(root: .profile)
-        let viewModel = ProfileViewModel(logic: mock, router: router, refreshLog: RefreshActivityLog())
+        let sessionState = AppSessionState(router: Coordinator(root: .profile))
+        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
 
         viewModel.handle(.load)
         await viewModel.inFlightLoad?.value
@@ -26,7 +26,8 @@ struct ProfileViewModelTests {
     func logoutRoutesToLogin() async {
         let mock = ProfileLogicMock()
         let router = Coordinator<AppRoute>(root: .profile)
-        let viewModel = ProfileViewModel(logic: mock, router: router, refreshLog: RefreshActivityLog())
+        let sessionState = AppSessionState(router: router)
+        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
 
         viewModel.handle(.logout)
         await viewModel.inFlightActivity?.value
@@ -38,8 +39,8 @@ struct ProfileViewModelTests {
     @Test("handle(.logoutRequested) shows a destructive confirmation alert, without logging out yet")
     func logoutRequestedShowsAlert() async {
         let mock = ProfileLogicMock()
-        let router = Coordinator<AppRoute>(root: .profile)
-        let viewModel = ProfileViewModel(logic: mock, router: router, refreshLog: RefreshActivityLog())
+        let sessionState = AppSessionState(router: Coordinator(root: .profile))
+        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
 
         viewModel.handle(.logoutRequested)
 
@@ -51,7 +52,8 @@ struct ProfileViewModelTests {
     func confirmingLogoutAlertLogsOut() async {
         let mock = ProfileLogicMock()
         let router = Coordinator<AppRoute>(root: .profile)
-        let viewModel = ProfileViewModel(logic: mock, router: router, refreshLog: RefreshActivityLog())
+        let sessionState = AppSessionState(router: router)
+        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
 
         viewModel.handle(.logoutRequested)
         viewModel.alert?.primaryButton.action()
@@ -61,13 +63,27 @@ struct ProfileViewModelTests {
         #expect(router.mainStack.root == .login)
     }
 
+    @Test("Logging out discards the session-scoped Container(parent:) child")
+    func logoutDiscardsSessionContainer() async {
+        let mock = ProfileLogicMock()
+        let sessionState = AppSessionState(router: Coordinator(root: .profile), parentContainer: Container())
+        sessionState.startSession()
+        let containerBeforeLogout = sessionState.sessionContainer
+        let viewModel = ProfileViewModel(logic: mock, sessionState: sessionState, refreshLog: RefreshActivityLog())
+
+        viewModel.handle(.logout)
+        await viewModel.inFlightActivity?.value
+
+        #expect(sessionState.sessionContainer !== containerBeforeLogout)
+    }
+
     @Test("refreshCount/lastRefreshDate mirror RefreshActivityLog")
     func refreshInfoMirrorsLog() {
         let log = RefreshActivityLog()
         log.recordRefresh(now: Date(timeIntervalSince1970: 100))
         let viewModel = ProfileViewModel(
             logic: ProfileLogicMock(),
-            router: Coordinator(root: .profile),
+            sessionState: AppSessionState(router: Coordinator(root: .profile)),
             refreshLog: log
         )
 

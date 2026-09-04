@@ -89,7 +89,7 @@ private final class ProfilePreviewLogic: ProfileLogicProtocol {
         ProfileView(
             viewModel: ProfileViewModel(
                 logic: ProfilePreviewLogic(),
-                router: Coordinator(root: .profile),
+                sessionState: AppSessionState(router: Coordinator(root: .profile)),
                 refreshLog: RefreshActivityLog()
             )
         )

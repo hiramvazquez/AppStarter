@@ -11,9 +11,10 @@ import Networking
 public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, ActionHandling {
     public private(set) var profile: UserProfile?
 
-    /// `Coordinator`, not `any Router<AppRoute>` — logout's `setRoot(.login)` needs
-    /// `Coordinator`'s own API (see `AppSessionState`'s doc comment for why).
-    private let router: Coordinator<AppRoute>
+    /// Logout goes through `sessionState.sessionDidEnd()` — not `router.setRoot(.login)`
+    /// directly — because ending the session also has to discard the session-scoped
+    /// child container (`AppSessionState`'s doc comment, PRD-APP-02 `Container(parent:)`).
+    private let sessionState: AppSessionState
     private let refreshLog: RefreshActivityLog
 
     /// `nil` when the pipeline never silently refreshed the token during this session.
@@ -29,8 +30,8 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         case logout
     }
 
-    public init(logic: any ProfileLogicProtocol, router: Coordinator<AppRoute>, refreshLog: RefreshActivityLog) {
-        self.router = router
+    public init(logic: any ProfileLogicProtocol, sessionState: AppSessionState, refreshLog: RefreshActivityLog) {
+        self.sessionState = sessionState
         self.refreshLog = refreshLog
         super.init(logic: logic)
     }
@@ -64,7 +65,7 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
     private func logout() {
         performActivity(errorHandling: .silent) { vm in
             await vm.logic.logout()
-            vm.router.setRoot(.login)
+            await vm.sessionState.sessionDidEnd()
         }
     }
 }

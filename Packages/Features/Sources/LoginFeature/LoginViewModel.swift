@@ -52,6 +52,9 @@ public final class LoginViewModel: LogicViewModel<any LoginLogicProtocol>, Actio
     private func login() {
         performLoad { vm in
             try await vm.logic.login(username: vm.username, password: vm.password)
+            // `Container(parent:)` per session (PRD-APP-02): a fresh session-scoped child
+            // container from here on, discarded by the next logout/expiry.
+            vm.sessionState.startSession()
             vm.router.setRoot(.products)
         }
     }

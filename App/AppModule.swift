@@ -55,10 +55,23 @@ enum AppModule {
             ProductsModule(),
             ProductDetailModule(),
             favoritesModule,
-            ProfileModule(),
             SearchModule()
             // archinit:modules
         ]
+    }
+
+    /// Session-scoped modules (PRD-APP-02, `Container(parent:)`): registered by
+    /// `AppSessionState.startSession()` into a FRESH child container on every login, not
+    /// into `Container.shared` — `RootView` resolves `ProfileViewModel` from
+    /// `AppSessionState.sessionContainer`, never from `Container.shared` directly. `Profile`
+    /// is the natural first candidate: its `RefreshActivityLog` is genuinely per-session
+    /// state (how many times THIS session's token silently refreshed), not app-lifetime
+    /// state — `AppStarterApp.init()` wires this closure onto `AppSessionState` right after
+    /// registering `makeModules()`, since `Networking` (where `AppSessionState` lives)
+    /// cannot import `ProfileFeature` (R13).
+    @MainActor
+    static func makeSessionModules() -> [DependencyModule] {
+        [ProfileModule()]
     }
 }
 
