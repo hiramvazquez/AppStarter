@@ -120,6 +120,28 @@ targets:
         product: SettingsFeature
       - package: Features
         product: DiagnosticsFeature
+      - package: Platform
+        product: Domain
+      - package: Platform
+        product: Networking
+      - package: Platform
+        product: CameraKit
+      - package: Platform
+        product: AnalyticsAdapters
+      - package: CoreNetworking
+        product: CoreNetworkingTestSupport
+      - package: Features
+        product: LoginFeature
+      - package: Features
+        product: ProductsFeature
+      - package: Features
+        product: ProductDetailFeature
+      - package: Features
+        product: FavoritesFeature
+      - package: Features
+        product: ProfileFeature
+      - package: Features
+        product: SearchFeature
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
