@@ -28,7 +28,7 @@ let package = Package(
         .library(name: "DiagnosticsFeature", targets: ["DiagnosticsFeature"]),
         .library(name: "UploadsFeature", targets: ["UploadsFeature"]),
         .library(name: "GalleryFeature", targets: ["GalleryFeatureCore", "GalleryFeatureUI"]),
-        .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
+        .library(name: "SettingsFeature", targets: ["SettingsFeature"])
         // archinit:products-end
     ],
     dependencies: [
@@ -283,12 +283,12 @@ let package = Package(
             dependencies: [
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "Domain", package: "Platform"),
-                .product(name: "Networking", package: "Platform"),
+                .product(name: "Networking", package: "Platform")
             ],
             path: "Sources/SettingsFeature",
             swiftSettings: swiftSettings,
             plugins: [
-                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+                .plugin(name: "ArchitectureLint", package: "AppFoundation")
             ]
         ),
         .testTarget(
@@ -296,7 +296,7 @@ let package = Package(
             dependencies: [
                 "SettingsFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
-                .product(name: "PlatformTestSupport", package: "Platform"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/SettingsFeatureTests",
             swiftSettings: swiftSettings
