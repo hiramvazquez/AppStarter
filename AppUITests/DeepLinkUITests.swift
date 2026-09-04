@@ -23,7 +23,7 @@ final class DeepLinkUITests: AppStarterUITestCase {
         let app = launchApp()
         loginAndWaitForProducts(app)
 
-        openURL("appstarter://product/1")
+        openURL("appstarter://product/1", in: app)
 
         let title = app.descendants(matching: .any)["productDetail.title"]
         XCTAssertTrue(waitForExistenceTolerant(title, in: app, timeout: 15), "Deep link did not open ProductDetail")
@@ -43,7 +43,7 @@ final class DeepLinkUITests: AppStarterUITestCase {
         // The offline fixture only stubs `GET /products/search?q=mascara`
         // (`App/OfflineFixtures.swift`) — the same query the manual verification
         // screenshot (`docs/screenshots/03-deeplink-search.png`) used against the real API.
-        openURL("appstarter://search?q=mascara")
+        openURL("appstarter://search?q=mascara", in: app)
 
         let results = app.descendants(matching: .any)["search.results"]
         XCTAssertTrue(waitForExistenceTolerant(results, in: app, timeout: 15), "Search sheet did not open")
@@ -73,15 +73,14 @@ final class DeepLinkUITests: AppStarterUITestCase {
 
     /// Delivers `urlString` to the app under test via the simulator itself — see the type
     /// doc comment for why this, not a launch argument, is what this suite uses.
-    private func openURL(_ urlString: String) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        process.arguments = ["simctl", "openurl", "booted", urlString]
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            XCTFail("Failed to run `xcrun simctl openurl booted \(urlString)`: \(error)")
+    /// `XCUIApplication.open(_:)` (iOS 16.4+) delivers the URL to the app under test exactly
+    /// like a tap on a link would — `Process`/`xcrun simctl` is not available on iOS, and a
+    /// launch argument would fire before the login the test needs first.
+    private func openURL(_ urlString: String, in app: XCUIApplication) {
+        guard let url = URL(string: urlString) else {
+            XCTFail("Invalid deep link: \(urlString)")
+            return
         }
+        app.open(url)
     }
 }
