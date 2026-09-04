@@ -722,3 +722,172 @@ contra la API real, no solo contra fixtures, está pensada para sacar a la luz. 
 reales de los seis experimentos, ya con ambos arreglos: `docs/screenshots/
 diagnostics-real-network.png` (los seis resultados) y `docs/screenshots/
 diagnostics-slow-running.png` (el séptimo, cancelable, a mitad de vuelo).
+
+## Fase 2, tramo B — fricciones nuevas (Gallery, Settings, deep links, Search)
+
+Escaparate restante de PRD-APP-02: `Gallery` (`generate-feature Gallery --api --module`),
+`Settings` (`generate-feature Settings --local`), deep links `appstarter://`, y
+`SearchBarConfiguration`/`Debouncer` en Search. Cuatro fricciones nuevas — dos genuinas
+del kit, una del toolchain, una de esta app.
+
+### 12. Un `.build/` incremental desactualizado, tras varios commits que cambian el
+layout de un tipo compartido (`AppRoute`), hace que `swift test` crashee con
+`SIGSEGV`/`SIGBUS` reales — no flakiness del runner
+
+**Repro:** con `Packages/Features/.build/` acumulado a través de varios commits que
+fueron añadiendo casos con valores asociados a `AppRoute` (`.gallery(productID:)`,
+`.search(query:)`), `swift test --package-path Packages/Features` crasheaba el binario
+combinado de tests (`swiftpm-testing-helper`) de forma consistente (100% de las
+ejecuciones, no intermitente) — señal distinta cada vez (`SIGSEGV`/`SIGBUS`), sitio de
+fallo distinto cada vez (`Array<AppRoute>.==`, `Mirror.init(reflecting:)` dentro del
+propio `#expect` al construir el mensaje de un fallo), siempre corrupción de memoria, no
+un fallo de aserción normal. Reproducible incluso con `--filter` a UN SOLO test ajeno
+por completo a `AppRoute`, y aún con `--skip` de los tests del target recién añadido
+(`GalleryFeatureTests`) — la sola presencia del target nuevo enlazado en el binario
+combinado bastaba, sin necesidad de ejecutar ninguno de sus tests.
+
+**Diagnóstico:** confirmado por bisección real (`git stash`/`git checkout <commit> --
+.`/`git checkout HEAD -- .`, sin tocar `HEAD`): el mismo estado de código exacto
+compila y pasa los tests 100% de las veces con `rm -rf Packages/Features/.build` antes
+de compilar, y crashea 100% de las veces sin ese paso, en el mismo checkout. No es una
+regresión de código — es un artefacto de build incremental de SwiftPM que quedó
+desincronizado: distintos módulos del mismo binario combinado de tests, compilados en
+momentos distintos mientras `AppRoute` (un tipo compartido por todos) cambiaba de
+tamaño/layout entre medias, acaban con suposiciones ABI distintas sobre el mismo tipo —
+la mezcla resultante corrompe memoria en tiempo de ejecución de forma silenciosa hasta
+que algo la lee (a menudo, la propia maquinaria de `swift-testing` construyendo el
+mensaje de un `#expect` fallido, de ahí los sitios de crash aparentemente aleatorios).
+
+**Impacto:** indistinguible, desde fuera, de un bug real de concurrencia en el código de
+la app — cuesta buena parte de una sesión de depuración descartar cada sospechoso
+(Throttler, Debouncer, ManualClock, Task, actors) antes de sospechar del propio `.build/`.
+
+**Workaround:** `rm -rf Packages/Features/.build` (y lo mismo para `Packages/Platform`)
+antes de una tanda de verificación importante, especialmente tras una sesión con varios
+commits seguidos que tocan un tipo compartido central como `AppRoute`/`Product`. Este
+repo no lo necesita como paso permanente de CI (cada corredor de CI parte de un checkout
+limpio, sin `.build/` previo) — es un riesgo específico de desarrollo local/agéntico con
+sesiones largas y build incremental persistente entre commits.
+
+**Propuesta:** no es una fricción de `AppFoundation`/`CoreNetworking` — es de SwiftPM
+(`swift test`'s build incremental para el binario combinado de un paquete con múltiples
+test targets). Documentado aquí porque cualquier sesión larga tocando un tipo
+`Domain`/`AppRoute` compartido por muchos targets puede reproducirlo; ningún cambio de
+código lo evita, solo limpiar `.build/` cuando aparece.
+
+### 13. `generate-feature Settings --local` genera SwiftData, nunca `UserDefaults` — no
+hay forma de pedirle la variante `UserDefaults` desde la CLI
+
+**Repro:**
+```bash
+cd Packages/Features
+swift package --allow-writing-to-package-directory generate-feature Settings --local
+```
+El `Store` generado es `@Model`/`@ModelActor`/`ModelContainer` (`SwiftDataSettingsStore`)
+— el mismo cascarón que `Favorites` ya usa. El PRD (y `Architecture.md`) piden
+explícitamente el patrón `UserDefaults` («actor + conformidad en extension», el que ya
+usa `Domain.UserDefaultsSessionStore`) para una pantalla de ajustes con tres booleanos,
+no una entidad que se consulta/ordena — SwiftData es la herramienta equivocada aquí
+(un `ModelContainer` para tres `Bool` es coste sin beneficio), pero `--local` no ofrece
+alternativa: no hay un `--local=userdefaults` ni variante equivalente.
+
+**Workaround usado aquí:** generar con `--local` igualmente (el resto del cascarón —
+`SettingsLogicProtocol`, `SettingsModule`, tests con mocks — sigue siendo la base
+correcta) y reescribir a mano `Stores/SettingsStore.swift` completo, sustituyendo
+`@Model`/`SwiftDataSettingsStore` por `UserDefaultsSettingsStore` sobre el patrón de
+`UserDefaultsSessionStore`. El resto del cascarón generado (`SettingsLogic.swift`,
+`SettingsModule.swift`, `SettingsView.swift`, los mocks/tests) también se reescribió a
+mano casi por completo, porque el dominio real (`AppSettings` con tres toggles +
+entorno + red + analítica) no se parece en nada al ejemplo genérico `SettingsItem` que
+el generador produce sin más contexto que el nombre del feature — esperable, no una
+fricción del generador en sí.
+
+**Propuesta para 1.2.1:** una tercera variante de `--local` (p. ej. `--local=userDefaults`
+o un flag `--store-kind userDefaults`) que genere el patrón `actor` + `UserDefaults` en
+vez de SwiftData siempre que el dominio sea "unas pocas preferencias", no una colección
+de registros — el propio kit ya conoce y documenta ambos patrones (`Architecture.md`),
+solo le falta dejar elegir cuál generar.
+
+### 14. `@Observable` no notifica cuando el nuevo valor de una `stored property`
+`Equatable` es igual al anterior — un test de "cambia y notifica" que reutiliza el valor
+por defecto pasa por las razones equivocadas (o falla por las correctas)
+
+**Repro:** un test de `SettingsViewModelTests` que hacía `viewModel.handle(.load)` con
+un mock cuyo `stateToReturn.settings` era el `AppSettings()` por defecto — EXACTAMENTE
+el valor inicial de `viewModel.settings`, también `AppSettings()` — nunca disparaba
+`withObservationTracking`'s `onChange`, a pesar de que `SettingsViewModel` sí declara su
+propio `@Observable` (verificado leyendo el macro-expandido: el setter sintetizado por
+`@Observable` compara el valor nuevo con el viejo para tipos `Equatable` y solo llama a
+`withMutation`/notifica si son distintos — no es un fallo de instrumentación, es una
+optimización real del macro). El mismo test, cambiando el mock para devolver
+`AppSettings(themeIsBrand: true)` (un valor genuinamente distinto del inicial), pasa de
+inmediato.
+
+**Por qué importa para escribir TESTS de `@Observable`** (no es un bug de la app, es una
+trampa al escribir la prueba): cualquier test "`withObservationTracking` + cambia una
+propiedad + `#expect(flag.fired)`" que reutilice, sin querer, el valor por defecto de
+esa propiedad demuestra "esta asignación no notificó" sin decir SI fue porque
+`@Observable` falta (el bug real que estas pruebas, PRD-APP-02 tramo B item 0, existen
+para atrapar) o porque el valor no cambió (un falso positivo del test, no del código).
+Los tests de este tramo que siguen este patrón (`ObservationFlag`,
+`docs/INFORME-MULTI.md` §11) fuerzan ahora, a propósito, un valor final DISTINTO del
+inicial en cada caso.
+
+**No es una fricción de AppFoundation** — `@Observable` es del framework `Observation`
+de Apple, no del kit — pero merece registro aquí porque el propio §11 (arriba, tramo A)
+documenta el patrón de test `ObservationFlag`/`withObservationTracking` sin advertir de
+esta trampa; una nota en ese mismo sitio en 1.2.1 ahorraría repetir el hallazgo.
+
+### 15. `UserDefaults` no es `Sendable` — construirlo con `UserDefaults(suiteName:)` en
+un test y pasarlo al `init` de un `actor` bajo Swift 6 estricto exige `@preconcurrency
+import Foundation`
+
+**Repro:**
+```swift
+// dentro de una función de test @MainActor (aislamiento por defecto de este proyecto):
+let defaults = try #require(UserDefaults(suiteName: suiteName))
+return UserDefaultsSettingsStore(defaults: defaults)   // el init del actor
+```
+```
+error: sending 'defaults' risks causing data races [#SendingRisksDataRace]
+note: sending main actor-isolated 'defaults' to actor-isolated initializer
+'init(defaults:)' risks causing data races between actor-isolated and main
+actor-isolated uses
+```
+Confirmado con un chequeo aislado (`func check<T: Sendable>(_ x: T) {}; check(UserDefaults
+.standard)`): el SDK marca la conformidad de `UserDefaults` a `Sendable` como
+`@_nonSendable(_assumed)` — EXPLÍCITAMENTE no-`Sendable`, a pesar de ser, en la práctica,
+thread-safe (así lo documenta Apple). `Domain.UserDefaultsSessionStore`/
+`SettingsFeature.UserDefaultsSettingsStore` nunca lo habían notado porque el único sitio
+que los construye con un `UserDefaults` no-`.standard` es, precisamente, este test nuevo
+— cualquier otro call site usa el parámetro por defecto (`= .standard`), evaluado en el
+propio `init`, no una variable local "enviada" a través de un límite de aislamiento.
+
+**Workaround usado aquí:** `@preconcurrency import Foundation` en el fichero de test que
+construye `UserDefaults(suiteName:)` explícitamente — relaja el chequeo de `Sendable`
+para los tipos de `Foundation`, aceptable aquí porque `UserDefaults` es, de hecho,
+thread-safe (el propio comentario de `UserDefaultsSessionStore` ya lo asume igual, solo
+que nunca lo había puesto a prueba con un valor no-`.standard`).
+
+**No es una fricción de AppFoundation/CoreNetworking** — es el SDK de Apple negándose a
+marcar `UserDefaults` como `Sendable` a pesar de serlo en la práctica — pero cualquier
+Store futuro de este repo que quiera testear contra un `UserDefaults(suiteName:)` real
+(en vez de un mock en memoria) se topará con lo mismo; documentado para no repetir el
+diagnóstico.
+
+### Decisión de diseño: el pinning se aplica en el próximo lanzamiento, no en caliente
+
+No es una fricción — una decisión deliberada, documentada aquí porque el PRD habla de
+"Settings... reconfigura el transporte" de una forma que podría leerse como "en caliente,
+sin reiniciar". `NetworkingModule.register(in:)` construye el `APIService` autenticado
+(y el de login/refresh) UNA VEZ, en el momento en que `Container.shared.register(modules:)`
+corre (arranque de la app) — cada `*Service` de cada feature (`ProductsService`,
+`GalleryService`, `AuthService`…) resuelve `any APIServiceProtocol` una sola vez y
+guarda esa referencia. Re-registrar el tipo en el `Container` después de un toggle en
+`Settings` no llegaría a ninguna de esas referencias ya resueltas — haría falta un nivel
+de indirección adicional (un `APIServiceProtocol` "proxy" que reenvíe a una instancia
+intercambiable) que el kit no pide y que esta app no necesita: el caso de uso real
+("verifica que el pinning estricto/pin falso funcionan") tolera perfectamente un
+reinicio entre tocar el ajuste y comprobar el efecto, exactamente como la comprobación
+manual de `README.md` lo hace. `SettingsViewModel` lo dice explícitamente en su propio
+banner ("se aplica al reiniciar la app") y en su doc comment.

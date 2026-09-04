@@ -15,20 +15,29 @@ funcionando desde el primer commit — en la estructura **modular de tres nivele
 - **Arquitectura**: View → ViewModel → Logic → Services/Stores (la de `AppFoundation`),
   sin excepciones, con `ArchitectureLint` activo en cada `swift build` y R13 (aislamiento
   entre módulos) vigilando que ninguna feature importe otra.
-- **Ocho pantallas + una hoja modal**: Login, Productos (lista paginada), Detalle de
-  producto (favorito ⭐, `chrome: .custom` a propósito), Favoritos (SwiftData, "Vaciar
-  favoritos" con `AlertState` destructiva), Perfil (`GET /auth/me`, logout con
-  confirmación, y muestra cuándo se renovó el token en silencio), Buscar (sheet),
-  **Diagnostics** (escaparate de `CoreNetworking`: siete experimentos reales contra
-  DummyJSON — 404, 401, timeout, JSON inválido, host inalcanzable, 5xx con reintentos,
-  petición lenta cancelable) y **Uploads** (`POST /products/add` con
-  `upload(_:data:progress:)`, una foto vía `any CameraCapturing`, y progreso real).
+- **Once pantallas + una hoja modal**: Login, Productos (lista paginada), Detalle de
+  producto (favorito ⭐, `chrome: .custom` a propósito, entrada a Gallery), Favoritos
+  (SwiftData, "Vaciar favoritos" con `AlertState` destructiva), Perfil (`GET /auth/me`,
+  logout con confirmación, muestra cuándo se renovó el token en silencio, entrada a
+  Settings), Buscar (sheet, barra custom `.blur` con `SearchBarConfiguration` y
+  `Debouncer`), **Diagnostics** (escaparate de `CoreNetworking`: siete experimentos
+  reales contra DummyJSON — 404, 401, timeout, JSON inválido, host inalcanzable, 5xx
+  con reintentos, petición lenta cancelable — más `.untrustedServer` cuando `Settings`
+  tiene el pin falso activo), **Uploads** (`POST /products/add` con
+  `upload(_:data:progress:)`, una foto vía `any CameraCapturing`, y progreso real),
+  **Gallery** (imágenes grandes de un producto, barra custom `.transparent` en
+  `.overlay`, `Throttler` para prefetch, miniaturas con `PhaseView`/
+  `BindingBackedState`) y **Settings** (tema del kit/de marca en vivo, pinning TLS con
+  pines reales de `dummyjson.com` + un pin falso, `AppEnvironment`, configuración de red
+  activa, últimos eventos de analítica).
+- **Deep links**: `appstarter://product/<id>` y `appstarter://search?q=<query>` —
+  `App/DeepLink.swift`.
 - **Sesión**: bearer token + refresh automático en 401, con logout global si el refresh
   también falla. `Container(parent:)` por sesión: al hacer login se crea un contenedor
   hijo con los módulos autenticados (hoy, `Profile`); al cerrar sesión se descarta.
 - **Analítica**: `AnalyticsTracking` (`Domain`) — un evento `screen_view` por navegación
   (`App/RootView.swift`) y uno `upload` al subir una foto, con un adaptador de consola
-  que además guarda los últimos eventos en memoria.
+  que además guarda los últimos eventos en memoria — `Settings` los muestra.
 
 ## Arranca en 5 minutos
 
@@ -59,31 +68,35 @@ AppStarter/
 ├── project.yml                  targets, esquema, dependencias SPM
 ├── Scripts/bootstrap.sh          xcodegen generate
 ├── App/                          cáscara fina de xcodegen — target `AppStarter`
-│   ├── AppStarterApp.swift        @main: instala AppErrorPresenter, registra AppModule.makeModules()
+│   ├── AppStarterApp.swift        @main: instala AppErrorPresenter, registra AppModule.makeModules(), onOpenURL
 │   ├── AppModule.swift            composition root: PlatformModule (navegación, CameraKit, AnalyticsAdapters)
-│   │                              + NetworkingModule + los seis módulos de feature
-│   ├── RootView.swift             CoordinatorView + switch sobre AppRoute (Domain)
+│   │                              + NetworkingModule + un módulo por feature
+│   ├── RootView.swift             CoordinatorView + switch sobre AppRoute (Domain) + tema en vivo (ThemeSettings)
 │   ├── AppErrorPresenter.swift    mapeo DomainError → ScreenError, instalado en @main
+│   ├── DeepLink.swift             appstarter://product/<id>, appstarter://search?q=<query>
+│   ├── Theme/                     Brand (tokens) + los cuatro Brand…Style (Settings los instala/quita)
 │   └── OfflineFixtures.swift      InMemoryTransport con respuestas grabadas (-UITestOffline)
-├── AppTests/                     smoke test nativo de Xcode del composition root completo
-├── AppUITests/                   los 4 XCUITests del PRD + el helper de arranque compartido
+├── AppTests/                     smoke test nativo de Xcode del composition root + DeepLinkTests
+├── AppUITests/                   los XCUITests del PRD + el helper de arranque compartido
 ├── Packages/
 │   ├── Platform/                  1 Package.swift — Domain, Networking, CameraKit, AnalyticsAdapters
-│   │   ├── Sources/Domain/          modelos y protocolos compartidos: Product, UserProfile,
-│   │   │                            StoredSession/SessionStoring, FavoritesStoring, AppRoute
-│   │   │                            — SOLO importa Foundation
+│   │   ├── Sources/Domain/          modelos y protocolos compartidos: Product (con images),
+│   │   │                            UserProfile, StoredSession/SessionStoring, FavoritesStoring,
+│   │   │                            AnalyticsTracking (con recentEvents()), AppRoute — SOLO Foundation
 │   │   ├── Sources/Networking/      lo que necesita CoreNetworking pero es transversal a
 │   │   │                            varias features: AuthServicing/ProductsServicing,
 │   │   │                            AppSessionState/SessionExpiring, RefreshActivityLog,
-│   │   │                            NetworkingWiring.swift, NetworkingModule
+│   │   │                            AppSettings/ThemeSettings/PinningPins (Settings), NetworkingModule
 │   │   ├── Sources/CameraKit/       stub de CameraProviding (Fase 2 lo usa de verdad)
 │   │   ├── Sources/AnalyticsAdapters/  stub de AnalyticsAdapting (consola; Fase 2)
 │   │   └── Sources/PlatformTestSupport/  mocks/spies compartidos por más de un *FeatureTests
-│   │                                     (SessionStoreSpy, ProductsServiceMock, FavoritesStoreMock…)
+│   │                                     (SessionStoreSpy, ProductsServiceMock, FavoritesStoreMock,
+│   │                                     InMemoryAnalytics, ObservationFlag…)
 │   └── Features/                  1 Package.swift — un target <Name>Feature por feature
 │       ├── Sources/LoginFeature/ ProductsFeature/ ProductDetailFeature/ FavoritesFeature/
-│       │                         ProfileFeature/ SearchFeature/  (View/ViewModel/Logic/Module
-│       │                                                          + Services/Stores propios)
+│       │                         ProfileFeature/ SearchFeature/ DiagnosticsFeature/ UploadsFeature/
+│       │                         SettingsFeature/  (View/ViewModel/Logic/Module + Services/Stores)
+│       ├── Sources/GalleryFeatureCore/ GalleryFeatureUI/  (--module: dos targets reales)
 │       └── Tests/<Name>FeatureTests/    unitarios por capa · IntegrationTests/ (cross-feature)
 └── docs/
     ├── INFORME-INTEGRACION.md    fricciones al integrar los paquetes desde Xcode (histórico)
@@ -196,6 +209,64 @@ mismo `.swift-format` sobre `Packages`, `App`, `AppTests` y `AppUITests`.
   y `Packages/Features/Package.swift` — cada build corre `archlint` sobre ese target. Ver
   «Criterios de aceptación» más abajo para la demostración de que un `import` entre
   features rompe el build (R13).
+
+## Escaparate (PRD-APP-02, tramo B)
+
+Cada fila, verificable en el código real — `fichero:línea`:
+
+| Capacidad | Dónde |
+|---|---|
+| `Product.images` (`GET /products/{id}` trae varias imágenes) | `Packages/Platform/Sources/Domain/Product.swift:18` |
+| `ScreenChrome.custom(_, placement: .overlay)` + `NavigationBarStyle.transparent` | `Packages/Features/Sources/GalleryFeatureUI/GalleryView.swift:24` (estilo en la línea 30) |
+| `Throttler` (prefetch de la siguiente imagen, clock inyectable) | `Packages/Features/Sources/GalleryFeatureUI/GalleryViewModel.swift:31,60` |
+| `PhaseView` + estado local sin ViewModel (miniaturas) | `Packages/Features/Sources/GalleryFeatureUI/GalleryView.swift:112,120` |
+| `AppRoute.gallery(productID:)` desde `ProductDetail` | `Packages/Platform/Sources/Domain/AppRoute.swift:27` |
+| `DeepLinkType` (`appstarter://product/<id>`, `appstarter://search?q=<query>`) | `App/DeepLink.swift:13,21` |
+| `Coordinator.handle(_:as:map:)` — `.setStack`/`.present` desde un deep link | `App/DeepLink.swift:48` |
+| `CFBundleURLTypes` fusionado en el Info.plist sintetizado (xcodegen `info.properties`) | `project.yml:84` |
+| `SearchBarConfiguration` en barra custom `.blur` | `Packages/Features/Sources/SearchFeature/SearchView.swift:27,32` |
+| `Debouncer` (texto de búsqueda, clock inyectable) | `Packages/Features/Sources/SearchFeature/SearchViewModel.swift:31,57` |
+| `AppSettings` (contrato compartido `Networking`↔`SettingsFeature`) | `Packages/Platform/Sources/Networking/AppSettings.swift` |
+| `AppSettings.loadSynchronously(from:)` — bootstrap síncrono para `NetworkingModule` | `Packages/Platform/Sources/Networking/AppSettings.swift:39`, usado en `Packages/Platform/Sources/Networking/NetworkingModule.swift:54` |
+| `SSLPinningConfiguration` (pines reales + pin falso) | `Packages/Platform/Sources/Networking/PinningPins.swift:31` |
+| `UserDefaultsSettingsStore` (actor + conformidad en extension) | `Packages/Features/Sources/SettingsFeature/Stores/SettingsStore.swift:29` |
+| `AnalyticsTracking.recentEvents()` mostrados en Settings | `Packages/Platform/Sources/Domain/AnalyticsTracking.swift:36`, consumido en `Packages/Features/Sources/SettingsFeature/SettingsLogic.swift:95` |
+| `AppEnvironment` (debug/release, versión) | `Packages/Features/Sources/SettingsFeature/SettingsView.swift:61-62` |
+| `ThemeSettings` (`@Observable`, broadcast en vivo) | `Packages/Platform/Sources/Networking/ThemeSettings.swift:22` |
+| Los cuatro `Brand…Style` instalados en `RootView` | `App/Theme/Brand*.swift`, instalados en `App/RootView.swift:41-44` |
+| `AppRoute.settings` desde `Profile` | `Packages/Platform/Sources/Domain/AppRoute.swift:38`, destino en `App/RootView.swift:90` |
+| `APIError.Category.untrustedServer` → `DiagnosticsError.untrustedServer` | `Packages/Features/Sources/DiagnosticsFeature/DiagnosticsModels.swift` |
+
+### Pinning TLS: cómo se obtuvieron los pines reales
+
+Dos pines reales de `dummyjson.com` — la hoja (rota en cada renovación) y la
+intermediaria emisora (sobrevive a esa rotación, el "pin de respaldo" que pide
+RFC 7469 §2.5):
+
+```bash
+openssl s_client -connect dummyjson.com:443 -servername dummyjson.com </dev/null \
+  | openssl x509 -pubkey -noout \
+  | openssl pkey -pubin -outform der \
+  | openssl dgst -sha256 -binary | base64
+```
+
+```
+leaf         (dummyjson.com):              q79YST4pUwa2CDkfrlOfH4rDdgrCXfQDLmtZeEBEk3w=
+intermediate (Google Trust Services WE1):  kIdp6NNEd8wsugYyyIYFsi1ylMCED3hZbSR8ZFsa/A4=
+```
+
+El "pin falso" (`Packages/Platform/Sources/Networking/PinningPins.swift`) es base64
+válido de 32 bytes (pasa la validación de forma de `SSLPinningConfiguration`) pero no
+coincide con ninguna clave real — cualquier petición con él instalado falla
+`.untrustedServer`, nunca `.cancelled` (`CoreNetworking`'s `TransportError`).
+
+**El pinning se aplica en el PRÓXIMO lanzamiento, no en caliente.**
+`NetworkingModule.register(in:)` lee `AppSettings` UNA VEZ, al registrar el
+`Container`, para decidir si el `APIService` autenticado (y el de login/refresh) pinan
+TLS — cada `*Service` ya resolvió y cacheó su propia referencia a `any
+APIServiceProtocol` desde ese único registro; re-registrar el tipo después no llega a
+ninguno de ellos. La comprobación manual de abajo reinicia la app entre tocar el
+toggle y verificar su efecto.
 
 ## Tests
 
