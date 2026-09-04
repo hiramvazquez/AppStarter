@@ -42,6 +42,17 @@ struct ProductDetailViewModelTests {
         #expect(viewModel.isFavorite)
     }
 
+    @Test("handle(.openGallery) pushes .gallery(productID:)")
+    func openGalleryPushesGalleryRoute() {
+        let mock = ProductDetailLogicMock()
+        let router = Coordinator<AppRoute>(root: .products)
+        let viewModel = ProductDetailViewModel(logic: mock, productID: 7, router: router)
+
+        viewModel.handle(.openGallery)
+
+        #expect(router.mainStack.path == [.gallery(productID: 7)])
+    }
+
     @Test("handle(.back) pops the router")
     func backPopsRouter() {
         let mock = ProductDetailLogicMock()
