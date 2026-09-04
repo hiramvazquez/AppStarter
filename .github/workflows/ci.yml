@@ -58,7 +58,7 @@ jobs:
           swift format lint --strict --configuration ../../.swift-format --recursive Sources Tests
 
   app:
-    name: App (xcodebuild test: unit + snapshot + UI, offline)
+    name: "App (xcodebuild test: unit + snapshot + UI, offline)"
     runs-on: macos-15
     timeout-minutes: 30
     needs: packages
