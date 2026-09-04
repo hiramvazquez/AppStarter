@@ -22,6 +22,7 @@ let package = Package(
         .library(name: "LoginFeature", targets: ["LoginFeature"]),
         .library(name: "ProductsFeature", targets: ["ProductsFeature"]),
         .library(name: "ProductDetailFeature", targets: ["ProductDetailFeature"]),
+        .library(name: "FavoritesFeature", targets: ["FavoritesFeature"]),
         // archinit:products-end
     ],
     dependencies: [
@@ -104,6 +105,30 @@ let package = Package(
                 .product(name: "PlatformTestSupport", package: "Platform"),
             ],
             path: "Tests/ProductDetailFeatureTests",
+            swiftSettings: swiftSettings
+        ),
+        // FavoritesFeature no depende de CoreNetworking/Networking (SwiftData, --local):
+        // generate-feature en modo multi solo añade CoreNetworking con --api.
+        .target(
+            name: "FavoritesFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "Domain", package: "Platform"),
+            ],
+            path: "Sources/FavoritesFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+            ]
+        ),
+        .testTarget(
+            name: "FavoritesFeatureTests",
+            dependencies: [
+                "FavoritesFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "PlatformTestSupport", package: "Platform"),
+            ],
+            path: "Tests/FavoritesFeatureTests",
             swiftSettings: swiftSettings
         ),
         // archinit:features-end
