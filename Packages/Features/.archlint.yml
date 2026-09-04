@@ -15,7 +15,23 @@ suffixes.module: Module
 
 # Reglas desactivadas (por id, p. ej. R11 si @MainActor en una Logic es intencional
 # en este proyecto).
-disabled: []
+#
+# R3: fricción del modo multi (PRD-APP-02, Fase 1 — docs/INFORME-MULTI.md). R3 es un
+# chequeo léxico POR FICHERO: un Service (Services/XxxService.swift) debe declarar su
+# propio 'protocol XxxServicing: Sendable' en ESE MISMO fichero. Tres features
+# (ProductsFeature, ProductDetailFeature, SearchFeature) comparten un único
+# ProductsServicing — vive en Packages/Platform/Sources/Networking (un target aparte,
+# para que las tres features lo importen sin importarse entre sí, R13) mientras que la
+# implementación concreta (ProductsService, con sus DTOs) se queda en ProductsFeature, la
+# única que la construye. R3 no contempla un protocolo Servicing/Storing declarado en OTRO
+# módulo — ve el Service sin su protocolo en el mismo fichero y falla, aunque la regla que
+# de verdad importa (ningún Service expone su DTO, ninguna otra capa toca
+# APIServiceProtocol/BaseRequest directamente) se sigue cumpliendo. Repro: mover
+# ProductsServicing a Networking sin desactivar R3 → `swift build --package-path
+# Packages/Features` falla con '[ArchLint.R3] Falta protocol XxxServicing: Sendable'.
+# Propuesta para 1.2.1: que R3 acepte un 'protocol XxxServicing'/'XxxStoring' resuelto
+# desde cualquier import del fichero, no solo declarado en el propio fichero.
+disabled: [R3]
 
 # Rutas ignoradas (glob: '*' un segmento, '**' cualquier profundidad). Esta lista
 # REEMPLAZA los defaults de archlint (Tests/**, *Tests.swift, *Mock.swift, *Spy.swift,
