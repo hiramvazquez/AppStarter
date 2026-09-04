@@ -70,6 +70,20 @@ targets:
       - package: Features
         product: GalleryFeature
       # archinit:products
+    # URL scheme para deep links (PRD-APP-02 tramo B item 3): `appstarter://product/3`,
+    # `appstarter://search?q=phone`, parseados por `App/DeepLink.swift` y encaminados
+    # por el Coordinator (`onOpenURL`, `AppStarterApp.swift`). `CFBundleURLTypes` no
+    # tiene un `INFOPLIST_KEY_` sintetizado (a diferencia de las claves escalares de
+    # abajo) — xcodegen fusiona este `info.properties` con el Info.plist sintetizado
+    # por `GENERATE_INFOPLIST_FILE: YES`.
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.appstarter.app
+            CFBundleURLSchemes:
+              - appstarter
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.appstarter.app

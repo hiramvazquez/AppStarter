@@ -1,6 +1,8 @@
 import AppFoundation
+import DiagnosticsFeature
 import FavoritesFeature
 import Foundation
+import GalleryFeatureUI
 import LoginFeature
 import Networking
 import ProductDetailFeature
@@ -8,6 +10,7 @@ import ProductsFeature
 import ProfileFeature
 import SearchFeature
 import Testing
+import UploadsFeature
 
 @testable import AppStarter
 
@@ -28,31 +31,41 @@ import Testing
 struct CompositionRootTests {
     @Test("Every module resolves its ViewModel without crashing")
     func allModulesResolve() throws {
+        let baseURL = URL(string: "https://dummyjson.com")!
         let container = Container()
         let modules: [DependencyModule] = [
             PlatformModule(),
-            NetworkingModule(baseURL: URL(string: "https://dummyjson.com")!),
+            NetworkingModule(baseURL: baseURL),
             LoginModule(),
             ProductsModule(),
             ProductDetailModule(),
+            GalleryModule(),
             try FavoritesModule.inMemory(),
             ProfileModule(),
-            SearchModule()
+            SearchModule(),
+            DiagnosticsModule(baseURL: baseURL),
+            UploadsModule()
         ]
         container.register(modules: modules)
 
         #expect(container.canResolve(LoginViewModel.self))
         #expect(container.canResolve(ProductsViewModel.self))
         #expect(container.canResolve(ProductDetailViewModelFactory.self))
+        #expect(container.canResolve(GalleryViewModelFactory.self))
         #expect(container.canResolve(FavoritesViewModel.self))
         #expect(container.canResolve(ProfileViewModel.self))
-        #expect(container.canResolve(SearchViewModel.self))
+        #expect(container.canResolve(SearchViewModelFactory.self))
+        #expect(container.canResolve(DiagnosticsViewModel.self))
+        #expect(container.canResolve(UploadsViewModel.self))
 
         _ = container.resolve(LoginViewModel.self)
         _ = container.resolve(ProductsViewModel.self)
         _ = container.resolve(ProductDetailViewModelFactory.self)(1)
+        _ = container.resolve(GalleryViewModelFactory.self)(1)
         _ = container.resolve(FavoritesViewModel.self)
         _ = container.resolve(ProfileViewModel.self)
-        _ = container.resolve(SearchViewModel.self)
+        _ = container.resolve(SearchViewModelFactory.self)(nil)
+        _ = container.resolve(DiagnosticsViewModel.self)
+        _ = container.resolve(UploadsViewModel.self)
     }
 }
