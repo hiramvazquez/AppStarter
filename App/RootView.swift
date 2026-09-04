@@ -36,15 +36,13 @@ struct RootView: View {
     @State private var themeSettings = Container.shared.resolve(ThemeSettings.self)
 
     var body: some View {
-        if themeSettings.isBrand {
-            coordinatorView
-                .loadingViewStyle(BrandLoadingStyle())
-                .errorViewStyle(BrandErrorStyle())
-                .emptyViewStyle(BrandEmptyStyle())
-                .bannerViewStyle(BrandBannerStyle())
-        } else {
-            coordinatorView
-        }
+        // Same view identity whatever the theme (see `App/Theme/ThemedStyles.swift`): the
+        // styles switch inside, the `CoordinatorView` and its navigation stack stay put.
+        coordinatorView
+            .loadingViewStyle(ThemedLoadingStyle(isBrand: themeSettings.isBrand))
+            .errorViewStyle(ThemedErrorStyle(isBrand: themeSettings.isBrand))
+            .emptyViewStyle(ThemedEmptyStyle(isBrand: themeSettings.isBrand))
+            .bannerViewStyle(ThemedBannerStyle(isBrand: themeSettings.isBrand))
     }
 
     private var coordinatorView: some View {

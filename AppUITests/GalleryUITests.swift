@@ -6,7 +6,7 @@ import XCTest
 /// to `ProductDetail` — the offline fixture's product has three images
 /// (`App/OfflineFixtures.swift`), so there is something to page/swipe between.
 final class GalleryUITests: AppStarterUITestCase {
-    func testOpenGalleryFromDetailShowsOverlayBarAndSwipeBackReturns() {
+    func testOpenGalleryFromDetailShowsOverlayBarPagesAndCloseReturns() {
         let app = launchApp()
         loginAndWaitForProducts(app)
 
@@ -37,16 +37,15 @@ final class GalleryUITests: AppStarterUITestCase {
         let secondImage = app.descendants(matching: .any)["gallery.image.1"]
         XCTAssertTrue(waitForExistenceTolerant(secondImage, in: app), "Selecting the second thumbnail did not page")
 
-        // Edge swipe (same technique as `SwipeBackTests`, ProductDetail's own swipe-back):
-        // Gallery is the second screen in this app with `.custom` chrome, so this is what
-        // proves `PopGestureEnabler` also engages under `.overlay` placement, not just
-        // `.stack`.
-        let window = app.windows.firstMatch
-        let edge = window.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
-        let target = window.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5))
-        edge.press(forDuration: 0.05, thenDragTo: target)
+        // Back to the detail through the overlay bar's close item. An edge swipe is NOT
+        // used here on purpose: the gallery pages with `TabView(.page)`, whose horizontal pan
+        // (a `UIPageViewController` underneath) wins over the navigation controller's
+        // interactive pop gesture at the leftmost page — a UIKit gesture-precedence fact,
+        // not a `PopGestureEnabler` gap. Swipe-back under `.custom` chrome is proven by
+        // `SwipeBackTests` on ProductDetail, whose content does not pan horizontally.
+        waitAndTap(closeButton)
 
-        XCTAssertTrue(detailTitle.waitForExistence(timeout: 10), "Swipe-back did not return to ProductDetail")
-        XCTAssertFalse(firstImage.exists, "Gallery should be gone after swipe-back")
+        XCTAssertTrue(detailTitle.waitForExistence(timeout: 10), "Close did not return to ProductDetail")
+        XCTAssertFalse(firstImage.exists, "Gallery should be gone after closing")
     }
 }

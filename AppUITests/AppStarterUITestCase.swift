@@ -131,7 +131,19 @@ class AppStarterUITestCase: XCTestCase {
         dismissSystemAlertIfPresent(app, timeout: 0.5)
         if element.waitForExistence(timeout: timeout) { return true }
         dismissSystemAlertIfPresent(app, timeout: 1)
-        return element.waitForExistence(timeout: 5)
+        let found = element.waitForExistence(timeout: 5)
+        if !found {
+            // Same evidence `waitAndTap` leaves: what was on screen when the wait gave up.
+            let screenshot = XCTAttachment(screenshot: app.screenshot())
+            screenshot.name = "not-found"
+            screenshot.lifetime = .keepAlways
+            add(screenshot)
+            let tree = XCTAttachment(string: "missing=\(element)\n\(app.debugDescription)")
+            tree.name = "not-found-tree"
+            tree.lifetime = .keepAlways
+            add(tree)
+        }
+        return found
     }
 
     /// Taps the `product.1` row from the products list and waits for `ProductDetail` to
