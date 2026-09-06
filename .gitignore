@@ -15,3 +15,6 @@ Packages/*/.swiftpm/
 
 # Simulator/test artifacts
 *.xcresult
+
+# Marker de verificación: es estado local ligado a un diff, no viaja
+.claude/estado/

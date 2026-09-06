@@ -24,6 +24,18 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash Scripts/puerta-commit.sh",
+            "_por_que": "Único hook que bloquea. Exige firma de verificación ligada al sha256 del diff antes de commitear."
+          }
+        ]
+      }
     ]
   },
   "permissions": {
