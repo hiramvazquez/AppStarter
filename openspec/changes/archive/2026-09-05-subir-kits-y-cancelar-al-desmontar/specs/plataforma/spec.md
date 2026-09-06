@@ -1,40 +1,59 @@
-# Delta — plataforma
+## ADDED Requirements
 
-## AÑADIDO: cancelación del trabajo en vuelo al desmontar una pantalla
+### Requirement: Cancelación del trabajo en vuelo al desmontar una pantalla
 
-Una pantalla que lanza trabajo asíncrono **cancela ese trabajo cuando se la elimina de la
-jerarquía de navegación** (pop, cambio de pestaña que destruye la vista, dismiss de un
-modal).
+Una pantalla montada con `ScreenContainer` SHALL cancelar su trabajo asíncrono en vuelo
+cuando la vista sea eliminada de la jerarquía de navegación, y SHALL NOT cancelarlo cuando
+la vista quede únicamente cubierta por otra empujada encima.
 
-**No lo cancela cuando la pantalla queda simplemente TAPADA** por un push: al volver, su
-carga sigue siendo válida y no debe repetirse.
+El comportamiento se controla con `ScreenContainer(_:cancelsInFlightWorkOnRemoval:)`, cuyo
+valor por defecto es `true` desde AppFoundation 1.3.0: subir la versión cambia el
+comportamiento de las diez pantallas sin tocar una línea.
 
-Se expresa con `ScreenContainer(viewModel, cancelsInFlightWorkOnRemoval:)`, que **viene a
-`true` por defecto** desde AppFoundation 1.3.0: subir la version ya cambia el
-comportamiento de las 10 pantallas sin tocar una linea. El kit expone tambien
-`ScreenState.cancelInFlightWork()` para el caso manual.
+#### Scenario: La pantalla se elimina de la jerarquía
 
-### EXCEPCION: el trabajo que debe sobrevivir a su pantalla
+- **WHEN** el usuario hace pop de una pantalla que tiene una carga en curso
+- **THEN** el trabajo en vuelo se cancela
+- **AND** no se entrega ningún resultado a una vista que ya no existe
 
-**Uploads** pasa `cancelsInFlightWorkOnRemoval: false`. Su trabajo en vuelo es una subida
-de foto con barra de progreso, y perderla porque el usuario navego fuera es peor que el
-problema que el default resuelve.
+#### Scenario: La pantalla queda cubierta por un push
 
-**Pendiente de decision del owner:** `LoginFeature` es el otro envio de formulario del
-repo. Cancelar un login al salir de la pantalla es probablemente correcto —el usuario se
-fue—, pero es una decision de producto, no del que sube la dependencia. Se deja con el
-default `true` y anotado aqui.
+- **WHEN** el usuario empuja otra pantalla encima de una que tiene una carga en curso
+- **THEN** el trabajo en vuelo continúa
+- **AND** al volver atrás la carga sigue siendo válida y no se repite
 
-## MODIFICADO: qué ve el usuario cuando un error se envuelve
+#### Scenario: El trabajo debe sobrevivir a su pantalla
 
-Un error envuelto (`WrappedError`) presenta al usuario **solo** el mensaje de la capa que
-lo envuelve. El error interno queda para el log y para diagnóstico, nunca en pantalla.
+- **WHEN** la pantalla es `UploadsView`, que sube una foto con barra de progreso
+- **THEN** pasa `cancelsInFlightWorkOnRemoval: false`
+- **AND** la subida continúa aunque el usuario navegue fuera
 
-Antes: `screenError` y `message` componían el texto con el error interno incluido.
+### Requirement: Versión mínima de los kits
 
-## Versiones mínimas
+Los manifiestos del proyecto SHALL declarar AppFoundation `1.3.1` o superior y
+CoreNetworking `1.2.2` o superior, en los tres sitios donde vive el suelo de versión:
+`project.yml`, `Packages/Platform/Package.swift` y `Packages/Features/Package.swift`.
 
-| kit | antes | ahora |
-|---|---|---|
-| AppFoundation | 1.2.3 | **1.3.1** |
-| CoreNetworking | 1.0.0 | **1.2.2** |
+#### Scenario: Se resuelve el grafo de dependencias
+
+- **WHEN** se ejecuta `swift package update` o `xcodebuild -resolvePackageDependencies`
+- **THEN** los tres `Package.resolved` quedan en AppFoundation 1.3.1 o superior
+- **AND** en CoreNetworking 1.2.2 o superior
+
+## MODIFIED Requirements
+
+### Requirement: El usuario no ve errores internos
+
+Un error envuelto (`WrappedError`) SHALL presentar al usuario únicamente el mensaje de la
+capa que lo envuelve. El error interno SHALL quedar disponible para el log y el
+diagnóstico, y SHALL NOT aparecer en pantalla.
+
+Antes de AppFoundation 1.2.6, `screenError` y `message` componían el texto incluyendo el
+error interno. Era un fallo de seguridad y por eso este requisito cambia de comportamiento
+al subir la versión, no de redacción.
+
+#### Scenario: Un fallo de red envuelto por una capa de dominio
+
+- **WHEN** una operación falla y el error se envuelve antes de llegar a la vista
+- **THEN** el texto en pantalla es el de la capa que envuelve
+- **AND** el error original no forma parte de ese texto
