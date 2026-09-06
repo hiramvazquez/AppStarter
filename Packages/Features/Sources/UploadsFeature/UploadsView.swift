@@ -22,7 +22,12 @@ public struct UploadsView: View {
     }
 
     public var body: some View {
-        ScreenContainer(viewModel) { send in
+        // `cancelsInFlightWorkOnRemoval: false` A PROPOSITO: el default de AppFoundation
+        // 1.3.0 es `true`, y para esta pantalla es el default equivocado — su trabajo en
+        // vuelo es una SUBIDA de foto con barra de progreso, que no debe perderse porque
+        // el usuario navegue fuera mientras sube. Es el caso exacto que el doc comment de
+        // `ScreenContainer` nombra para excluirse.
+        ScreenContainer(viewModel, cancelsInFlightWorkOnRemoval: false) { send in
             Form {
                 Section("Foto") {
                     if let data = viewModel.capturedPhotoData, let image = platformImage(from: data) {

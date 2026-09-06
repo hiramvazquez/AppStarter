@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/hiramvazquez/AppFoundation.git",
       "state" : {
-        "revision" : "88d87b576620a520bb164762ccf4ed06b42dba95",
-        "version" : "1.2.3"
+        "revision" : "2c312b8e0067050ca8806d6e57b85ee1de46f3e6",
+        "version" : "1.3.1"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/hiramvazquez/CoreNetworking.git",
       "state" : {
-        "revision" : "1991cedbc401cc2a18c2482cb942ea77d7fc9c2b",
-        "version" : "1.0.0"
+        "revision" : "211357c1d564c686ced62dd49df528cf514f922c",
+        "version" : "1.2.2"
       }
     }
   ],

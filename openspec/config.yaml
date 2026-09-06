@@ -1,0 +1,52 @@
+schema: spec-driven
+
+context: |
+  Language: es
+  All artifacts must be written in es.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+
+  Proyecto: app iOS (deployment target iOS 17) con dos paquetes locales —
+  Packages/Platform (dominio, networking, kits) y Packages/Features (un target por
+  feature) — sobre los SPM propios AppFoundation y CoreNetworking. La cáscara App/ la
+  genera xcodegen desde project.yml y no lleva lógica.
+
+  Reglas de arquitectura: AGENTS.md y .archlint.yml (R13/R16) mandan sobre cualquier otra
+  guía. Reglas de Swift/SwiftUI: .claude/skills/swift-swiftui.md.
+
+  Verificación del proyecto: `bash Scripts/verifica.sh` — build y tests de los dos
+  paquetes más el informe de lógica repetida, firmado contra el sha256 del diff staged.
+  Un cambio no se da por bueno sin esa firma.
+
+rules:
+  proposal:
+    - 'Usa los encabezados que el CLI espera: "## Why" y "## What Changes". El archivado
+       avisa si faltan (no bloquea, pero el aviso sale en cada cierre).'
+    - 'Incluye siempre una sección "Fuera de alcance" con lo que NO se va a tocar.'
+    - 'Incluye siempre "Criterios de aceptación" como lista de casillas, y cada criterio
+       tiene que poder comprobarse mirando el resultado. "La carga es más fluida" no es un
+       criterio; "UploadsView pasa el flag en false y hay un test que lo fija" sí lo es.'
+    - 'Nombra los ficheros o módulos concretos que se van a tocar. Un criterio que dice
+       "las pantallas que lanzan trabajo largo" no se puede verificar: di cuáles.'
+  tasks:
+    - 'La última tarea de todo cambio es `bash Scripts/verifica.sh` en verde.'
+  design:
+    - 'Solo si el cambio tiene decisiones técnicas de verdad. Un cambio sin decisiones no
+       lleva design.md: lleva un proposal y sus tareas.'
+
+operations:
+  apply:
+    guidance:
+      - 'Antes de escribir una función nueva, comprueba que no exista ya con
+         `python3 Scripts/busca-duplicados.py`. Este repo llegó a tener mapError()
+         repetido en cinco ficheros sin que nadie se diera cuenta.'
+      - 'Si al implementar descubres que el acuerdo estaba mal, se corrige el ACUERDO por
+         escrito y se dice. Lo prohibido es seguir adelante en silencio porque "es obvio
+         que hace falta" — pasó de verdad, y lo cazó la aceptación.'
+  archive:
+    guidance:
+      - 'Antes de archivar, lanza el sub-agente `aceptacion` (.claude/agents/aceptacion.md)
+         contra el cambio. Compara lo ENTREGADO con lo ACORDADO, criterio por criterio. Es
+         la pregunta que ni el compilador, ni los tests, ni el reviewer se hacen, y es
+         donde aparece el requisito que se evaporó por el camino.'
+      - 'No se archiva con veredicto DEVUELTO o ACUERDO-ROTO. Con ACUERDO-ROTO se corrige
+         el acuerdo primero, POR ESCRITO, y se vuelve a pasar.'

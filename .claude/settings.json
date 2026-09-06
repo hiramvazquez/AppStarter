@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_nota": "Tres hooks y nada más. Cada uno existe porque resuelve un fallo observado, no por simetría. Si algún día hay un cuarto, tiene que traer el fallo que lo motiva escrito en su commit.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash Scripts/inyecta-contexto.sh",
+            "_por_que": "La deriva no se arregla obligando a releer: se arregla poniendo el acuerdo delante otra vez, corto, en cada turno."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash Scripts/inyecta-contexto.sh",
+            "_por_que": "Tras compactar, el texto de las reglas es de lo primero que se pierde. Se reinyecta el mismo digest."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash Scripts/puerta-commit.sh",
+            "_por_que": "Único hook que bloquea. Exige firma de verificación ligada al sha256 del diff antes de commitear."
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(gh pr merge:*)"
+    ],
+    "deny": [
+      "Edit(./.claude/estado/**)"
+    ],
+    "_deny_por_que": "El marker de verificación lo escribe Scripts/verifica.sh, no el modelo. Es mitigación PARCIAL y se declara como tal: frena el error de proceso (el caso real), no a un agente que quiera falsificarlo — eso no se puede cerrar desde dentro de la misma máquina.",
+    "allow": [
+      "Bash(bash Scripts/verifica.sh:*)",
+      "Bash(python3 Scripts/busca-duplicados.py:*)",
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  }
+}
