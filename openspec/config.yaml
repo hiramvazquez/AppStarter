@@ -13,9 +13,9 @@ context: |
   Reglas de arquitectura: AGENTS.md y .archlint.yml (R13/R16) mandan sobre cualquier otra
   guía. Reglas de Swift/SwiftUI: .claude/skills/swift-swiftui.md.
 
-  Verificación del proyecto: `bash Scripts/verifica.sh` — build y tests de los dos
-  paquetes más el informe de lógica repetida, firmado contra el sha256 del diff staged.
-  Un cambio no se da por bueno sin esa firma.
+  Verificación del proyecto: `/kit-verifica` (plugin ios-agent-kit) — build y tests de los
+  dos paquetes más el informe de lógica repetida, firmado contra el sha256 del diff staged.
+  Los comandos concretos viven en `kit.conf`. Un cambio no se da por bueno sin esa firma.
 
 rules:
   proposal:
@@ -28,7 +28,7 @@ rules:
     - 'Nombra los ficheros o módulos concretos que se van a tocar. Un criterio que dice
        "las pantallas que lanzan trabajo largo" no se puede verificar: di cuáles.'
   tasks:
-    - 'La última tarea de todo cambio es `bash Scripts/verifica.sh` en verde.'
+    - 'La última tarea de todo cambio es `/kit-verifica` en verde.'
   design:
     - 'Solo si el cambio tiene decisiones técnicas de verdad. Un cambio sin decisiones no
        lleva design.md: lleva un proposal y sus tareas.'
@@ -37,14 +37,14 @@ operations:
   apply:
     guidance:
       - 'Antes de escribir una función nueva, comprueba que no exista ya con
-         `python3 Scripts/busca-duplicados.py`. Este repo llegó a tener mapError()
+         `/kit-duplicados`. Este repo llegó a tener mapError()
          repetido en cinco ficheros sin que nadie se diera cuenta.'
       - 'Si al implementar descubres que el acuerdo estaba mal, se corrige el ACUERDO por
          escrito y se dice. Lo prohibido es seguir adelante en silencio porque "es obvio
          que hace falta" — pasó de verdad, y lo cazó la aceptación.'
   archive:
     guidance:
-      - 'Antes de archivar, lanza el sub-agente `aceptacion` (.claude/agents/aceptacion.md)
+      - 'Antes de archivar, pasa `/kit-acepta`
          contra el cambio. Compara lo ENTREGADO con lo ACORDADO, criterio por criterio. Es
          la pregunta que ni el compilador, ni los tests, ni el reviewer se hacen, y es
          donde aparece el requisito que se evaporó por el camino.'
