@@ -7,6 +7,12 @@ Estructura **modular de tres niveles** (`archinit --multi`, PRD-AF-10): `App/` (
 `Packages/Platform` (Domain/Networking/Kits/Adapters) y `Packages/Features` (un target real
 por feature) — nunca un paquete por feature, y nunca lógica de negocio dentro de `App/`.
 
+## Cómo se especifica y cómo se escribe Swift
+
+- **Especificación de cambios:** `openspec/AGENTS.md` — propuesta y delta ANTES del código.
+  La verdad actual del sistema vive en `openspec/specs/`.
+- **Reglas de Swift/SwiftUI:** `.claude/skills/swift-swiftui.md` (SwiftAgents adaptado a iOS 17).
+
 ## Módulos de este proyecto
 
 | Módulo | Dónde | Puede importar | Nunca importa |

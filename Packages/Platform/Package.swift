@@ -29,8 +29,8 @@ let package = Package(
         .library(name: "PlatformTestSupport", targets: ["PlatformTestSupport"])
     ],
     dependencies: [
-        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.2.3"),
-        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.0.0")
+        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.3.1"),
+        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.2.2")
     ],
     targets: [
         .target(
