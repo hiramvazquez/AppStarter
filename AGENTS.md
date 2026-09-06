@@ -7,11 +7,47 @@ Estructura **modular de tres niveles** (`archinit --multi`, PRD-AF-10): `App/` (
 `Packages/Platform` (Domain/Networking/Kits/Adapters) y `Packages/Features` (un target real
 por feature) — nunca un paquete por feature, y nunca lógica de negocio dentro de `App/`.
 
-## Cómo se especifica y cómo se escribe Swift
+## Cómo se trabaja aquí: el kit
 
-- **Especificación de cambios:** `openspec/AGENTS.md` — propuesta y delta ANTES del código.
-  La verdad actual del sistema vive en `openspec/specs/`.
-- **Reglas de Swift/SwiftUI:** `.claude/skills/swift-swiftui.md` (SwiftAgents adaptado a iOS 17).
+Este proyecto usa **[ios-agent-kit](https://github.com/hiramvazquez/ios-agent-kit)**, un
+plugin de Claude Code. Los agentes, comandos, hooks y scripts **no viven en este repo**:
+los pone el plugin. Aquí dentro solo hay dos cosas suyas, y las dos son nuestras:
+
+| | |
+|---|---|
+| `openspec/` | nuestras specs, cambios activos y archivados |
+| `kit.conf` | 10 líneas: qué verifica este proyecto y dónde vive el código |
+
+**Para trabajar en este repo necesitas instalarlo una vez:**
+
+```bash
+npm install -g @fission-ai/openspec@latest
+claude plugin marketplace add hiramvazquez/ios-agent-kit
+claude plugin install ios-agent-kit@hiram-kits -y
+```
+
+**El bucle:**
+
+```
+/opsx:propose "…"   →  se acuerda, sin tocar código
+/opsx:apply         →  se implementa
+/kit-verifica       →  build + tests de los dos paquetes, firmado contra el diff
+   reviewer         →  ¿esto rompe algo?
+/kit-acepta         →  ¿es lo acordado?
+/opsx:archive       →  el delta se funde en openspec/specs/
+```
+
+No se commitea sin firma de verificación válida: la puerta de `PreToolUse` lo bloquea.
+Stagea, verifica y commitea en **comandos separados** — encadenar `git add && git commit`
+cambia el diff entre la firma y el commit.
+
+Las reglas de Swift/SwiftUI las trae el plugin (`swift-swiftui`, SwiftAgents adaptado a
+iOS 17, que es nuestro deployment target). **Donde discrepen con este AGENTS.md, gana este
+AGENTS.md**: la arquitectura de este repo manda sobre cualquier guía general.
+
+Documentación completa del kit: [instalación](https://github.com/hiramvazquez/ios-agent-kit/blob/main/docs/INSTALACION.md)
+· [primer cambio](https://github.com/hiramvazquez/ios-agent-kit/blob/main/docs/PRIMER-CAMBIO.md)
+· [las piezas](https://github.com/hiramvazquez/ios-agent-kit/blob/main/docs/PIEZAS.md)
 
 ## Módulos de este proyecto
 
