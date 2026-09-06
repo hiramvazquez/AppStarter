@@ -19,6 +19,8 @@ context: |
 
 rules:
   proposal:
+    - 'Usa los encabezados que el CLI espera: "## Why" y "## What Changes". El archivado
+       avisa si faltan (no bloquea, pero el aviso sale en cada cierre).'
     - 'Incluye siempre una sección "Fuera de alcance" con lo que NO se va a tocar.'
     - 'Incluye siempre "Criterios de aceptación" como lista de casillas, y cada criterio
        tiene que poder comprobarse mirando el resultado. "La carga es más fluida" no es un

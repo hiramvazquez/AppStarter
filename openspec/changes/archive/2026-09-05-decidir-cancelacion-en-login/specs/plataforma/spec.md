@@ -32,4 +32,10 @@ Cada pantalla que se aparte del default SHALL declarar por qué en el propio có
 #### Scenario: Un login en vuelo pierde su pantalla
 
 - **WHEN** `LoginView` tiene una petición de login en curso y su vista se elimina
-- **THEN** <PENDIENTE: lo decide el owner — ver proposal.md>
+- **THEN** la petición se cancela
+- **AND** `LoginView` se queda con el default del kit, sin pasar el parámetro
+
+Decidido por el owner el 2026-09-05: **el login se cancela**. Un login sin pantalla no
+tiene a quién entregarle el resultado — ni la sesión que lo pidió, ni el formulario que
+recogería el error. Y a diferencia de la subida de Uploads, repetirlo es barato: el usuario
+vuelve a la pantalla y lo intenta otra vez, sin haber perdido nada por el camino.
