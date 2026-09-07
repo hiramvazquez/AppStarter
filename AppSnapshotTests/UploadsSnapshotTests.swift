@@ -1,3 +1,4 @@
+import Domain
 import Foundation
 import SnapshotTesting
 import SwiftUI
@@ -88,13 +89,13 @@ final class UploadsSnapshotTests: XCTestCase {
 
     func testErrorKit() {
         let vm = makeViewModel()
-        vm.setError(title: "Error del servidor", message: "Inténtalo de nuevo más tarde.")
+        vm.setError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
         assertUploads(vm, theme: .kit, named: "kit")
     }
 
     func testErrorBrand() {
         let vm = makeViewModel()
-        vm.setError(title: "Error del servidor", message: "Inténtalo de nuevo más tarde.")
+        vm.setError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
         assertUploads(vm, theme: .brand, named: "brand")
     }
 

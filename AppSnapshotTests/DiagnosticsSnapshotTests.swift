@@ -1,4 +1,5 @@
 import DiagnosticsFeature
+import Domain
 import SnapshotTesting
 import SwiftUI
 import XCTest
@@ -87,13 +88,13 @@ final class DiagnosticsSnapshotTests: XCTestCase {
 
     func testErrorKit() {
         let vm = makeViewModel()
-        vm.setError(title: "Algo salió mal", message: "Inténtalo de nuevo.")
+        vm.setError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         assertDiagnostics(vm, theme: .kit, named: "kit")
     }
 
     func testErrorBrand() {
         let vm = makeViewModel()
-        vm.setError(title: "Algo salió mal", message: "Inténtalo de nuevo.")
+        vm.setError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         assertDiagnostics(vm, theme: .brand, named: "brand")
     }
 
