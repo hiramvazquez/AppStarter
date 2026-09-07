@@ -27,6 +27,14 @@ rules:
        criterio; "UploadsView pasa el flag en false y hay un test que lo fija" sí lo es.'
     - 'Nombra los ficheros o módulos concretos que se van a tocar. Un criterio que dice
        "las pantallas que lanzan trabajo largo" no se puede verificar: di cuáles.'
+    - 'Pero NO cuentes el resto del repo para justificarte. Enumerar lo que el cambio toca
+       es alcance y muere con el cambio; "las otras siete features no exponen el caso" es
+       una afirmación sobre código que no tocas, se archiva como norma y envejece sola.
+       Escribe el criterio ("toda feature que lance X cumple Y"), o una medición con su
+       fecha y el comando que la produjo. Nunca un censo a pelo.'
+    - 'Y cuida el predicado: si cuentas por cómo se LLAMA algo y la regla habla de lo que
+       SIGNIFICA, el censo y la regla no cubren lo mismo, y por el hueco se cuela un caso
+       real. Ha pasado en este repo, con UploadsError.captureCancelled.'
   tasks:
     - 'La última tarea de todo cambio es `/kit-verifica` en verde.'
   design:
