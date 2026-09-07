@@ -43,3 +43,25 @@ struct ProductsLogicTests {
         }
     }
 }
+
+@Suite("ProductsError: cancelación")
+struct ProductsErrorCancelledTests {
+    /// Pasa por `mapError` de verdad, con el mismo patrón que sus tests hermanos: si el
+    /// caso `.cancelled` se cae del `switch`, esto se pone rojo.
+    @Test("una cancelación del transporte mapea a .cancelled, no a .unknown")
+    func cancelacionMapeaACancelled() async {
+        let service = ProductsServiceMock()
+        service.errorToThrow = .stub(code: .cancelled, underlying: URLError(.cancelled))
+        let logic = ProductsLogic(productsService: service)
+
+        await #expect(throws: ProductsError.cancelled) {
+            try await logic.loadPage(skip: 0)
+        }
+    }
+
+    @Test("una cancelación NO es reintentable")
+    func cancelacionNoEsReintentable() {
+        #expect(ProductsError.cancelled.isRetryable == false)
+        #expect(ProductsError.server.isRetryable == true)
+    }
+}

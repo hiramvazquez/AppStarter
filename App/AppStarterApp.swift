@@ -11,6 +11,11 @@ import SwiftUI
 struct AppStarterApp: App {
     init() {
         BaseViewModel.errorPresenter = AppErrorPresenter()
+        // Sin esto, una cancelación expresada como error de dominio propio llega a la
+        // pantalla como un fallo cualquiera: el reconocedor por defecto solo entiende
+        // `CancellationError` y `URLError(.cancelled)`, y nuestras features no lanzan
+        // ninguno de los dos.
+        BaseViewModel.cancellationRecognizer = AppCancellationRecognizer()
         do {
             Container.shared.register(modules: try AppModule.makeModules())
         } catch {

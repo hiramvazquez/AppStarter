@@ -164,3 +164,91 @@ struct SearchViewModelTests {
         #expect(flag.fired)
     }
 }
+
+/// Equivalente al `AppCancellationRecognizer` de `App/`, que este target no puede importar
+/// (R13). Ver la nota del gemelo en `ProductsViewModelTests`.
+
+/// Reconoce la cancelación por el NOMBRE DEL CASO, no por el tipo, y **no se restaura**.
+/// Las dos cosas son deliberadas y costaron un rato entenderlas:
+///
+/// `BaseViewModel.cancellationRecognizer` es un `static var` compartido por todo el proceso
+/// de test, y las suites de features corren en PARALELO. Un reconocedor atado a un solo
+/// tipo hace fallar a la suite gemela; y restaurarlo en un `defer` es peor todavía, porque
+/// la que termina antes devuelve el `static` a su valor original mientras la otra sigue en
+/// vuelo. Fallos intermitentes que no son del código.
+///
+/// Reconociendo por nombre de caso —los dos se llaman `cancelled`— e instalándolo una sola
+/// vez sin devolverlo, da igual cuál de las dos suites gane la carrera: el valor instalado
+/// es equivalente. `.serialized` no bastaba: solo ordena DENTRO de una suite.
+///
+/// Lo que NO cubre esto es el `AppCancellationRecognizer` de verdad — este target no puede
+/// importar `App/` (R13). De ese se encarga `AppTests/CancellationRecognizerTests`.
+private struct RecognizerDePrueba: CancellationRecognizing {
+    func isCancellation(_ error: any Error) -> Bool { String(describing: error) == "cancelled" }
+}
+
+@Suite("SearchViewModel: una cancelación no llega a la pantalla", .serialized)
+@MainActor
+struct SearchViewModelCancellationTests {
+    init() { BaseViewModel.cancellationRecognizer = RecognizerDePrueba() }
+
+    @Test("una búsqueda cancelada no cuelga la hoja")
+    func busquedaCancelada() async {
+        let mock = SearchLogicMock()
+        mock.errorToThrow = SearchError.cancelled
+        let vm = SearchViewModel(logic: mock, router: Coordinator(root: .products))
+
+        vm.handle(.updateQuery("phone"))
+        vm.handle(.submit)
+        await vm.inFlightLoad?.value
+
+        #expect(vm.hasError == false)
+        #expect(vm.isLoading == false)
+        #expect(vm.isIdle)
+    }
+}
+
+/// La primera llamada se queda esperando hasta que su `Task` se cancele y sale por
+/// `.cancelled`; la segunda cuelga hasta que la suelten. Reproduce el solapamiento real:
+/// `performLoad` cancela la carga anterior al arrancar la nueva.
+private final class LogicQueSeSolapa: SearchLogicProtocol, @unchecked Sendable {
+    private(set) var llamadas = 0
+    private var primera = true
+
+    func search(query: String) async throws -> [Product] {
+        llamadas += 1
+        if primera {
+            primera = false
+            while !Task.isCancelled { await Task.yield() }
+            throw SearchError.cancelled
+        }
+        while !Task.isCancelled { await Task.yield() }   // la segunda se queda en vuelo
+        return []
+    }
+}
+
+@Suite("SearchViewModel: una carga superada no pisa a la que la superó", .serialized)
+@MainActor
+struct SearchViewModelSolapamientoTests {
+    init() { BaseViewModel.cancellationRecognizer = RecognizerDePrueba() }
+
+    @Test("la búsqueda cancelada por otra no le quita el spinner a la nueva")
+    func superadaNoPisaALaNueva() async {
+        let logic = LogicQueSeSolapa()
+        let vm = SearchViewModel(logic: logic, router: Coordinator(root: .products))
+
+        vm.handle(.updateQuery("a"))
+        vm.handle(.submit)                    // T1, se queda esperando
+        #expect(vm.isLoading)
+
+        vm.handle(.updateQuery("ab"))
+        vm.handle(.submit)                    // T2 cancela T1
+        while logic.llamadas < 2 { await Task.yield() }
+
+        // T1 se desenrolla con `.cancelled`. Sin el `if !Task.isCancelled`, su `setIdle()`
+        // le quita el spinner a T2, que sigue cargando.
+        #expect(vm.isLoading, "la carga en vuelo perdió su spinner por culpa de la superada")
+
+        vm.inFlightLoad?.cancel()
+    }
+}

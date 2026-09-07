@@ -96,9 +96,26 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
     private func search() {
         guard !query.isEmpty else { return }
         performLoad(successTransition: .preserveCurrentPhase) { vm in
-            let results = try await vm.logic.search(query: vm.query)
-            vm.results = results
-            if results.isEmpty { vm.setEmpty() } else { vm.setContent() }
+        // Una cancelación reconocida sale de `performLoad`/`performActivity` por un
+        // `return` seco: no toca `phase` ni `activity`, así que la fase transitoria que se
+        // puso ANTES de arrancar se queda puesta. Sin esto, cancelar dejaba la pantalla en
+        // `.loading(.fullScreen)` para siempre —contenido oculto, sin error, sin
+        // reintentar, sin salida—, que es PEOR que el bug que este cambio arregla.
+        // Se devuelve el estado a algo honesto y se relanza para que el reconocedor haga
+        // su trabajo: no mostrar nada.
+            do {
+                let results = try await vm.logic.search(query: vm.query)
+                vm.results = results
+                if results.isEmpty { vm.setEmpty() } else { vm.setContent() }
+            } catch SearchError.cancelled {
+                // Solo si esta Task sigue viva: `performLoad` cancela la anterior al
+                // arrancar, así que la superada se desenrolla por aquí con `.cancelled` y
+                // sin esta condición resetearía la fase de la que la superó — quitándole
+                // el spinner a una carga que sigue en vuelo. El `guard !Task.isCancelled`
+                // de AppFoundation no cubre esto: está DESPUÉS del closure.
+                if !Task.isCancelled { vm.setIdle() }
+                throw SearchError.cancelled
+            }
         }
     }
 }
