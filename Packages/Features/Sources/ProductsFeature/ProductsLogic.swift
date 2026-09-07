@@ -9,9 +9,17 @@ import Networking
 public enum ProductsError: DomainError, Equatable {
     case offline
     case server
+    case cancelled
     case unknown
 
-    public var isRetryable: Bool { true }
+    /// `.cancelled` NO es reintentable: un botón de «Reintentar» sobre algo que se acaba
+    /// de cancelar invita a deshacer esa decisión. Mismo criterio que `DiagnosticsError`.
+    public var isRetryable: Bool {
+        switch self {
+        case .cancelled: false
+        case .offline, .server, .unknown: true
+        }
+    }
 
     public var screenError: ScreenError {
         switch self {
@@ -19,6 +27,14 @@ public enum ProductsError: DomainError, Equatable {
             return ScreenError(title: ErrorCopy.Offline.title, message: ErrorCopy.Offline.message)
         case .server:
             return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
+        // Este arm NO debería renderizarse nunca: `AppCancellationRecognizer` intercepta
+        // el caso antes de que `BaseViewModel` llame a `setError`. Existe porque el
+        // `switch` es exhaustivo, y devuelve el texto genérico A PROPÓSITO — inventar copy
+        // propia aquí sería escribir un mensaje para una pantalla que no debe aparecer, y
+        // haría creer al siguiente que este camino es normal. Lo que mantiene el arm
+        // inalcanzable es el test del recognizer, no este comentario.
+        case .cancelled:
+            return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         case .unknown:
             return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
@@ -64,6 +80,7 @@ public nonisolated final class ProductsLogic: ProductsLogicProtocol {
         switch error.category {
         case .offline: return .offline
         case .server: return .server
+        case .cancelled: return .cancelled
         default: return .unknown
         }
     }

@@ -32,3 +32,25 @@ struct SearchLogicTests {
         }
     }
 }
+
+@Suite("SearchError: cancelación")
+struct SearchErrorCancelledTests {
+    /// Pasa por `mapError` de verdad, con el mismo patrón que sus tests hermanos: si el
+    /// caso `.cancelled` se cae del `switch`, esto se pone rojo.
+    @Test("una cancelación del transporte mapea a .cancelled, no a .unknown")
+    func cancelacionMapeaACancelled() async {
+        let service = ProductsServiceMock()
+        service.errorToThrow = .stub(code: .cancelled, underlying: URLError(.cancelled))
+        let logic = SearchLogic(productsService: service)
+
+        await #expect(throws: SearchError.cancelled) {
+            _ = try await logic.search(query: "x")
+        }
+    }
+
+    @Test("una cancelación NO es reintentable")
+    func cancelacionNoEsReintentable() {
+        #expect(SearchError.cancelled.isRetryable == false)
+        #expect(SearchError.server.isRetryable == true)
+    }
+}
