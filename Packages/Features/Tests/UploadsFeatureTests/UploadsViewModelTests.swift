@@ -1,4 +1,5 @@
 import Foundation
+import PlatformTestSupport
 import Testing
 
 @testable import UploadsFeature
@@ -71,15 +72,5 @@ struct UploadsViewModelTests {
         #expect(viewModel.progress == 1.0)
         #expect(viewModel.uploadedProduct == UploadedProduct(id: 7, title: "Producto de prueba"))
         #expect(viewModel.banner?.style == .success)
-    }
-
-    /// `.upload`'s `Task` is privately owned (the structured `activity()` variant, not
-    /// `performActivity`) — a test polls observable state instead of awaiting a specific
-    /// `Task` handle, same rationale as `DiagnosticsViewModelTests`.
-    private func waitUntil(timeout: Duration = .seconds(2), _ condition: @MainActor () -> Bool) async {
-        let deadline = ContinuousClock.now + timeout
-        while !condition(), ContinuousClock.now < deadline {
-            try? await Task.sleep(for: .milliseconds(5))
-        }
     }
 }

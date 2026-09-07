@@ -212,7 +212,8 @@ let package = Package(
             dependencies: [
                 "DiagnosticsFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
-                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking")
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/DiagnosticsFeatureTests",
             swiftSettings: swiftSettings

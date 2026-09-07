@@ -1,4 +1,5 @@
 import Foundation
+import PlatformTestSupport
 import Testing
 
 @testable import DiagnosticsFeature
@@ -96,15 +97,5 @@ struct DiagnosticsViewModelTests {
 
         #expect(task?.isCancelled == true)
         #expect(viewModel.hasError == false)
-    }
-
-    /// Polls `condition` instead of awaiting a specific `Task` — `.run(_:)` for
-    /// non-`slowCancelable` experiments owns its `Task` privately (`experimentTasks`),
-    /// so a test can't reach it directly the way it awaits `inFlightLoad`.
-    private func waitUntil(timeout: Duration = .seconds(2), _ condition: @MainActor () -> Bool) async {
-        let deadline = ContinuousClock.now + timeout
-        while !condition(), ContinuousClock.now < deadline {
-            try? await Task.sleep(for: .milliseconds(5))
-        }
     }
 }
