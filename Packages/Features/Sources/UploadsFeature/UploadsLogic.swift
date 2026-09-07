@@ -40,11 +40,11 @@ public enum UploadsError: DomainError, Equatable {
         case .captureFailed:
             return ScreenError(title: "No se pudo capturar", message: "Inténtalo de nuevo.")
         case .offline:
-            return ScreenError(title: "Sin conexión", message: "Comprueba tu red e inténtalo de nuevo.")
+            return ScreenError(title: ErrorCopy.Offline.title, message: ErrorCopy.Offline.message)
         case .server:
-            return ScreenError(title: "Error del servidor", message: "Inténtalo de nuevo más tarde.")
+            return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
         case .unknown:
-            return ScreenError(title: "Algo salió mal", message: "Inténtalo de nuevo.")
+            return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
     }
 }

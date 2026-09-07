@@ -1,4 +1,5 @@
 import AppFoundation
+import Domain
 import Foundation
 
 // MARK: - Experiments
@@ -120,14 +121,19 @@ public enum DiagnosticsError: DomainError, Equatable {
             return ScreenError(title: "JSON inválido", message: "La respuesta no coincide con el tipo esperado.")
         case .unreachable:
             return ScreenError(title: "Host inalcanzable", message: "No se pudo conectar con el servidor.")
-        case .server: return ScreenError(title: "Error del servidor", message: "Inténtalo de nuevo.")
+        // Este caso decía "Inténtalo de nuevo." mientras el resto de pantallas con el
+        // mismo error decían "Inténtalo de nuevo más tarde.". Era la deriva que `ErrorCopy`
+        // existe para impedir, ya ocurrida y sin que nadie se enterara. Sin número a
+        // propósito: un conteo escrito aquí caduca en cuanto alguien añade una pantalla, y
+        // el comentario se queda mintiendo.
+        case .server: return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
         case .cancelled: return ScreenError(title: "Cancelado", message: "La operación se canceló.")
         case .untrustedServer:
             return ScreenError(
                 title: "Servidor no confiable",
                 message: "El pinning TLS rechazó la conexión (pin falso activo en Ajustes)."
             )
-        case .unknown: return ScreenError(title: "Algo salió mal", message: "Inténtalo de nuevo.")
+        case .unknown: return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
     }
 

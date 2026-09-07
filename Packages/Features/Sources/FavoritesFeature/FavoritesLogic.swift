@@ -17,7 +17,7 @@ public enum FavoritesError: DomainError, Equatable {
         case .storageFailure:
             return ScreenError(title: "No se pudo leer", message: "Hubo un problema con el almacenamiento local.")
         case .unknown:
-            return ScreenError(title: "Algo salió mal", message: "Inténtalo de nuevo.")
+            return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
     }
 }

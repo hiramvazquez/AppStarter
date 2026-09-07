@@ -21,13 +21,13 @@ public enum ProfileError: DomainError, Equatable {
     public var screenError: ScreenError {
         switch self {
         case .offline:
-            return ScreenError(title: "Sin conexión", message: "Comprueba tu red e inténtalo de nuevo.")
+            return ScreenError(title: ErrorCopy.Offline.title, message: ErrorCopy.Offline.message)
         case .unauthorized:
             return ScreenError(title: "Sesión no válida", message: "Vuelve a iniciar sesión.")
         case .server:
-            return ScreenError(title: "Error del servidor", message: "Inténtalo de nuevo más tarde.")
+            return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
         case .unknown:
-            return ScreenError(title: "Algo salió mal", message: "Inténtalo de nuevo.")
+            return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
     }
 }
