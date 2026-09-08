@@ -45,6 +45,7 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         case openDiagnostics
         case openUploads
         case openSettings
+        case openCart
     }
 
     public init(
@@ -67,6 +68,10 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
         case .openDiagnostics: router.push(.diagnostics)
         case .openUploads: router.push(.uploads)
         case .openSettings: router.push(.settings)
+        // Sin perfil cargado no hay a quién pedirle el carrito, y la ruta EXIGE el id: no
+        // se empuja en vez de empujar con un id inventado. El botón solo aparece con el
+        // perfil delante, así que este brazo es la red, no el camino normal.
+        case .openCart: if let profile { router.push(.cart(userId: profile.id)) }
         }
     }
 

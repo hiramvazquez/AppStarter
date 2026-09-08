@@ -122,6 +122,52 @@ struct ProfileViewModelTests {
         #expect(router.mainStack.path == [.diagnostics, .uploads])
     }
 
+    @Test("handle(.openCart) empuja el carrito CON el id del perfil cargado")
+    func openCartPushesWithTheLoadedUserId() async {
+        // El id tiene que salir del perfil, no de ninguna otra parte: `CartFeature` no puede
+        // preguntar quién es el usuario (R13), así que la ruta es el único sitio donde ese
+        // dato viaja. Un `push(.cart(userId: 0))` dejaba los tests en verde.
+        let mock = ProfileLogicMock()
+        mock.profileToReturn = UserProfile(
+            id: 42,
+            username: "emilys",
+            email: "e@x.com",
+            firstName: "Emily",
+            lastName: "Johnson",
+            imageURL: nil
+        )
+        let router = Coordinator<AppRoute>(root: .profile)
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: AppSessionState(router: Coordinator(root: .profile)),
+            refreshLog: RefreshActivityLog(),
+            router: router
+        )
+
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+        viewModel.handle(.openCart)
+
+        #expect(router.mainStack.path == [.cart(userId: 42)])
+    }
+
+    @Test("handle(.openCart) sin perfil cargado no empuja nada")
+    func openCartWithoutProfileDoesNotPush() {
+        // El otro brazo del `if let profile`, que es una decisión escrita: antes que empujar
+        // con un id inventado, no se empuja. Sin este test, un `break` pasaba desapercibido.
+        let router = Coordinator<AppRoute>(root: .profile)
+        let viewModel = ProfileViewModel(
+            logic: ProfileLogicMock(),
+            sessionState: AppSessionState(router: Coordinator(root: .profile)),
+            refreshLog: RefreshActivityLog(),
+            router: router
+        )
+
+        viewModel.handle(.openCart)
+
+        #expect(router.mainStack.path.isEmpty)
+    }
+
     @Test("refreshCount/lastRefreshDate mirror RefreshActivityLog")
     func refreshInfoMirrorsLog() {
         let log = RefreshActivityLog()

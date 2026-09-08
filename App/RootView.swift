@@ -1,4 +1,5 @@
 import AppFoundation
+import CartFeature
 import DiagnosticsFeature
 import Domain
 import FavoritesFeature
@@ -90,6 +91,9 @@ struct RootView: View {
         case .gallery(let productID):
             let factory = Container.shared.resolve(GalleryViewModelFactory.self)
             GalleryView(viewModel: factory(productID))
+        case .cart(let userId):
+            let factory = Container.shared.resolve(CartViewModelFactory.self)
+            CartView(viewModel: factory(userId))
         case .favorites:
             FavoritesView(viewModel: Container.shared.resolve())
         case .profile:

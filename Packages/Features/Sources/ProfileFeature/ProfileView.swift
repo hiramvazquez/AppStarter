@@ -58,6 +58,8 @@ public struct ProfileView: View {
                 }
 
                 Section {
+                    Button("Mi carrito") { send(.openCart) }
+                        .accessibilityIdentifier("profile.cart")
                     Button("Ajustes") { send(.openSettings) }
                         .accessibilityIdentifier("profile.settings")
                 }

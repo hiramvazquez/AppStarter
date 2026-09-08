@@ -76,6 +76,8 @@ targets:
         product: GalleryFeature
       - package: Features
         product: SettingsFeature
+      - package: Features
+        product: CartFeature
       # archinit:products
     # URL scheme para deep links (PRD-APP-02 tramo B item 3): `appstarter://product/3`,
     # `appstarter://search?q=phone`, parseados por `App/DeepLink.swift` y encaminados
@@ -120,6 +122,8 @@ targets:
         product: SettingsFeature
       - package: Features
         product: DiagnosticsFeature
+      - package: Features
+        product: CartFeature
       - package: Platform
         product: Domain
       - package: Platform
@@ -185,6 +189,8 @@ targets:
         product: UploadsFeature
       - package: Features
         product: GalleryFeature
+      - package: Features
+        product: CartFeature
       - package: SnapshotTesting
         product: SnapshotTesting
     settings:

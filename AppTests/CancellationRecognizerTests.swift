@@ -1,4 +1,5 @@
 import AppFoundation
+import CartFeature
 import Domain
 import Foundation
 import ProductsFeature
@@ -22,6 +23,7 @@ struct CancellationRecognizerTests {
         let r = AppCancellationRecognizer()
         #expect(r.isCancellation(ProductsError.cancelled))
         #expect(r.isCancellation(SearchError.cancelled))
+        #expect(r.isCancellation(CartError.cancelled))
     }
 
     @Test("no reconoce un error de dominio normal — la pantalla lo sigue mostrando")
@@ -30,6 +32,7 @@ struct CancellationRecognizerTests {
         #expect(r.isCancellation(ProductsError.server) == false)
         #expect(r.isCancellation(ProductsError.offline) == false)
         #expect(r.isCancellation(SearchError.unknown) == false)
+        #expect(r.isCancellation(CartError.server) == false)
     }
 
     @Test("sigue reconociendo lo que reconocía el de por defecto")

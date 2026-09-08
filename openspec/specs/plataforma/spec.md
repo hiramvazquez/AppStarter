@@ -152,22 +152,31 @@ mirar `Task.isCancelled` porque `performLoad` cancela la carga anterior al arran
 nueva: sin esa condición, la superada le quita el indicador de progreso a la que la superó.
 
 **El requisito se aplica a la cancelación que llega desde la red, que la pantalla nunca pidió
-y que por tanto no debe presentar.** De las diez features con error de dominio propio, cuatro
-tienen un caso que representa una cancelación:
+y que por tanto no debe presentar.** Y se aplica por lo que el error SIGNIFICA, no por cómo
+se llame el caso: `UploadsError.captureCancelled` no se llama `cancelled` y entra igual en el
+razonamiento.
 
-- `ProductsFeature` y `SearchFeature` la lanzan traducida de `APIError.Category.cancelled`, y
-  por tanto cumplen las cuatro cláusulas.
-- `DiagnosticsFeature` no la lanza —su `run` no es `throws`—: guarda el caso como dato en su
-  `DiagnosticsResult` y lo pinta en una fila a propósito, así que nunca llega a
-  `BaseViewModel`.
-- `UploadsFeature` **sí la lanza** (`UploadsError.captureCancelled`), pero no viene de un
-  `APIError`: viene de `CameraCaptureError.cancelled`, o sea del usuario cerrando la cámara
-  sin disparar. Ahí la cancelación ES el resultado de la pantalla, y se presenta a propósito
-  como contenido («Cancelado / No se tomó ninguna foto.»). Queda excluida por decisión: solo
-  cumple la cláusula 2 y no debe cumplir las otras tres. Es una exclusión distinta de la de
-  Diagnostics —aquella no lanza, esta lanza y presenta a sabiendas—.
+Quedan fuera dos clases de cancelación, cada una por su motivo:
 
-Las otras seis no tienen ningún caso de esta clase.
+- **La que no se lanza.** Una feature cuya operación no es `throws` y guarda la cancelación
+  como dato para pintarla —`DiagnosticsFeature` y su `DiagnosticsResult`— nunca llega a
+  `BaseViewModel`, así que no le aplica.
+- **La que no viene de la red y la pantalla presenta a sabiendas.**
+  `UploadsError.captureCancelled` nace de `CameraCaptureError.cancelled` —el usuario cerrando
+  la cámara sin disparar—, y ahí la cancelación ES el resultado de la pantalla
+  («Cancelado / No se tomó ninguna foto.»). Cumple la cláusula 2 y NO debe cumplir las otras
+  tres.
+
+**Aquí no va un censo de las features que cumplen.** La versión anterior de este requisito
+enumeraba «de las diez features… cuatro tienen un caso», y el número caducó con el primer
+cambio que añadió una: al llegar `CartFeature` eran once y cinco. Un recuento sobre código
+que el requisito no toca envejece solo y nadie vuelve a contarlo, así que lo que manda es el
+criterio de arriba. Quien necesite el recuento de hoy, que lo mida:
+
+```bash
+grep -rln "enum [A-Za-z]*Error: DomainError" Packages/Features/Sources   # features con error propio
+grep -rn  "case .*[Cc]ancel" Packages/Features/Sources                   # candidatas, a filtrar por SIGNIFICADO
+```
 
 #### Scenario: Una carga cancelada con la pantalla montada
 
@@ -192,3 +201,9 @@ Las otras seis no tienen ningún caso de esta clase.
 - **WHEN** una feature guarda el caso de cancelación en su resultado en vez de lanzarlo
 - **THEN** este requisito no le aplica
 - **AND** puede presentarlo como parte de su contenido
+
+#### Scenario: Una feature nueva que lanza cancelación de red
+
+- **WHEN** se añade una feature cuya `Logic` traduce `APIError.Category.cancelled` a un caso propio
+- **THEN** ese caso queda registrado en el `CancellationRecognizing` de la app
+- **AND** hay un test que se pone rojo si se quita del registro
