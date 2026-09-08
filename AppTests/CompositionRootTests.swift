@@ -1,4 +1,5 @@
 import AppFoundation
+import CartFeature
 import DiagnosticsFeature
 import FavoritesFeature
 import Foundation
@@ -46,7 +47,8 @@ struct CompositionRootTests {
             SearchModule(),
             DiagnosticsModule(baseURL: baseURL),
             UploadsModule(),
-            SettingsModule(baseURL: baseURL)
+            SettingsModule(baseURL: baseURL),
+            CartModule()
         ]
         container.register(modules: modules)
 
@@ -61,6 +63,7 @@ struct CompositionRootTests {
         #expect(container.canResolve(UploadsViewModel.self))
         #expect(container.canResolve(SettingsViewModel.self))
         #expect(container.canResolve(ThemeSettings.self))
+        #expect(container.canResolve(CartViewModelFactory.self))
 
         _ = container.resolve(LoginViewModel.self)
         _ = container.resolve(ProductsViewModel.self)
@@ -72,5 +75,6 @@ struct CompositionRootTests {
         _ = container.resolve(DiagnosticsViewModel.self)
         _ = container.resolve(UploadsViewModel.self)
         _ = container.resolve(SettingsViewModel.self)
+        _ = container.resolve(CartViewModelFactory.self)(1)
     }
 }

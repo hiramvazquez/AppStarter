@@ -1,4 +1,5 @@
 import AppFoundation
+import CartFeature
 import Foundation
 import ProductsFeature
 import SearchFeature
@@ -25,7 +26,7 @@ import SearchFeature
 struct AppCancellationRecognizer: CancellationRecognizing {
     func isCancellation(_ error: any Error) -> Bool {
         switch error {
-        case ProductsError.cancelled, SearchError.cancelled: true
+        case ProductsError.cancelled, SearchError.cancelled, CartError.cancelled: true
         // Se delega en el de por defecto en vez de reimplementar sus dos casos: si
         // AppFoundation amplía lo que reconoce, esto lo hereda. Se construye aquí, sin
         // propiedad almacenada, porque el valor por defecto de una propiedad se evalúa en

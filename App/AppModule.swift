@@ -1,5 +1,6 @@
 import AnalyticsAdapters
 import AppFoundation
+import CartFeature
 import CameraKit
 import CoreNetworking
 import DiagnosticsFeature
@@ -72,7 +73,8 @@ enum AppModule {
                 offlineTransport: isOffline ? OfflineFixtures.makeDiagnosticsOfflineTransport() : nil
             ),
             UploadsModule(),
-            SettingsModule(baseURL: apiBaseURL)
+            SettingsModule(baseURL: apiBaseURL),
+            CartModule()
             // archinit:modules
         ]
     }

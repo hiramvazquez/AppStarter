@@ -36,4 +36,10 @@ public enum AppRoute: Hashable {
     case uploads
     /// `Settings` (PRD-APP-02 tramo B item 2): pushed from `Profile`.
     case settings
+    /// El carrito del usuario. Lleva el `userId` EN LA RUTA a propósito: `CartFeature` no
+    /// puede preguntar quién es el usuario —eso lo sabe `ProfileFeature`, y una feature no
+    /// importa a otra (R13)—, y subir un proveedor de identidad a `Networking` para un solo
+    /// consumidor sería crear superficie compartida para nadie. Lo empuja `Profile`, que
+    /// acaba de cargar el perfil. Coste asumido: no hay deep link a esta pantalla.
+    case cart(userId: Int)
 }

@@ -28,7 +28,8 @@ let package = Package(
         .library(name: "DiagnosticsFeature", targets: ["DiagnosticsFeature"]),
         .library(name: "UploadsFeature", targets: ["UploadsFeature"]),
         .library(name: "GalleryFeature", targets: ["GalleryFeatureCore", "GalleryFeatureUI"]),
-        .library(name: "SettingsFeature", targets: ["SettingsFeature"])
+        .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
+        .library(name: "CartFeature", targets: ["CartFeature"]),
         // archinit:products-end
     ],
     dependencies: [
@@ -300,6 +301,29 @@ let package = Package(
                 .product(name: "PlatformTestSupport", package: "Platform")
             ],
             path: "Tests/SettingsFeatureTests",
+            swiftSettings: swiftSettings
+        ),
+        .target(
+            name: "CartFeature",
+            dependencies: [
+                .product(name: "AppFoundation", package: "AppFoundation"),
+                .product(name: "CoreNetworking", package: "CoreNetworking"),
+                .product(name: "Domain", package: "Platform"),
+            ],
+            path: "Sources/CartFeature",
+            swiftSettings: swiftSettings,
+            plugins: [
+                .plugin(name: "ArchitectureLint", package: "AppFoundation"),
+            ]
+        ),
+        .testTarget(
+            name: "CartFeatureTests",
+            dependencies: [
+                "CartFeature",
+                .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
+                .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+            ],
+            path: "Tests/CartFeatureTests",
             swiftSettings: swiftSettings
         ),
         // archinit:features-end
