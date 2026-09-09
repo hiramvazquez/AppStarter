@@ -9,7 +9,7 @@ import Testing
 @Suite("CartLogic")
 struct CartLogicTests {
     private static func cart(lines: [CartLine] = [.fixture()]) -> Cart {
-        Cart(lines: lines, discountedTotal: 105.41, totalQuantity: 4)
+        Cart(lines: lines, total: 119.96, discountedTotal: 105.41, totalQuantity: 4)
     }
 
     @Test("Devuelve el primer carrito del usuario")

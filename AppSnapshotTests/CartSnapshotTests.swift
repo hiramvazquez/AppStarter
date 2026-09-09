@@ -27,6 +27,11 @@ import XCTest
 final class CartSnapshotTests: XCTestCase {
     private enum StubOutcome {
         case content
+        /// Un carrito cuyos importes con y sin descuento coinciden. Es el ÚNICO artefacto
+        /// que prueba sobre la pantalla de verdad la cláusula 3 del requisito —que sin
+        /// rebaja no aparezca ni un tachado ni una fila de «Descuento»—; un
+        /// `#expect(cart.hasDiscount == false)` prueba el modelo, no lo que se pinta.
+        case sinDescuento
         case empty
         case failure
     }
@@ -48,6 +53,7 @@ final class CartSnapshotTests: XCTestCase {
                             title: "Charger SXY 21",
                             unitPrice: 540.00,
                             quantity: 3,
+                            total: 1620.00,
                             discountedTotal: 1481.20,
                             thumbnailURL: nil
                         ),
@@ -56,11 +62,39 @@ final class CartSnapshotTests: XCTestCase {
                             title: "Apple MacBook Pro 14 Inch Space Grey",
                             unitPrice: 1999.99,
                             quantity: 1,
+                            total: 1999.99,
                             discountedTotal: 1798.99,
                             thumbnailURL: nil
                         )
                     ],
+                    total: 3619.99,
                     discountedTotal: 3280.19,
+                    totalQuantity: 4
+                )
+            case .sinDescuento:
+                return Cart(
+                    lines: [
+                        CartLine(
+                            id: 168,
+                            title: "Charger SXY 21",
+                            unitPrice: 540.00,
+                            quantity: 3,
+                            total: 1620.00,
+                            discountedTotal: 1620.00,
+                            thumbnailURL: nil
+                        ),
+                        CartLine(
+                            id: 78,
+                            title: "Apple MacBook Pro 14 Inch Space Grey",
+                            unitPrice: 1999.99,
+                            quantity: 1,
+                            total: 1999.99,
+                            discountedTotal: 1999.99,
+                            thumbnailURL: nil
+                        )
+                    ],
+                    total: 3619.99,
+                    discountedTotal: 3619.99,
                     totalQuantity: 4
                 )
             case .empty:
@@ -105,6 +139,13 @@ final class CartSnapshotTests: XCTestCase {
 
     func testContentKit() async {
         let vm = await makeViewModel(outcome: .content)
+        captura(CartView(viewModel: vm), theme: .kit, named: "kit")
+    }
+
+    /// La misma pantalla sin rebaja. Va por `CartView` entera y en UN tema, por las dos
+    /// razones que este fichero ya documenta para `testContentKit`.
+    func testContentSinDescuentoKit() async {
+        let vm = await makeViewModel(outcome: .sinDescuento)
         captura(CartView(viewModel: vm), theme: .kit, named: "kit")
     }
 

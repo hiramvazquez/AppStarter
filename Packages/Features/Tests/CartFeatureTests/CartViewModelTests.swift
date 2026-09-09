@@ -12,7 +12,7 @@ import Testing
 @MainActor
 struct CartViewModelTests {
     private static func cart(lines: [CartLine] = [.fixture()]) -> Cart {
-        Cart(lines: lines, discountedTotal: 105.41, totalQuantity: 4)
+        Cart(lines: lines, total: 119.96, discountedTotal: 105.41, totalQuantity: 4)
     }
 
     @Test("Carga con líneas: pide el carrito del usuario y queda en .content")
@@ -71,7 +71,7 @@ struct CartViewModelCancellationTests {
     init() { BaseViewModel.cancellationRecognizer = RecognizerDePrueba() }
 
     private static func cart(lines: [CartLine] = [.fixture()]) -> Cart {
-        Cart(lines: lines, discountedTotal: 105.41, totalQuantity: 4)
+        Cart(lines: lines, total: 119.96, discountedTotal: 105.41, totalQuantity: 4)
     }
 
     @Test("Una cancelación no deja la pantalla colgada en .loading ni la marca con error")

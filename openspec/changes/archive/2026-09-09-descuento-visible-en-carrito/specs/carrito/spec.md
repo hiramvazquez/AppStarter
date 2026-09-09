@@ -1,18 +1,4 @@
-# carrito Specification
-
-## Purpose
-
-Leer el carrito de un usuario y enseñarlo: qué lleva, cuántas unidades y lo que va a pagar
-con el descuento aplicado. Solo lectura — modificar el carrito no es de esta capacidad.
-
-La identidad del usuario NO la resuelve esta capacidad: la recibe. `CartFeature` no puede
-importar `ProfileFeature` (R13), y subir un proveedor de identidad a `Networking` habría
-creado superficie compartida para un solo consumidor, así que el `userId` viaja en
-`AppRoute.cart(userId:)` desde la pantalla que ya lo tiene cargado. El coste, que es
-decisión y no descuido: no se puede abrir por deep link sin ese id. El día que haya un
-segundo origen, subir el proveedor será su propio cambio.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: El carrito se lee, se muestra vacío o falla, y siempre se sale de la carga
 
@@ -52,6 +38,8 @@ que es el que se olvida porque no parece un caso.
 - **WHEN** la petición falla
 - **THEN** la pantalla muestra el `ScreenError` de `CartError`
 - **AND** ofrece reintentar solo si el error es reintentable
+
+## ADDED Requirements
 
 ### Requirement: La rebaja que se aplica se ve, y cuando no la hay no se inventa
 
