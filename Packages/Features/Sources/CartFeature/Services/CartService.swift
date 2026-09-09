@@ -16,6 +16,11 @@ struct GetUserCartsRequest: BaseRequest {
         let title: String
         let price: Double
         let quantity: Int
+        /// Lo que suma la línea ANTES del descuento. No opcional, igual que sus hermanos y
+        /// a diferencia de `thumbnail`: si el campo desapareciera de la respuesta, es mejor
+        /// que la pantalla falle con su error de siempre a que degrade en silencio a «aquí
+        /// no hay rebaja» — que es justo el problema que este campo viene a arreglar.
+        let total: Double
         let discountedTotal: Double
         /// Ausente en fixtures hechos a mano — se decodifica como `nil` en vez de fallar.
         let thumbnail: String?
@@ -23,6 +28,7 @@ struct GetUserCartsRequest: BaseRequest {
 
     struct CartDTO: Decodable, Sendable {
         let products: [LineDTO]
+        let total: Double
         let discountedTotal: Double
         let totalQuantity: Int
     }
@@ -69,10 +75,12 @@ public struct CartService: CartServicing, EndpointService {
                         title: line.title,
                         unitPrice: line.price,
                         quantity: line.quantity,
+                        total: line.total,
                         discountedTotal: line.discountedTotal,
                         thumbnailURL: line.thumbnail.flatMap(URL.init(string:))
                     )
                 },
+                total: dto.total,
                 discountedTotal: dto.discountedTotal,
                 totalQuantity: dto.totalQuantity
             )
