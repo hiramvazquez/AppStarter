@@ -75,7 +75,7 @@ struct GalleryLogicTests {
         }
     }
 
-    @Test("ni la cancelación ni lo no encontrado son reintentables")
+    @Test("todo caso está clasificado: ni la cancelación ni lo no encontrado son reintentables")
     func cancelacionNoEsReintentable() {
         #expect(GalleryError.cancelled.isRetryable == false)
         // `notFound` lo afirma ESTA feature, no solo la plataforma: desde que `isRetryable` lo da
@@ -83,6 +83,16 @@ struct GalleryLogicTests {
         // entero en verde. Lo cazó el revisor con esa mutación exacta.
         #expect(GalleryError.notFound.isRetryable == false)
         #expect(GalleryError.server.isRetryable == true)
+
+        // Y el `switch` que devuelve al COMPILADOR la obligación de decidir: `isRetryable` lo da
+        // `TransportMappable` por exclusión, así que un caso nuevo heredaría «reintentable» en
+        // silencio. Esto no compila hasta clasificarlo, y compara lo heredado con lo decidido.
+        for caso in GalleryError.allCases {
+            switch caso {
+            case .offline, .server, .unknown: #expect(caso.isRetryable)
+            case .notFound, .cancelled: #expect(caso.isRetryable == false)
+            }
+        }
     }
 
     @Test("prefetchImage(url:) delegates to the service and never throws")

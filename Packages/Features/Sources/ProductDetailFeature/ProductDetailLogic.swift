@@ -20,7 +20,7 @@ public nonisolated struct ProductDetailState: Sendable, Equatable {
 
 // MARK: - Domain errors (M1)
 
-public enum ProductDetailError: TransportMappable {
+public enum ProductDetailError: TransportMappable, CaseIterable {
     case offline
     case notFound
     case server
@@ -41,8 +41,9 @@ public enum ProductDetailError: TransportMappable {
     // `ProductDetailLogicTests.reintentabilidad`, no el default.
     //
     // OJO AL AÑADIR UN CASO: se hereda por EXCLUSIÓN —todo lo que no sea `.notFound` ni
-    // `.cancelled` es reintentable—, así que un caso nuevo será reintentable SIN que el compilador
-    // te pregunte. Antes lo forzaba un `switch` exhaustivo; ahora lo decides tú aquí.
+    // `.cancelled` es reintentable—. Quien te obliga a decidirlo es
+    // `ProductDetailLogicTests.reintentabilidad`, que recorre `allCases` con un `switch`
+    // exhaustivo: añade un caso y ese test DEJA DE COMPILAR. Por eso este enum es `CaseIterable`.
 
     public var screenError: ScreenError {
         switch self {

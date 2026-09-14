@@ -129,6 +129,17 @@ struct CartModelTests {
         #expect(CartError.offline.isRetryable)
         #expect(CartError.server.isRetryable)
         #expect(CartError.unknown.isRetryable)
+
+        // Y el `switch` que devuelve al COMPILADOR la obligación de decidir. `isRetryable` lo da
+        // `TransportMappable` por exclusión, así que un caso nuevo heredaría «reintentable» en
+        // silencio; esto no compila hasta clasificarlo. Además compara lo heredado contra lo
+        // decidido aquí, así que también falla si los dos dejan de coincidir.
+        for caso in CartError.allCases {
+            switch caso {
+            case .offline, .server, .unknown: #expect(caso.isRetryable)
+            case .notFound, .cancelled: #expect(caso.isRetryable == false)
+            }
+        }
     }
 
     @Test("Los textos compartidos salen de ErrorCopy, no escritos otra vez aquí")

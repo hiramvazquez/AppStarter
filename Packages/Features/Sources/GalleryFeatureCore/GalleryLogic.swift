@@ -20,7 +20,7 @@ public nonisolated struct GalleryState: Sendable, Equatable {
 
 // MARK: - Domain errors (M1)
 
-public enum GalleryError: TransportMappable {
+public enum GalleryError: TransportMappable, CaseIterable {
     case offline
     case notFound
     case server
@@ -38,8 +38,9 @@ public enum GalleryError: TransportMappable {
     // estaban escritas igual en tres features. El `screenError` sí se queda aquí.
     //
     // OJO AL AÑADIR UN CASO: `isRetryable` se hereda por EXCLUSIÓN —todo lo que no sea `.notFound`
-    // ni `.cancelled` es reintentable—, así que un caso nuevo será reintentable SIN que el
-    // compilador te pregunte. Antes lo forzaba un `switch` exhaustivo; ahora lo decides tú aquí.
+    // ni `.cancelled` es reintentable—. Quien te obliga a decidirlo es
+    // `GalleryLogicTests.cancelacionNoEsReintentable`, que recorre `allCases` con un `switch`
+    // exhaustivo: añade un caso y ese test DEJA DE COMPILAR. Por eso este enum es `CaseIterable`.
 
     public var screenError: ScreenError {
         switch self {

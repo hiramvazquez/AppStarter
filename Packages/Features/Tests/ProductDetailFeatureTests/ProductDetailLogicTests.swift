@@ -75,5 +75,16 @@ struct ProductDetailLogicTests {
         #expect(ProductDetailError.notFound.isRetryable == false)
         #expect(ProductDetailError.server.isRetryable == true)
         #expect(ProductDetailError.favoriteStorageFailure.isRetryable == true)
+
+        // Y el `switch` que devuelve al COMPILADOR la obligación de decidir. Aquí importa el
+        // doble: `favoriteStorageFailure` es un caso PROPIO que `TransportMappable` no conoce y
+        // que hereda `true` por exclusión — este `switch` lo clasifica explícitamente en vez de
+        // dejarlo heredado en silencio, y no compila si mañana aparece otro.
+        for caso in ProductDetailError.allCases {
+            switch caso {
+            case .offline, .server, .favoriteStorageFailure, .unknown: #expect(caso.isRetryable)
+            case .notFound, .cancelled: #expect(caso.isRetryable == false)
+            }
+        }
     }
 }
