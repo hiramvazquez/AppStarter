@@ -1,6 +1,7 @@
 import AppFoundation
 import Domain
 import Foundation
+import Networking
 import Observation
 
 /// Orchestrates the search sheet: query text, submit, select a result, close. Never
@@ -107,14 +108,14 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
                 let results = try await vm.logic.search(query: vm.query)
                 vm.results = results
                 if results.isEmpty { vm.setEmpty() } else { vm.setContent() }
-            } catch SearchError.cancelled {
+            } catch CatalogError.cancelled {
                 // Solo si esta Task sigue viva: `performLoad` cancela la anterior al
                 // arrancar, así que la superada se desenrolla por aquí con `.cancelled` y
                 // sin esta condición resetearía la fase de la que la superó — quitándole
                 // el spinner a una carga que sigue en vuelo. El `guard !Task.isCancelled`
                 // de AppFoundation no cubre esto: está DESPUÉS del closure.
                 if !Task.isCancelled { vm.setIdle() }
-                throw SearchError.cancelled
+                throw CatalogError.cancelled
             }
         }
     }

@@ -1,5 +1,6 @@
 import AppFoundation
 import Domain
+import Networking
 import Foundation
 import Observation
 import PlatformTestSupport
@@ -140,7 +141,7 @@ struct ProductsViewModelCancellationTests {
     @Test("una carga cancelada deja la pantalla en un estado del que se puede salir")
     func cargaCancelada() async {
         let mock = ProductsLogicMock()
-        mock.errorToThrow = ProductsError.cancelled
+        mock.errorToThrow = CatalogError.cancelled
         let vm = ProductsViewModel(logic: mock, router: Coordinator(root: .products))
 
         vm.handle(.load)
@@ -157,7 +158,7 @@ struct ProductsViewModelCancellationTests {
     @Test("un refresco cancelado no deja el overlay puesto para siempre")
     func refrescoCancelado() async {
         let mock = ProductsLogicMock()
-        mock.errorToThrow = ProductsError.cancelled
+        mock.errorToThrow = CatalogError.cancelled
         let vm = ProductsViewModel(logic: mock, router: Coordinator(root: .products))
 
         vm.handle(.refresh)
@@ -176,7 +177,7 @@ struct ProductsViewModelCancellationTests {
         vm.handle(.load)
         await vm.inFlightLoad?.value
 
-        mock.errorToThrow = ProductsError.cancelled
+        mock.errorToThrow = CatalogError.cancelled
         vm.handle(.loadMore)
         await vm.inFlightActivity?.value
 
@@ -189,7 +190,7 @@ struct ProductsViewModelCancellationTests {
     @Test("un error de verdad SÍ llega a la pantalla — el reconocedor no se lo come todo")
     func errorDeVerdadSeVe() async {
         let mock = ProductsLogicMock()
-        mock.errorToThrow = ProductsError.server
+        mock.errorToThrow = CatalogError.server
         let vm = ProductsViewModel(logic: mock, router: Coordinator(root: .products))
 
         vm.handle(.load)
@@ -222,7 +223,7 @@ private final class LogicDeActividadQueSeSolapa: ProductsLogicProtocol, @uncheck
         if primera {
             primera = false
             while !Task.isCancelled { await Task.yield() }
-            throw ProductsError.cancelled
+            throw CatalogError.cancelled
         }
         while !Task.isCancelled { await Task.yield() }
         return ProductsPage(items: [], total: 0, skip: 0, limit: 20)

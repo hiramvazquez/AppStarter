@@ -1,6 +1,7 @@
 import AppFoundation
 import Domain
 import Foundation
+import Networking
 import Observation
 
 /// Orchestrates the product list: pagination, pull-to-refresh, and navigation to
@@ -73,14 +74,14 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
                 vm.items = page.items
                 vm.canLoadMore = page.hasMore
                 if page.items.isEmpty { vm.setEmpty() } else { vm.setContent() }
-            } catch ProductsError.cancelled {
+            } catch CatalogError.cancelled {
                 // Solo si esta Task sigue viva: `performLoad` cancela la anterior al
                 // arrancar, así que la superada se desenrolla por aquí con `.cancelled` y
                 // sin esta condición resetearía la fase de la que la superó — quitándole
                 // el spinner a una carga que sigue en vuelo. El `guard !Task.isCancelled`
                 // de AppFoundation no cubre esto: está DESPUÉS del closure.
                 if !Task.isCancelled { vm.setIdle() }
-                throw ProductsError.cancelled
+                throw CatalogError.cancelled
             }
         }
     }
@@ -96,7 +97,7 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
                 } else if vm.isEmpty {
                     vm.setContent()
                 }
-            } catch ProductsError.cancelled {
+            } catch CatalogError.cancelled {
                 // Mismo motivo que en `load()`: sin esto el scrim del `.overlay` se queda
                 // encima para siempre, y `loadMore` muere con él por su
                 // `guard !isPerformingActivity`.
@@ -106,7 +107,7 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
                 // el spinner a una carga que sigue en vuelo. El `guard !Task.isCancelled`
                 // de AppFoundation no cubre esto: está DESPUÉS del closure.
                 if !Task.isCancelled { vm.stopActivity() }
-                throw ProductsError.cancelled
+                throw CatalogError.cancelled
             }
         }
     }
@@ -118,7 +119,7 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
                 let page = try await vm.logic.loadPage(skip: vm.items.count)
                 vm.items += page.items
                 vm.canLoadMore = page.hasMore
-            } catch ProductsError.cancelled {
+            } catch CatalogError.cancelled {
                 // Sin esto el overlay se queda encima
                 // y la paginación muere DEL TODO, porque el `guard !isPerformingActivity`
                 // de arriba ya no vuelve a pasar nunca.
@@ -128,7 +129,7 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
                 // el spinner a una carga que sigue en vuelo. El `guard !Task.isCancelled`
                 // de AppFoundation no cubre esto: está DESPUÉS del closure.
                 if !Task.isCancelled { vm.stopActivity() }
-                throw ProductsError.cancelled
+                throw CatalogError.cancelled
             }
         }
     }

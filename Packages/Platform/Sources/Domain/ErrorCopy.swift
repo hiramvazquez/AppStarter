@@ -4,8 +4,10 @@ import Foundation
 ///
 /// Viven aquí y no en cada feature porque son literales de cara al usuario: quien retoque
 /// «Comprueba tu red e inténtalo de nuevo.» en una pantalla no tiene forma de saber que hay
-/// otra diciendo lo mismo, y las dos divergen sin que nadie se entere. `ProductsError` y
-/// `SearchError` los tenían escritos por duplicado, palabra por palabra.
+/// otra diciendo lo mismo, y las dos divergen sin que nadie se entere. Los errores de Products
+/// y de Search los tenían escritos por duplicado, palabra por palabra — hoy comparten
+/// `CatalogError`, en `Networking`, que los consume desde un solo sitio. Ahí y no aquí porque
+/// necesita `ScreenError` y `APIError`, y esta capa solo puede ver `Foundation`.
 ///
 /// Son `String` a propósito, no `ScreenError`: ese tipo es de `AppFoundation` y pertenece a
 /// la capa de presentación. Guardarlo aquí obligaría a `Domain` —que hoy no depende de

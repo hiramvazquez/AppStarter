@@ -1,6 +1,7 @@
 import AppFoundation
 import AppFoundationTestSupport
 import Domain
+import Networking
 import Foundation
 import Observation
 import PlatformTestSupport
@@ -195,7 +196,7 @@ struct SearchViewModelCancellationTests {
     @Test("una búsqueda cancelada no cuelga la hoja")
     func busquedaCancelada() async {
         let mock = SearchLogicMock()
-        mock.errorToThrow = SearchError.cancelled
+        mock.errorToThrow = CatalogError.cancelled
         let vm = SearchViewModel(logic: mock, router: Coordinator(root: .products))
 
         vm.handle(.updateQuery("phone"))
@@ -220,7 +221,7 @@ private final class LogicQueSeSolapa: SearchLogicProtocol, @unchecked Sendable {
         if primera {
             primera = false
             while !Task.isCancelled { await Task.yield() }
-            throw SearchError.cancelled
+            throw CatalogError.cancelled
         }
         while !Task.isCancelled { await Task.yield() }   // la segunda se queda en vuelo
         return []

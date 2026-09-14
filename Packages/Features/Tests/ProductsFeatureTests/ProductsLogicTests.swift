@@ -1,6 +1,7 @@
 import CoreNetworking
 import CoreNetworkingTestSupport
 import Domain
+import Networking
 import Foundation
 import PlatformTestSupport
 import Testing
@@ -21,31 +22,31 @@ struct ProductsLogicTests {
         #expect(page.items == [product])
     }
 
-    @Test("An offline service failure maps to ProductsError.offline")
+    @Test("An offline service failure maps to CatalogError.offline")
     func offlineFailureMapsToOffline() async {
         let service = ProductsServiceMock()
         service.errorToThrow = .stub(code: .transport, underlying: URLError(.notConnectedToInternet))
         let logic = ProductsLogic(productsService: service)
 
-        await #expect(throws: ProductsError.offline) {
+        await #expect(throws: CatalogError.offline) {
             try await logic.loadPage(skip: 0)
         }
     }
 
-    @Test("A 5xx service failure maps to ProductsError.server")
+    @Test("A 5xx service failure maps to CatalogError.server")
     func serverFailureMapsToServer() async {
         let service = ProductsServiceMock()
         service.errorToThrow = .stub(code: .httpStatus, statusCode: 500)
         let logic = ProductsLogic(productsService: service)
 
-        await #expect(throws: ProductsError.server) {
+        await #expect(throws: CatalogError.server) {
             try await logic.loadPage(skip: 0)
         }
     }
 }
 
-@Suite("ProductsError: cancelación")
-struct ProductsErrorCancelledTests {
+@Suite("CatalogError desde Products: cancelación")
+struct ProductsCatalogErrorCancelledTests {
     /// Pasa por `mapError` de verdad, con el mismo patrón que sus tests hermanos: si el
     /// caso `.cancelled` se cae del `switch`, esto se pone rojo.
     @Test("una cancelación del transporte mapea a .cancelled, no a .unknown")
@@ -54,14 +55,12 @@ struct ProductsErrorCancelledTests {
         service.errorToThrow = .stub(code: .cancelled, underlying: URLError(.cancelled))
         let logic = ProductsLogic(productsService: service)
 
-        await #expect(throws: ProductsError.cancelled) {
+        await #expect(throws: CatalogError.cancelled) {
             try await logic.loadPage(skip: 0)
         }
     }
 
-    @Test("una cancelación NO es reintentable")
-    func cancelacionNoEsReintentable() {
-        #expect(ProductsError.cancelled.isRetryable == false)
-        #expect(ProductsError.server.isRetryable == true)
-    }
+    // `isRetryable` se comprueba en `NetworkingTests/CatalogErrorTests`, donde vive el tipo.
+    // Aquí estaba duplicado con el test gemelo de Search: al unificar el error, los dos cuerpos
+    // pasaron a ser idénticos y el detector los reportó como un grupo nuevo.
 }
