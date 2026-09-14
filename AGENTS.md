@@ -31,15 +31,21 @@ claude plugin install ios-agent-kit@hiram-kits -y
 ```
 /opsx:propose "…"   →  se acuerda, sin tocar código
 /opsx:apply         →  se implementa
-/kit-verifica       →  build + tests de los dos paquetes, firmado contra el diff
-   reviewer         →  ¿esto rompe algo?
-/kit-acepta         →  ¿es lo acordado?
+/kit-verifica       →  build + tests de los dos paquetes, firmado contra el árbol y el índice
+/kit-revisa         →  ¿esto rompe algo?   ← el obligatorio antes de archivar
+/kit-acepta         →  ¿es lo acordado?    ← OPCIONAL
 /opsx:archive       →  el delta se funde en openspec/specs/
 ```
 
+El único paso opcional es el juez: se invoca **cuando nadie vaya a leer el acuerdo contra lo
+entregado** —cambios grandes o que tocan varias capas (más de unos cinco ficheros), alcance que
+se movió al implementar, o cuando quien orquesta no es quien acordó—.
+
 No se commitea sin firma de verificación válida: la puerta de `PreToolUse` lo bloquea.
-Stagea, verifica y commitea en **comandos separados** — encadenar `git add && git commit`
-cambia el diff entre la firma y el commit.
+Stagea, verifica y commitea en **comandos separados** — se firma el árbol **y** el índice, así
+que encadenar `git add && git commit` cambia el índice entre la firma y el commit. Y un
+`git commit -am` sobre un árbol editado después de firmar también queda bloqueado: antes se
+colaba.
 
 Las reglas de Swift/SwiftUI las trae el plugin (`swift-swiftui`, SwiftAgents adaptado a
 iOS 17, que es nuestro deployment target). **Donde discrepen con este AGENTS.md, gana este

@@ -14,8 +14,11 @@ context: |
   guía. Reglas de Swift/SwiftUI: .claude/skills/swift-swiftui.md.
 
   Verificación del proyecto: `/kit-verifica` (plugin ios-agent-kit) — build y tests de los
-  dos paquetes más el informe de lógica repetida, firmado contra el sha256 del diff staged.
-  Los comandos concretos viven en `kit.conf`. Un cambio no se da por bueno sin esa firma.
+  dos paquetes más el informe de lógica repetida, firmado contra el sha256 del ÁRBOL DE
+  TRABAJO Y DEL ÍNDICE (desde la 1.11.0 del kit; antes era solo el diff staged, y así se
+  colaba un `git commit -am` con código sin verificar). Stagear después de firmar invalida
+  la firma, así que stagear, verificar y commitear van en comandos separados. Los comandos
+  concretos viven en `kit.conf`. Un cambio no se da por bueno sin esa firma.
 
 rules:
   proposal:
@@ -52,9 +55,19 @@ operations:
          que hace falta" — pasó de verdad, y lo cazó la aceptación.'
   archive:
     guidance:
-      - 'Antes de archivar, pasa `/kit-acepta`
-         contra el cambio. Compara lo ENTREGADO con lo ACORDADO, criterio por criterio. Es
-         la pregunta que ni el compilador, ni los tests, ni el reviewer se hacen, y es
-         donde aparece el requisito que se evaporó por el camino.'
-      - 'No se archiva con veredicto DEVUELTO o ACUERDO-ROTO. Con ACUERDO-ROTO se corrige
-         el acuerdo primero, POR ESCRITO, y se vuelve a pasar.'
+      - 'El paso obligatorio antes de archivar es el REVISOR (`/kit-revisa`): ¿esto rompe algo?
+         El juez (`/kit-acepta`) pregunta otra cosa —¿es lo ACORDADO?, criterio por criterio— y
+         se invoca CUANDO NADIE VAYA A LEER EL ACUERDO CONTRA LO ENTREGADO: cambios grandes o
+         que tocan varias capas (más de unos 5 ficheros), alcance que se movió al implementar,
+         o cuando quien orquesta no es quien acordó.
+         Es donde aparece el requisito que se evaporó por el camino, y en este repo ya pasó:
+         la aceptación cazó un cambio que seguía adelante en silencio porque "era obvio que
+         hacía falta". El revisor no lo ve porque no es su pregunta. Lo que decide cuándo
+         pagar esa ronda eres tú, no una regla.'
+      - 'Si pasaste el juez, su veredicto manda: no se archiva con ACUERDO-ROTO ni con un
+         DEVUELTO del producto —una pieza que no hace lo acordado—. Con ACUERDO-ROTO se
+         corrige el acuerdo primero, POR ESCRITO, y se vuelve a pasar. Con un DEVUELTO que NO
+         es del producto —lo que queda es prosa— y el presupuesto de rondas agotado, decides
+         tú: puedes archivar dejando la deuda escrita en el acuerdo. Esa salida existe porque
+         sin ella un cambio cuyo producto está bien y cuya prosa sigue dando hallazgos no
+         termina nunca.'
