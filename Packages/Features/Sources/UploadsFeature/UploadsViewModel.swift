@@ -74,17 +74,27 @@ public final class UploadsViewModel: LogicViewModel<any UploadsLogicProtocol>, A
 
     private func performUpload(photoData: Data) async {
         await activity(style: .inline) { vm in
-            vm.progress = 0
-            let result = try await vm.logic.upload(
-                title: vm.title,
-                photoData: photoData,
-                progress: { fraction in
-                    Task { @MainActor in vm.progress = fraction }
-                }
-            )
-            vm.progress = 1
-            vm.uploadedProduct = result
-            vm.showBanner(.success("Producto #\(result.id) creado: \(result.title)"))
+            do {
+                vm.progress = 0
+                let result = try await vm.logic.upload(
+                    title: vm.title,
+                    photoData: photoData,
+                    progress: { fraction in
+                        Task { @MainActor in vm.progress = fraction }
+                    }
+                )
+                vm.progress = 1
+                vm.uploadedProduct = result
+                vm.showBanner(.success("Producto #\(result.id) creado: \(result.title)"))
+            } catch UploadsError.cancelled {
+                // `stopActivity()`, NO `setIdle()`: esto corre bajo `activity(style:)`, y su
+                // `_runActivity` se va de una cancelación reconocida sin pararla, así que la
+                // barra de progreso se queda puesta para siempre. La fase no está en juego
+                // aquí; la actividad sí. Y solo si esta Task sigue viva, por lo mismo que en
+                // las demás features.
+                if !Task.isCancelled { vm.stopActivity() }
+                throw UploadsError.cancelled
+            }
         }
     }
 }

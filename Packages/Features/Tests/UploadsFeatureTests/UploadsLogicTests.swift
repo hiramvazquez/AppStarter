@@ -107,6 +107,28 @@ struct UploadsLogicTests {
             _ = try await logic.upload(title: "Widget", photoData: Data(), progress: { _ in })
         }
     }
+
+    /// Pasa por `mapError` de verdad: si `.cancelled` vuelve a caer en el `default`, esto se
+    /// pone rojo. Es la ruta de RED, no la de cámara: el caso de arriba
+    /// (`cancelledCaptureMapsToDomainError`) prueba `captureCancelled`, que es otra cosa y se
+    /// presenta en pantalla a propósito.
+    @Test("una cancelación de la SUBIDA mapea a UploadsError.cancelled, no a .unknown")
+    func cancelacionDeSubidaMapeaACancelled() async {
+        let service = UploadsServiceMock()
+        await service.setResultToReturn(.failure(.stub(code: .cancelled, underlying: URLError(.cancelled))))
+        let logic = UploadsLogic(uploadsService: service, camera: CameraCapturingMock(), analytics: InMemoryAnalytics())
+
+        await #expect(throws: UploadsError.cancelled) {
+            _ = try await logic.upload(title: "Widget", photoData: Data(), progress: { _ in })
+        }
+    }
+
+    @Test("ninguna de las dos cancelaciones es reintentable")
+    func cancelacionNoEsReintentable() {
+        #expect(UploadsError.cancelled.isRetryable == false)
+        #expect(UploadsError.captureCancelled.isRetryable == false)
+        #expect(UploadsError.server.isRetryable == true)
+    }
 }
 
 /// A plain lock-guarded array — simpler than `SpyRecorder` for a value recorded from a

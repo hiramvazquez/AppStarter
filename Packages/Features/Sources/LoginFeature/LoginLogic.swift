@@ -14,12 +14,17 @@ public enum LoginError: DomainError, Equatable {
     case invalidCredentials
     case offline
     case server
+    /// El login se canceló. Existe porque la spec `plataforma` lo exige de toda feature que
+    /// lance una cancelación venida de la red: se mapea desde `APIError.Category.cancelled`
+    /// en vez de caer en `.unknown`, no es reintentable, y `AppCancellationRecognizer` lo
+    /// reconoce para que `BaseViewModel` no lo presente como error.
+    case cancelled
     case unknown
 
     public var isRetryable: Bool {
         switch self {
         case .offline, .server, .unknown: true
-        case .emptyUsername, .emptyPassword, .invalidCredentials: false
+        case .emptyUsername, .emptyPassword, .invalidCredentials, .cancelled: false
         }
     }
 
@@ -35,6 +40,8 @@ public enum LoginError: DomainError, Equatable {
             return ScreenError(title: ErrorCopy.Offline.title, message: ErrorCopy.Offline.message)
         case .server:
             return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
+        case .cancelled:
+            return ScreenError(title: ErrorCopy.Cancelled.title, message: ErrorCopy.Cancelled.message)
         case .unknown:
             return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
@@ -106,6 +113,8 @@ public nonisolated final class LoginLogic: LoginLogicProtocol {
             return .invalidCredentials
         case .server:
             return .server
+        case .cancelled:
+            return .cancelled
         default:
             return .unknown
         }

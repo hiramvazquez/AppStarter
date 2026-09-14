@@ -66,11 +66,20 @@ public final class LoginViewModel: LogicViewModel<any LoginLogicProtocol>, Actio
 
     private func login() {
         performLoad { vm in
-            try await vm.logic.login(username: vm.username, password: vm.password)
-            // `Container(parent:)` per session (PRD-APP-02): a fresh session-scoped child
-            // container from here on, discarded by the next logout/expiry.
-            vm.sessionState.startSession()
-            vm.router.setRoot(.products)
+            do {
+                try await vm.logic.login(username: vm.username, password: vm.password)
+                // `Container(parent:)` per session (PRD-APP-02): a fresh session-scoped child
+                // container from here on, discarded by the next logout/expiry.
+                vm.sessionState.startSession()
+                vm.router.setRoot(.products)
+            } catch LoginError.cancelled {
+                // Una cancelación reconocida sale de `performLoad` por un `return` seco que no
+                // toca `phase`: sin esto el botón de entrar se queda en `.loading` para siempre
+                // y no hay forma de reintentar. Y solo si esta Task sigue viva, porque
+                // `performLoad` cancela la anterior al arrancar.
+                if !Task.isCancelled { vm.setIdle() }
+                throw LoginError.cancelled
+            }
         }
     }
 }

@@ -20,16 +20,25 @@ public nonisolated struct UploadedProduct: Sendable, Equatable {
 // MARK: - Domain errors (M1)
 
 public enum UploadsError: DomainError, Equatable {
+    /// El usuario cerró la cámara sin disparar. NO es lo mismo que `.cancelled`: no viene de
+    /// la red y esta pantalla lo presenta a sabiendas como su resultado, así que la spec
+    /// `plataforma` lo deja fuera de las otras tres cláusulas a propósito.
     case captureCancelled
     case captureFailed
     case offline
     case server
+    /// La SUBIDA se canceló, que es cancelación de red y por tanto lo contrario del caso de
+    /// arriba: nunca debe llegar a pantalla. Existe porque la spec `plataforma` lo exige de
+    /// toda feature que lance una cancelación venida de la red: se mapea desde
+    /// `APIError.Category.cancelled` en vez de caer en `.unknown`, no es reintentable, y
+    /// `AppCancellationRecognizer` lo reconoce para que `BaseViewModel` no lo presente.
+    case cancelled
     case unknown
 
     public var isRetryable: Bool {
         switch self {
         case .offline, .server, .unknown: return true
-        case .captureCancelled, .captureFailed: return false
+        case .captureCancelled, .captureFailed, .cancelled: return false
         }
     }
 
@@ -43,6 +52,8 @@ public enum UploadsError: DomainError, Equatable {
             return ScreenError(title: ErrorCopy.Offline.title, message: ErrorCopy.Offline.message)
         case .server:
             return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
+        case .cancelled:
+            return ScreenError(title: ErrorCopy.Cancelled.title, message: ErrorCopy.Cancelled.message)
         case .unknown:
             return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
@@ -110,6 +121,7 @@ public nonisolated final class UploadsLogic: UploadsLogicProtocol {
         switch error.category {
         case .offline: return .offline
         case .server: return .server
+        case .cancelled: return .cancelled
         default: return .unknown
         }
     }

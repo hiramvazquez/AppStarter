@@ -44,4 +44,24 @@ struct ProfileLogicTests {
             try await logic.loadProfile()
         }
     }
+
+    /// Pasa por `mapError` de verdad: si `.cancelled` vuelve a caer en el `default`, esto se
+    /// pone rojo. Antes caía, y cancelar la carga del perfil pintaba error a pantalla completa
+    /// con «Reintentar» — sobre algo que el usuario acababa de cancelar.
+    @Test("una cancelación del transporte mapea a ProfileError.cancelled, no a .unknown")
+    func cancelacionMapeaACancelled() async {
+        let service = ProfileServiceMock()
+        service.errorToThrow = .stub(code: .cancelled, underlying: URLError(.cancelled))
+        let logic = ProfileLogic(profileService: service, sessionStore: SessionStoreSpy())
+
+        await #expect(throws: ProfileError.cancelled) {
+            try await logic.loadProfile()
+        }
+    }
+
+    @Test("una cancelación NO es reintentable")
+    func cancelacionNoEsReintentable() {
+        #expect(ProfileError.cancelled.isRetryable == false)
+        #expect(ProfileError.server.isRetryable == true)
+    }
 }

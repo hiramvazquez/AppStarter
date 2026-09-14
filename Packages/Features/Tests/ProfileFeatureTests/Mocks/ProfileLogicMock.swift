@@ -16,7 +16,17 @@ final class ProfileLogicMock: ProfileLogicProtocol {
     )
     var errorToThrow: (any Error)?
 
+    private(set) var loadCallCount = 0
+
+    /// Deja parada una llamada concreta. Recibe el número de llamada (1, 2, …) para poder
+    /// soltar UNA y dejar la otra en vuelo, que es lo que hace falta para observar qué le pasa
+    /// a la fase cuando una carga supera a otra. Mismo mecanismo que `CartLogicMock`.
+    var gate: (@Sendable (Int) async -> Void)?
+
     func loadProfile() async throws -> UserProfile {
+        loadCallCount += 1
+        let llamada = loadCallCount
+        await gate?(llamada)
         if let errorToThrow { throw errorToThrow }
         return profileToReturn
     }

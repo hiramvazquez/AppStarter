@@ -9,11 +9,16 @@ public enum ProfileError: DomainError, Equatable {
     case offline
     case unauthorized
     case server
+    /// La carga se canceló. Existe porque la spec `plataforma` lo exige de toda feature que
+    /// lance una cancelación venida de la red: se mapea desde `APIError.Category.cancelled`
+    /// en vez de caer en `.unknown`, no es reintentable, y `AppCancellationRecognizer` lo
+    /// reconoce para que `BaseViewModel` no lo presente como error.
+    case cancelled
     case unknown
 
     public var isRetryable: Bool {
         switch self {
-        case .unauthorized: false
+        case .unauthorized, .cancelled: false
         case .offline, .server, .unknown: true
         }
     }
@@ -26,6 +31,8 @@ public enum ProfileError: DomainError, Equatable {
             return ScreenError(title: "Sesión no válida", message: "Vuelve a iniciar sesión.")
         case .server:
             return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
+        case .cancelled:
+            return ScreenError(title: ErrorCopy.Cancelled.title, message: ErrorCopy.Cancelled.message)
         case .unknown:
             return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
@@ -74,6 +81,7 @@ public nonisolated final class ProfileLogic: ProfileLogicProtocol {
         case .offline: return .offline
         case .unauthorized: return .unauthorized
         case .server: return .server
+        case .cancelled: return .cancelled
         default: return .unknown
         }
     }

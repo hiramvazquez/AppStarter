@@ -3,11 +3,14 @@ import CartFeature
 import Domain
 import Foundation
 import GalleryFeatureCore
+import LoginFeature
 import Networking
 import ProductDetailFeature
 import ProductsFeature
+import ProfileFeature
 import SearchFeature
 import Testing
+import UploadsFeature
 
 @testable import AppStarter
 
@@ -28,6 +31,19 @@ struct CancellationRecognizerTests {
         #expect(r.isCancellation(CartError.cancelled))
         #expect(r.isCancellation(GalleryError.cancelled))
         #expect(r.isCancellation(ProductDetailError.cancelled))
+        #expect(r.isCancellation(ProfileError.cancelled))
+        #expect(r.isCancellation(LoginError.cancelled))
+        #expect(r.isCancellation(UploadsError.cancelled))
+    }
+
+    /// La distinción que más fácil se rompe al tocar esto: `UploadsError` tiene DOS casos de
+    /// cancelación y solo uno se intercepta. `captureCancelled` es el usuario cerrando la
+    /// cámara, y esa pantalla lo presenta como su resultado —«Cancelado / No se tomó ninguna
+    /// foto.»—, así que reconocerlo aquí lo haría desaparecer de la pantalla sin dejar rastro.
+    @Test("la cancelación de cámara NO se intercepta — esa pantalla sí la presenta")
+    func noSeComeLaCancelacionDeCamara() {
+        let r = AppCancellationRecognizer()
+        #expect(r.isCancellation(UploadsError.captureCancelled) == false)
     }
 
     @Test("no reconoce un error de dominio normal — la pantalla lo sigue mostrando")
@@ -39,6 +55,9 @@ struct CancellationRecognizerTests {
         #expect(r.isCancellation(GalleryError.notFound) == false)
         #expect(r.isCancellation(ProductDetailError.favoriteStorageFailure) == false)
         #expect(r.isCancellation(CartError.server) == false)
+        #expect(r.isCancellation(ProfileError.unauthorized) == false)
+        #expect(r.isCancellation(LoginError.invalidCredentials) == false)
+        #expect(r.isCancellation(UploadsError.captureFailed) == false)
     }
 
     @Test("sigue reconociendo lo que reconocía el de por defecto")

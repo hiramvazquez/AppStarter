@@ -77,7 +77,18 @@ public final class ProfileViewModel: LogicViewModel<any ProfileLogicProtocol>, A
 
     private func load() {
         performLoad { vm in
-            vm.profile = try await vm.logic.loadProfile()
+            do {
+                vm.profile = try await vm.logic.loadProfile()
+            } catch ProfileError.cancelled {
+                // Una cancelación reconocida sale de `performLoad` por un `return` seco que no
+                // toca `phase`, así que la fase transitoria puesta ANTES de arrancar se queda
+                // puesta y la pantalla se cuelga en `.loading` para siempre. Y solo si esta
+                // Task sigue viva: `performLoad` cancela la anterior al arrancar, así que la
+                // superada se desenrolla por aquí y sin la condición le quitaría el indicador
+                // a la que la superó.
+                if !Task.isCancelled { vm.setIdle() }
+                throw ProfileError.cancelled
+            }
         }
     }
 

@@ -168,6 +168,62 @@ struct ProfileViewModelTests {
         #expect(router.mainStack.path.isEmpty)
     }
 
+    @Test("una carga cancelada deja la pantalla en un estado del que se puede salir")
+    func cargaCancelada() async {
+        BaseViewModel.cancellationRecognizer = RecognizerDePrueba()
+        let mock = ProfileLogicMock()
+        mock.errorToThrow = ProfileError.cancelled
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: AppSessionState(router: Coordinator(root: .profile)),
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
+
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+
+        // `hasError == false` NO basta: también es cierto con la pantalla colgada en
+        // `.loading` para siempre. Lo que se fija es que se pueda SALIR del estado.
+        #expect(viewModel.hasError == false)
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.isIdle)
+    }
+
+    @Test("una carga superada no le quita el indicador a la que la superó")
+    func cargaSuperadaNoResetealaGanadora() async {
+        // La primera carga se queda esperando en la puerta; la segunda la cancela al arrancar.
+        // Cuando la primera se desenrolla con `.cancelled`, su `Task` YA está cancelada: sin el
+        // `if !Task.isCancelled` del ViewModel, resetearía la fase de la segunda, que sigue en
+        // vuelo.
+        BaseViewModel.cancellationRecognizer = RecognizerDePrueba()
+        let mock = ProfileLogicMock()
+        let primeraPuerta = Puerta()
+        let segundaPuerta = Puerta()
+        mock.gate = { llamada in
+            await (llamada == 1 ? primeraPuerta : segundaPuerta).esperar()
+        }
+        mock.errorToThrow = ProfileError.cancelled
+        let viewModel = ProfileViewModel(
+            logic: mock,
+            sessionState: AppSessionState(router: Coordinator(root: .profile)),
+            refreshLog: RefreshActivityLog(),
+            router: Coordinator(root: .profile)
+        )
+
+        viewModel.handle(.load)
+        let primera = viewModel.inFlightLoad
+
+        viewModel.handle(.load)          // cancela la primera y arranca la segunda
+        await primeraPuerta.abrir()
+        await primera?.value
+
+        #expect(viewModel.isLoading, "la segunda carga sigue en vuelo")
+
+        await segundaPuerta.abrir()      // se suelta para no dejar la Task colgada
+        await viewModel.inFlightLoad?.value
+    }
+
     @Test("refreshCount/lastRefreshDate mirror RefreshActivityLog")
     func refreshInfoMirrorsLog() {
         let log = RefreshActivityLog()

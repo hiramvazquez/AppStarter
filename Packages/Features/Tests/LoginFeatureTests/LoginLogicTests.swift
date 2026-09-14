@@ -74,4 +74,24 @@ struct LoginLogicTests {
             try await logic.login(username: "emilys", password: "emilyspass")
         }
     }
+
+    /// Pasa por `mapError` de verdad: si `.cancelled` vuelve a caer en el `default`, esto se
+    /// pone rojo. Antes caía, y cancelar el login pintaba error a pantalla completa con
+    /// «Reintentar» — sobre algo que el usuario acababa de cancelar.
+    @Test("una cancelación del transporte mapea a LoginError.cancelled, no a .unknown")
+    func cancelacionMapeaACancelled() async {
+        let service = AuthServiceMock()
+        service.errorToThrow = .stub(code: .cancelled, underlying: URLError(.cancelled))
+        let logic = LoginLogic(authService: service, sessionStore: SessionStoreSpy())
+
+        await #expect(throws: LoginError.cancelled) {
+            try await logic.login(username: "emilys", password: "emilyspass")
+        }
+    }
+
+    @Test("una cancelación NO es reintentable")
+    func cancelacionNoEsReintentable() {
+        #expect(LoginError.cancelled.isRetryable == false)
+        #expect(LoginError.server.isRetryable == true)
+    }
 }
