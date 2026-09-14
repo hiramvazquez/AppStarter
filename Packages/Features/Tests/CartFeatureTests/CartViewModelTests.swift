@@ -1,5 +1,6 @@
 import AppFoundation
 import Foundation
+import PlatformTestSupport
 import Testing
 
 @testable import CartFeature
@@ -124,24 +125,5 @@ struct CartViewModelCancellationTests {
     }
 }
 
-private struct RecognizerDePrueba: CancellationRecognizing {
-    func isCancellation(_ error: any Error) -> Bool { String(describing: error) == "cancelled" }
-}
-
-/// Una espera que se abre a mano: deja una carga EN VUELO para poder observar qué le pasa
-/// a la fase mientras otra la supera.
-private actor Puerta {
-    private var continuaciones: [CheckedContinuation<Void, Never>] = []
-    private var abierta = false
-
-    func esperar() async {
-        if abierta { return }
-        await withCheckedContinuation { continuaciones.append($0) }
-    }
-
-    func abrir() {
-        abierta = true
-        for c in continuaciones { c.resume() }
-        continuaciones.removeAll()
-    }
-}
+// `RecognizerDePrueba` y `Puerta` viven en `PlatformTestSupport`: los usan varios targets de
+// test, y `plataforma` → «Dónde vive un helper de test compartido» prohíbe la copia privada.

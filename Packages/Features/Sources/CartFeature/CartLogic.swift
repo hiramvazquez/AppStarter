@@ -180,7 +180,7 @@ public enum CartError: DomainError, Equatable {
         case .server:
             return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
         case .cancelled:
-            return ScreenError(title: "Cancelado", message: "La operación se canceló.")
+            return ScreenError(title: ErrorCopy.Cancelled.title, message: ErrorCopy.Cancelled.message)
         case .unknown:
             return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }

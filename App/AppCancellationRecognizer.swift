@@ -1,7 +1,9 @@
 import AppFoundation
 import CartFeature
 import Foundation
+import GalleryFeatureCore
 import Networking
+import ProductDetailFeature
 
 /// Reconoce las cancelaciones que este app expresa con sus propios tipos de dominio.
 ///
@@ -25,9 +27,13 @@ import Networking
 struct AppCancellationRecognizer: CancellationRecognizing {
     func isCancellation(_ error: any Error) -> Bool {
         switch error {
-        // Dos tipos y no tres desde que Products y Search comparten `CatalogError`. `CartError`
-        // se queda aparte porque tiene cinco casos y no es este error.
-        case CatalogError.cancelled, CartError.cancelled: true
+        // `CatalogError` lo comparten Products y Search; los otros tres son propios de su
+        // feature porque no comparten el conjunto de casos (Cart y ProductDetail tienen
+        // `notFound`, ProductDetail además `favoriteStorageFailure`, Gallery `notFound`).
+        case CatalogError.cancelled,
+             CartError.cancelled,
+             GalleryError.cancelled,
+             ProductDetailError.cancelled: true
         // Se delega en el de por defecto en vez de reimplementar sus dos casos: si
         // AppFoundation amplía lo que reconoce, esto lo hereda. Se construye aquí, sin
         // propiedad almacenada, porque el valor por defecto de una propiedad se evalúa en

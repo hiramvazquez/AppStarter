@@ -50,9 +50,20 @@ public final class ProductDetailViewModel: LogicViewModel<any ProductDetailLogic
 
     private func load() {
         performLoad { vm in
-            let state = try await vm.logic.load(id: vm.productID)
-            vm.product = state.product
-            vm.isFavorite = state.isFavorite
+            do {
+                let state = try await vm.logic.load(id: vm.productID)
+                vm.product = state.product
+                vm.isFavorite = state.isFavorite
+            } catch ProductDetailError.cancelled {
+                // Lo exige la spec `plataforma`: al reconocer la cancelación, `performLoad`
+                // sale con un `return` que no toca `phase`, así que la fase transitoria puesta
+                // ANTES se queda puesta y la pantalla se cuelga en `.loading` para siempre.
+                // Y solo si esta `Task` sigue viva: `performLoad` cancela la carga anterior al
+                // arrancar la nueva, y sin la condición la superada le quitaría el indicador a
+                // la que la superó.
+                if !Task.isCancelled { vm.setIdle() }
+                throw ProductDetailError.cancelled
+            }
         }
     }
 

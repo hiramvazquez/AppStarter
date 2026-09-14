@@ -40,6 +40,15 @@ public nonisolated enum ErrorCopy {
     /// Ojo con el título: Diagnostics tiene otro «No encontrado», con el mensaje «El recurso
     /// no existe (404).». Es OTRO par y se queda donde está — lo que se comparte es el par
     /// completo, no el título suelto.
+    /// El par que muestran las features cuya carga puede cancelarse desde la red. No debería
+    /// llegar a pantalla —`AppCancellationRecognizer` intercepta el caso antes—, pero el
+    /// `screenError` de cada error de dominio tiene que devolver algo, y devolvían este par
+    /// copiado palabra por palabra en cuatro sitios.
+    public enum Cancelled {
+        public static let title = "Cancelado"
+        public static let message = "La operación se canceló."
+    }
+
     public enum NotFound {
         public static let title = "No encontrado"
         public static let message = "Este producto ya no está disponible."

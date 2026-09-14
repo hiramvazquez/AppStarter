@@ -129,9 +129,9 @@ struct ProductsViewModelTests {
 ///
 /// Lo que NO cubre esto es el `AppCancellationRecognizer` de verdad — este target no puede
 /// importar `App/` (R13). De ese se encarga `AppTests/CancellationRecognizerTests`.
-private struct RecognizerDePrueba: CancellationRecognizing {
-    func isCancellation(_ error: any Error) -> Bool { String(describing: error) == "cancelled" }
-}
+///
+/// El reconocedor en sí vive en `PlatformTestSupport`: lo usan cinco targets, y `plataforma`
+/// → «Dónde vive un helper de test compartido» prohíbe la copia privada.
 
 @Suite("ProductsViewModel: una cancelación no llega a la pantalla", .serialized)
 @MainActor

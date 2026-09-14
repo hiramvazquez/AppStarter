@@ -127,7 +127,7 @@ public enum DiagnosticsError: DomainError, Equatable {
         // propósito: un conteo escrito aquí caduca en cuanto alguien añade una pantalla, y
         // el comentario se queda mintiendo.
         case .server: return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
-        case .cancelled: return ScreenError(title: "Cancelado", message: "La operación se canceló.")
+        case .cancelled: return ScreenError(title: ErrorCopy.Cancelled.title, message: ErrorCopy.Cancelled.message)
         case .untrustedServer:
             return ScreenError(
                 title: "Servidor no confiable",

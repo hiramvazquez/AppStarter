@@ -83,10 +83,21 @@ public final class GalleryViewModel: LogicViewModel<any GalleryLogicProtocol>, A
         // itself — the default `successTransition` would force `.content` afterward and
         // silently discard `setEmpty()` (a product with no images, e.g. a fixture).
         performLoad(successTransition: .preserveCurrentPhase) { vm in
-            let state = try await vm.logic.load(productID: vm.productID)
-            vm.title = state.title
-            vm.images = state.images
-            if state.images.isEmpty { vm.setEmpty() } else { vm.setContent() }
+            do {
+                let state = try await vm.logic.load(productID: vm.productID)
+                vm.title = state.title
+                vm.images = state.images
+                if state.images.isEmpty { vm.setEmpty() } else { vm.setContent() }
+            } catch GalleryError.cancelled {
+                // Lo exige la spec `plataforma`: al reconocer la cancelación, `performLoad`
+                // sale con un `return` que no toca `phase`, así que la fase transitoria puesta
+                // ANTES se queda puesta y la pantalla se cuelga en `.loading` para siempre.
+                // Y solo si esta `Task` sigue viva: `performLoad` cancela la carga anterior al
+                // arrancar la nueva, y sin la condición la superada le quitaría el indicador a
+                // la que la superó.
+                if !Task.isCancelled { vm.setIdle() }
+                throw GalleryError.cancelled
+            }
         }
     }
 

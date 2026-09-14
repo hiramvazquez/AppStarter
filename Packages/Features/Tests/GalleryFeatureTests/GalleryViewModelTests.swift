@@ -9,6 +9,9 @@ import Testing
 @testable import GalleryFeatureCore
 @testable import GalleryFeatureUI
 
+// `RecognizerDePrueba` y `Puerta` viven en `PlatformTestSupport`: los usan varios targets de
+// test, y `plataforma` → «Dónde vive un helper de test compartido» prohíbe la copia privada.
+
 /// `GalleryViewModel` tested only against `GalleryLogicMock` — no `GalleryService` real,
 /// no network involved.
 @Suite("GalleryViewModel")
@@ -104,6 +107,52 @@ struct GalleryViewModelTests {
         // returns before reaching `inFlightPrefetch = Task { ... }`) — nothing to await.
         #expect(viewModel.inFlightPrefetch == nil)
         #expect(mock.prefetchedURLs.isEmpty)
+    }
+
+    @Test("una carga cancelada deja la pantalla en un estado del que se puede salir")
+    func cargaCancelada() async {
+        BaseViewModel.cancellationRecognizer = RecognizerDePrueba()
+        let mock = GalleryLogicMock()
+        mock.errorToThrow = GalleryError.cancelled
+        let viewModel = GalleryViewModel(logic: mock, productID: 3, router: Coordinator(root: .products))
+
+        viewModel.handle(.load)
+        await viewModel.inFlightLoad?.value
+
+        // `hasError == false` NO basta: también es cierto con la pantalla colgada en
+        // `.loading` para siempre. Lo que se fija es que se pueda SALIR del estado.
+        #expect(viewModel.hasError == false)
+        #expect(viewModel.isLoading == false)
+        #expect(viewModel.isIdle)
+    }
+
+    @Test("una carga superada no le quita el indicador a la que la superó")
+    func cargaSuperadaNoResetealaGanadora() async {
+        // La primera carga se queda esperando en la puerta; la segunda la cancela al arrancar.
+        // Cuando la primera se desenrolla con `.cancelled`, su `Task` YA está cancelada: sin el
+        // `if !Task.isCancelled` del ViewModel, resetearía la fase de la segunda, que sigue en
+        // vuelo. Sin este test la mutación sobrevivía — lo señaló el revisor.
+        BaseViewModel.cancellationRecognizer = RecognizerDePrueba()
+        let mock = GalleryLogicMock()
+        let primeraPuerta = Puerta()
+        let segundaPuerta = Puerta()
+        mock.gate = { llamada in
+            await (llamada == 1 ? primeraPuerta : segundaPuerta).esperar()
+        }
+        mock.errorToThrow = GalleryError.cancelled
+        let viewModel = GalleryViewModel(logic: mock, productID: 3, router: Coordinator(root: .products))
+
+        viewModel.handle(.load)
+        let primera = viewModel.inFlightLoad
+
+        viewModel.handle(.load)          // cancela la primera y arranca la segunda
+        await primeraPuerta.abrir()
+        await primera?.value
+
+        #expect(viewModel.isLoading, "la segunda carga sigue en vuelo")
+
+        await segundaPuerta.abrir()      // se suelta para no dejar la Task colgada
+        await viewModel.inFlightLoad?.value
     }
 
     @Test("handle(.scrolled) twice within the throttle window prefetches once; past the window, prefetches again")

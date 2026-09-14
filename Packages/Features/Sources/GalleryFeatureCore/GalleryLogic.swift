@@ -23,11 +23,19 @@ public enum GalleryError: DomainError, Equatable {
     case offline
     case notFound
     case server
+    /// La carga se canceló. Existe porque la spec `plataforma` lo exige de toda feature que
+    /// lance una cancelación venida de la red: se mapea desde `APIError.Category.cancelled`
+    /// en vez de caer en `.unknown`, no es reintentable, y `AppCancellationRecognizer` lo
+    /// reconoce para que `BaseViewModel` no lo presente como error.
+    ///
+    /// Sin este caso, cancelar una carga pintaba un error a pantalla completa con
+    /// «Reintentar» — sobre algo que el usuario acababa de cancelar.
+    case cancelled
     case unknown
 
     public var isRetryable: Bool {
         switch self {
-        case .notFound: false
+        case .notFound, .cancelled: false
         case .offline, .server, .unknown: true
         }
     }
@@ -40,6 +48,10 @@ public enum GalleryError: DomainError, Equatable {
             return ScreenError(title: ErrorCopy.NotFound.title, message: ErrorCopy.NotFound.message)
         case .server:
             return ScreenError(title: ErrorCopy.Server.title, message: ErrorCopy.Server.message)
+        // No debería renderizarse: `AppCancellationRecognizer` intercepta el caso antes de que
+        // `BaseViewModel` llame a `setError`. Está porque el `switch` es exhaustivo.
+        case .cancelled:
+            return ScreenError(title: ErrorCopy.Cancelled.title, message: ErrorCopy.Cancelled.message)
         case .unknown:
             return ScreenError(title: ErrorCopy.Unknown.title, message: ErrorCopy.Unknown.message)
         }
@@ -88,6 +100,7 @@ public nonisolated final class GalleryLogic: GalleryLogicProtocol {
         case .offline: return .offline
         case .notFound: return .notFound
         case .server: return .server
+        case .cancelled: return .cancelled
         default: return .unknown
         }
     }
