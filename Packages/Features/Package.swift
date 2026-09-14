@@ -248,7 +248,8 @@ let package = Package(
             dependencies: [
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
-                .product(name: "Domain", package: "Platform")
+                .product(name: "Domain", package: "Platform"),
+                .product(name: "Networking", package: "Platform")
             ],
             path: "Sources/GalleryFeatureCore",
             swiftSettings: swiftSettings,
@@ -309,6 +310,7 @@ let package = Package(
                 .product(name: "AppFoundation", package: "AppFoundation"),
                 .product(name: "CoreNetworking", package: "CoreNetworking"),
                 .product(name: "Domain", package: "Platform"),
+                .product(name: "Networking", package: "Platform"),
             ],
             path: "Sources/CartFeature",
             swiftSettings: swiftSettings,

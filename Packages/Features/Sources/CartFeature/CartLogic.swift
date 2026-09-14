@@ -2,6 +2,7 @@ import AppFoundation
 import CoreNetworking
 import Domain
 import Foundation
+import Networking
 
 // MARK: - The domain model
 
@@ -153,7 +154,7 @@ public nonisolated struct Cart: Sendable, Equatable {
 
 /// Cada forma en la que puede fallar esta pantalla — nunca `APIError`, que se queda en la
 /// frontera Logic/Service.
-public enum CartError: DomainError, Equatable {
+public enum CartError: TransportMappable {
     case offline
     case notFound
     case server
@@ -164,12 +165,13 @@ public enum CartError: DomainError, Equatable {
     case cancelled
     case unknown
 
-    public var isRetryable: Bool {
-        switch self {
-        case .notFound, .cancelled: false
-        case .offline, .server, .unknown: true
-        }
-    }
+    // `isRetryable` y la traducción desde `APIError` las da `TransportMappable` (`Networking`):
+    // estaban escritas igual en tres features. El `screenError` NO se comparte, y por eso sigue
+    // aquí: el de `.notFound` dice «Sin carrito», que es lo que esta pantalla necesita decir.
+    //
+    // OJO AL AÑADIR UN CASO: `isRetryable` se hereda por EXCLUSIÓN —todo lo que no sea `.notFound`
+    // ni `.cancelled` es reintentable—, así que un caso nuevo será reintentable SIN que el
+    // compilador te pregunte. Antes lo forzaba un `switch` exhaustivo; ahora lo decides tú aquí.
 
     public var screenError: ScreenError {
         switch self {
@@ -213,17 +215,7 @@ public nonisolated final class CartLogic: CartLogicProtocol {
             return carts.first ?? .empty
         } catch {
             // `fetchCarts` es `throws(APIError)`: aquí `error` ya es `APIError`.
-            throw Self.mapError(error)
-        }
-    }
-
-    private static func mapError(_ error: APIError) -> CartError {
-        switch error.category {
-        case .offline: return .offline
-        case .notFound: return .notFound
-        case .server: return .server
-        case .cancelled: return .cancelled
-        default: return .unknown
+            throw CartError.from(error)
         }
     }
 }

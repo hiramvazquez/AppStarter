@@ -15,7 +15,7 @@ import UploadsFeature
 @testable import AppStarter
 
 /// El contrato que de verdad importa del reconocedor: que una cancelación **no acabe en
-/// pantalla**. Los tests de `mapError` y de `isRetryable` viven en cada feature y son
+/// pantalla**. Los tests de la traducción y de `isRetryable` viven en cada feature y son
 /// necesarios, pero los tres pueden estar verdes con el usuario viendo un error igualmente
 /// — que es exactamente lo que pasaba antes de este cambio.
 ///

@@ -65,8 +65,10 @@ struct CartLogicTests {
 
     @Test("Una cancelación se traduce a .cancelled, no a .unknown")
     func cancelledMaps() async {
-        // Lo exige la spec `plataforma`: sin esta línea del `mapError`, la cancelación cae
+        // Lo exige la spec `plataforma`: sin esa línea de la traducción, la cancelación cae
         // en el `default` y la pantalla enseña "Algo salió mal" por algo que se canceló.
+        // La traducción la hereda de `TransportMappable`, pero quien la comprueba es ESTA
+        // feature: la cláusula 1 le aplica igual aunque el default venga de la plataforma.
         let service = CartServiceMock(
             result: .failure(.stub(code: .cancelled, underlying: URLError(.cancelled)))
         )

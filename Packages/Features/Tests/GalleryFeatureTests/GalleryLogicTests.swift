@@ -60,7 +60,7 @@ struct GalleryLogicTests {
         }
     }
 
-    /// Pasa por `mapError` de verdad: si `.cancelled` vuelve a caer en el `default`, esto se
+    /// Pasa por la traducción de verdad: si `.cancelled` vuelve a caer en el `default`, esto se
     /// pone rojo. Antes caía, y cancelar una carga pintaba error a pantalla completa con
     /// «Reintentar» — sobre algo que el usuario acababa de cancelar.
     @Test("una cancelación del transporte mapea a GalleryError.cancelled, no a .unknown")
@@ -75,9 +75,13 @@ struct GalleryLogicTests {
         }
     }
 
-    @Test("una cancelación NO es reintentable")
+    @Test("ni la cancelación ni lo no encontrado son reintentables")
     func cancelacionNoEsReintentable() {
         #expect(GalleryError.cancelled.isRetryable == false)
+        // `notFound` lo afirma ESTA feature, no solo la plataforma: desde que `isRetryable` lo da
+        // `TransportMappable` por defecto, sin este assert quitarlo del default dejaba este target
+        // entero en verde. Lo cazó el revisor con esa mutación exacta.
+        #expect(GalleryError.notFound.isRetryable == false)
         #expect(GalleryError.server.isRetryable == true)
     }
 

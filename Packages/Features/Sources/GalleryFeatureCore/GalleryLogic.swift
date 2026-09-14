@@ -2,6 +2,7 @@ import AppFoundation
 import CoreNetworking
 import Domain
 import Foundation
+import Networking
 
 // MARK: - The domain model
 
@@ -19,7 +20,7 @@ public nonisolated struct GalleryState: Sendable, Equatable {
 
 // MARK: - Domain errors (M1)
 
-public enum GalleryError: DomainError, Equatable {
+public enum GalleryError: TransportMappable {
     case offline
     case notFound
     case server
@@ -33,12 +34,12 @@ public enum GalleryError: DomainError, Equatable {
     case cancelled
     case unknown
 
-    public var isRetryable: Bool {
-        switch self {
-        case .notFound, .cancelled: false
-        case .offline, .server, .unknown: true
-        }
-    }
+    // `isRetryable` y la traducción desde `APIError` las da `TransportMappable` (`Networking`):
+    // estaban escritas igual en tres features. El `screenError` sí se queda aquí.
+    //
+    // OJO AL AÑADIR UN CASO: `isRetryable` se hereda por EXCLUSIÓN —todo lo que no sea `.notFound`
+    // ni `.cancelled` es reintentable—, así que un caso nuevo será reintentable SIN que el
+    // compilador te pregunte. Antes lo forzaba un `switch` exhaustivo; ahora lo decides tú aquí.
 
     public var screenError: ScreenError {
         switch self {
@@ -87,21 +88,11 @@ public nonisolated final class GalleryLogic: GalleryLogicProtocol {
         } catch {
             // `galleryService.fetchProduct` is `throws(APIError)`: `error` here is
             // already `APIError`, not `any Error`.
-            throw Self.mapError(error)
+            throw GalleryError.from(error)
         }
     }
 
     public func prefetchImage(url: URL) async {
         await galleryService.prefetchImage(url: url)
-    }
-
-    private static func mapError(_ error: APIError) -> GalleryError {
-        switch error.category {
-        case .offline: return .offline
-        case .notFound: return .notFound
-        case .server: return .server
-        case .cancelled: return .cancelled
-        default: return .unknown
-        }
     }
 }

@@ -48,7 +48,7 @@ struct ProductDetailLogicTests {
         }
     }
 
-    /// Pasa por `mapError` de verdad: si `.cancelled` vuelve a caer en el `default`, esto se
+    /// Pasa por la traducción de verdad: si `.cancelled` vuelve a caer en el `default`, esto se
     /// pone rojo. Antes caía, y cancelar una carga pintaba error a pantalla completa con
     /// «Reintentar» — sobre algo que el usuario acababa de cancelar.
     @Test("una cancelación del transporte mapea a ProductDetailError.cancelled, no a .unknown")
@@ -63,9 +63,17 @@ struct ProductDetailLogicTests {
         }
     }
 
-    @Test("una cancelación NO es reintentable")
-    func cancelacionNoEsReintentable() {
+    /// Lo que ESTA feature afirma sobre su reintentabilidad, y no delega en la plataforma.
+    ///
+    /// Desde que `isRetryable` lo da `TransportMappable` por defecto, sin estos asserts quitar
+    /// `notFound` del default dejaba este target entero en verde — lo cazó el revisor con esa
+    /// mutación exacta. Y `favoriteStorageFailure` es un caso propio que el protocolo no conoce:
+    /// hereda `true` por exclusión, y esta línea es lo que convierte esa herencia en contrato.
+    @Test("reintentabilidad: ni cancelado ni no encontrado; el fallo de favoritos sí")
+    func reintentabilidad() {
         #expect(ProductDetailError.cancelled.isRetryable == false)
+        #expect(ProductDetailError.notFound.isRetryable == false)
         #expect(ProductDetailError.server.isRetryable == true)
+        #expect(ProductDetailError.favoriteStorageFailure.isRetryable == true)
     }
 }

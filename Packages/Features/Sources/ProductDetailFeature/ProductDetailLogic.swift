@@ -20,7 +20,7 @@ public nonisolated struct ProductDetailState: Sendable, Equatable {
 
 // MARK: - Domain errors (M1)
 
-public enum ProductDetailError: DomainError, Equatable {
+public enum ProductDetailError: TransportMappable {
     case offline
     case notFound
     case server
@@ -35,12 +35,14 @@ public enum ProductDetailError: DomainError, Equatable {
     case cancelled
     case unknown
 
-    public var isRetryable: Bool {
-        switch self {
-        case .notFound, .cancelled: false
-        case .offline, .server, .favoriteStorageFailure, .unknown: true
-        }
-    }
+    // `isRetryable` y la traducción desde `APIError` las da `TransportMappable` (`Networking`).
+    // `favoriteStorageFailure` es un caso propio de esta feature y hereda `true` por exclusión,
+    // sin que el protocolo lo conozca: lo que convierte esa herencia en contrato es
+    // `ProductDetailLogicTests.reintentabilidad`, no el default.
+    //
+    // OJO AL AÑADIR UN CASO: se hereda por EXCLUSIÓN —todo lo que no sea `.notFound` ni
+    // `.cancelled` es reintentable—, así que un caso nuevo será reintentable SIN que el compilador
+    // te pregunte. Antes lo forzaba un `switch` exhaustivo; ahora lo decides tú aquí.
 
     public var screenError: ScreenError {
         switch self {
@@ -98,7 +100,7 @@ public nonisolated final class ProductDetailLogic: ProductDetailLogicProtocol {
         } catch {
             // `productsService.fetchProduct` is `throws(APIError)`: `error` here is
             // already `APIError`, not `any Error`.
-            throw Self.mapError(error)
+            throw ProductDetailError.from(error)
         }
     }
 
@@ -108,16 +110,6 @@ public nonisolated final class ProductDetailLogic: ProductDetailLogicProtocol {
             return try await favoritesStore.toggle(product)
         } catch {
             throw ProductDetailError.favoriteStorageFailure
-        }
-    }
-
-    private static func mapError(_ error: APIError) -> ProductDetailError {
-        switch error.category {
-        case .offline: return .offline
-        case .notFound: return .notFound
-        case .server: return .server
-        case .cancelled: return .cancelled
-        default: return .unknown
         }
     }
 }
