@@ -19,6 +19,18 @@ import Foundation
 /// LÍMITE DECLARADO: esto NO es «el error de la app». Las features que no comparten el
 /// conjunto de casos conservan el suyo — `FavoritesError` tiene dos y `CartError` cinco. Añadir
 /// casos aquí para acomodarlas sería inventar estados que nadie usa.
+///
+/// **Y si lo que buscas es la TRADUCCIÓN compartida y no el tipo compartido, está al lado, en
+/// `TransportMappable`.** `CartError`, `GalleryError` y `ProductDetailError` conservan cada uno
+/// su tipo —y, sobre todo, su `screenError`— pero heredan de ahí el mapeo desde `APIError` y el
+/// `isRetryable`. El criterio para elegir entre las dos formas: si dos features comparten el
+/// conjunto de casos **y lo que le dicen al usuario**, comparten el tipo, que es lo que hacen
+/// Products y Search aquí; si solo comparten la traducción, conforman ese protocolo. Este enum no
+/// lo conforma porque no tiene `notFound`.
+///
+/// Se escribe aquí porque este es el fichero donde aterriza quien busca «el mapeo compartido», y
+/// hasta hoy desde aquí no había forma de enterarse de que existía la otra opción. Lo señaló un
+/// revisor: la frontera estaba trazada, pero solo se leía desde un lado.
 public enum CatalogError: DomainError, Equatable {
     case offline
     case server
