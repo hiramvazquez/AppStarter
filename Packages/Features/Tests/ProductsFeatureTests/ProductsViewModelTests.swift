@@ -171,8 +171,8 @@ struct ProductsViewModelCancellationTests {
     @Test("una paginación cancelada no mata la paginación para siempre")
     func paginacionCancelada() async {
         let mock = ProductsLogicMock()
-        let p = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
-        mock.pageToReturn = ProductsPage(items: [p], total: 100, skip: 0, limit: 20)
+        let product = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
+        mock.pageToReturn = ProductsPage(items: [product], total: 100, skip: 0, limit: 20)
         let vm = ProductsViewModel(logic: mock, router: Coordinator(root: .products))
         vm.handle(.load)
         await vm.inFlightLoad?.value
@@ -217,8 +217,8 @@ private final class LogicDeActividadQueSeSolapa: ProductsLogicProtocol, @uncheck
         if cargaInicialPendiente {
             cargaInicialPendiente = false
             llamadas -= 1                       // esta no cuenta para el solapamiento
-            let p = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
-            return ProductsPage(items: [p], total: 100, skip: 0, limit: 20)
+            let product = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
+            return ProductsPage(items: [product], total: 100, skip: 0, limit: 20)
         }
         if primera {
             primera = false

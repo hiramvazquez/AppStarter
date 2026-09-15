@@ -31,7 +31,16 @@ nonisolated final class CartLogicMock: CartLogicProtocol, @unchecked Sendable {
     /// edición carga primero con éxito y luego hace fallar solo la edición.
     var editedCartToReturn: Cart = .empty
     var editErrorToThrow: (any Error)?
-    private(set) var setQuantityCalls: [(quantity: Int, lineId: Int, cart: Cart)] = []
+    /// Una llamada a `setQuantity`. Un `struct` y no una tupla: con tres miembros, la tupla es
+    /// la que SwiftLint `--strict` rechaza (`large_tuple`). Los nombres son los mismos, así que
+    /// los tests leen `.quantity`, `.lineId` y `.cart` igual que antes.
+    struct SetQuantityCall {
+        let quantity: Int
+        let lineId: Int
+        let cart: Cart
+    }
+
+    private(set) var setQuantityCalls: [SetQuantityCall] = []
     private(set) var removeLineCalls: [(lineId: Int, cart: Cart)] = []
 
     /// Como `gate`, para las ediciones: recibe el número de edición (1, 2, ...), contando las
@@ -41,7 +50,7 @@ nonisolated final class CartLogicMock: CartLogicProtocol, @unchecked Sendable {
     var editCallCount: Int { setQuantityCalls.count + removeLineCalls.count }
 
     func setQuantity(_ quantity: Int, ofLine lineId: Int, in cart: Cart) async throws -> Cart {
-        setQuantityCalls.append((quantity, lineId, cart))
+        setQuantityCalls.append(SetQuantityCall(quantity: quantity, lineId: lineId, cart: cart))
         return try await finishEdit()
     }
 

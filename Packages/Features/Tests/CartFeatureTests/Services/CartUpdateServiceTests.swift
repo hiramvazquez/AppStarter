@@ -91,7 +91,11 @@ struct CartUpdateServiceTests {
             let products: [Linea]
         }
         let enviado = try JSONDecoder().decode(Enviado.self, from: cuerpo)
-        #expect(enviado.products == [.init(id: 162, quantity: 2), .init(id: 113, quantity: 3), .init(id: 122, quantity: 3)])
+        #expect(enviado.products == [
+            .init(id: 162, quantity: 2),
+            .init(id: 113, quantity: 3),
+            .init(id: 122, quantity: 3),
+        ])
     }
 
     @Test("La respuesta real llega al carrito: `discountedPrice` es el importe con descuento de la línea")

@@ -33,9 +33,9 @@ final class GallerySnapshotTests: XCTestCase {
                 return GalleryState(
                     title: "Essence Mascara Lash Princess",
                     images: [
-                        URL(string: "\(base)/1.webp")!,
-                        URL(string: "\(base)/2.webp")!,
-                        URL(string: "\(base)/3.webp")!
+                        Self.url("\(base)/1.webp"),
+                        Self.url("\(base)/2.webp"),
+                        Self.url("\(base)/3.webp")
                     ]
                 )
             case .empty:
@@ -48,6 +48,14 @@ final class GallerySnapshotTests: XCTestCase {
         func prefetchImage(url: URL) async {}
         init(outcome: StubOutcome) {
             self.outcome = outcome
+        }
+
+        /// Una URL literal del fixture, sin `!` (SwiftLint `--strict`) pero igual de ruidosa si el
+        /// literal estuviera mal: el patrón de `AppModule.swift`. `??` con otra URL no valdría,
+        /// porque taparía un fixture roto y cambiaría lo que se fotografía.
+        private static func url(_ string: String) -> URL {
+            guard let url = URL(string: string) else { preconditionFailure("URL de fixture inválida: \(string)") }
+            return url
         }
     }
 

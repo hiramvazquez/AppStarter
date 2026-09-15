@@ -26,14 +26,14 @@ import UploadsFeature
 struct CancellationRecognizerTests {
     @Test("reconoce los .cancelled de las features")
     func reconoceLosDeDominio() {
-        let r = AppCancellationRecognizer()
-        #expect(r.isCancellation(CatalogError.cancelled))
-        #expect(r.isCancellation(CartError.cancelled))
-        #expect(r.isCancellation(GalleryError.cancelled))
-        #expect(r.isCancellation(ProductDetailError.cancelled))
-        #expect(r.isCancellation(ProfileError.cancelled))
-        #expect(r.isCancellation(LoginError.cancelled))
-        #expect(r.isCancellation(UploadsError.cancelled))
+        let recognizer = AppCancellationRecognizer()
+        #expect(recognizer.isCancellation(CatalogError.cancelled))
+        #expect(recognizer.isCancellation(CartError.cancelled))
+        #expect(recognizer.isCancellation(GalleryError.cancelled))
+        #expect(recognizer.isCancellation(ProductDetailError.cancelled))
+        #expect(recognizer.isCancellation(ProfileError.cancelled))
+        #expect(recognizer.isCancellation(LoginError.cancelled))
+        #expect(recognizer.isCancellation(UploadsError.cancelled))
     }
 
     /// La distinción que más fácil se rompe al tocar esto: `UploadsError` tiene DOS casos de
@@ -42,29 +42,29 @@ struct CancellationRecognizerTests {
     /// foto.»—, así que reconocerlo aquí lo haría desaparecer de la pantalla sin dejar rastro.
     @Test("la cancelación de cámara NO se intercepta — esa pantalla sí la presenta")
     func noSeComeLaCancelacionDeCamara() {
-        let r = AppCancellationRecognizer()
-        #expect(r.isCancellation(UploadsError.captureCancelled) == false)
+        let recognizer = AppCancellationRecognizer()
+        #expect(recognizer.isCancellation(UploadsError.captureCancelled) == false)
     }
 
     @Test("no reconoce un error de dominio normal — la pantalla lo sigue mostrando")
     func noSeComeLosErroresDeVerdad() {
-        let r = AppCancellationRecognizer()
-        #expect(r.isCancellation(CatalogError.server) == false)
-        #expect(r.isCancellation(CatalogError.offline) == false)
-        #expect(r.isCancellation(CatalogError.unknown) == false)
-        #expect(r.isCancellation(GalleryError.notFound) == false)
-        #expect(r.isCancellation(ProductDetailError.favoriteStorageFailure) == false)
-        #expect(r.isCancellation(CartError.server) == false)
-        #expect(r.isCancellation(ProfileError.unauthorized) == false)
-        #expect(r.isCancellation(LoginError.invalidCredentials) == false)
-        #expect(r.isCancellation(UploadsError.captureFailed) == false)
+        let recognizer = AppCancellationRecognizer()
+        #expect(recognizer.isCancellation(CatalogError.server) == false)
+        #expect(recognizer.isCancellation(CatalogError.offline) == false)
+        #expect(recognizer.isCancellation(CatalogError.unknown) == false)
+        #expect(recognizer.isCancellation(GalleryError.notFound) == false)
+        #expect(recognizer.isCancellation(ProductDetailError.favoriteStorageFailure) == false)
+        #expect(recognizer.isCancellation(CartError.server) == false)
+        #expect(recognizer.isCancellation(ProfileError.unauthorized) == false)
+        #expect(recognizer.isCancellation(LoginError.invalidCredentials) == false)
+        #expect(recognizer.isCancellation(UploadsError.captureFailed) == false)
     }
 
     @Test("sigue reconociendo lo que reconocía el de por defecto")
     func delegaEnElPorDefecto() {
-        let r = AppCancellationRecognizer()
-        #expect(r.isCancellation(CancellationError()))
-        #expect(r.isCancellation(URLError(.cancelled)))
-        #expect(r.isCancellation(URLError(.notConnectedToInternet)) == false)
+        let recognizer = AppCancellationRecognizer()
+        #expect(recognizer.isCancellation(CancellationError()))
+        #expect(recognizer.isCancellation(URLError(.cancelled)))
+        #expect(recognizer.isCancellation(URLError(.notConnectedToInternet)) == false)
     }
 }

@@ -28,80 +28,73 @@ enum OfflineFixtures {
         let semaphore = DispatchSemaphore(value: 0)
 
         Task {
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .post,
-                    url: baseURL.appendingPathComponent("auth/login"),
-                    response: .response(status: 200, body: loginBody)
-                )
-            )
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .get,
-                    url: baseURL.appendingPathComponent("products").withQuery([("limit", "20"), ("skip", "0")]),
-                    response: .response(status: 200, body: productsPageBody)
-                )
-            )
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .get,
-                    url: baseURL.appendingPathComponent("products/\(productID)"),
-                    response: .response(status: 200, body: productBody)
-                )
-            )
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .get,
-                    url: baseURL.appendingPathComponent("products/search").withQuery([("q", "mascara")]),
-                    response: .response(status: 200, body: searchBody)
-                )
-            )
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .get,
-                    url: baseURL.appendingPathComponent("auth/me"),
-                    response: .response(status: 200, body: meBody)
-                )
-            )
-            // Diagnostics (PRD-APP-02) — experiments that reuse the app's own
-            // authenticated `APIServiceProtocol`, so their fixtures live on the SAME
-            // shared transport as everything above:
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .get,
-                    url: baseURL.appendingPathComponent("products/999999"),
-                    response: .response(status: 404, body: notFoundBody)
-                )
-            )
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .get,
-                    url: baseURL.appendingPathComponent("products").withQuery([("delay", "3000")]),
-                    // 20s, deliberately far longer than the real 3s delay it stands in for:
-                    // `DiagnosticsUITests` needs a comfortable window to find AND tap
-                    // "Cancelar" (each XCUITest query round-trip alone can take several
-                    // hundred ms) before the fixture would resolve on its own — a shorter
-                    // latency made the test race the fixture and occasionally tap into a
-                    // result that had already landed.
-                    response: .response(status: 200, body: productsPageBody, latency: .seconds(20))
-                )
-            )
-            // Uploads (PRD-APP-02): `POST /products/add`, uploaded (not `execute`d) with
-            // the photo as base64 in the JSON body — DummyJSON echoes it with a fresh id;
-            // the fixture does the same.
-            await transport.register(
-                InMemoryTransport.Exchange(
-                    method: .post,
-                    url: baseURL.appendingPathComponent("products/add"),
-                    response: .response(status: 200, body: addProductBody)
-                )
-            )
+            for exchange in exchanges {
+                await transport.register(exchange)
+            }
             semaphore.signal()
         }
 
         semaphore.wait()
         return transport
     }
+
+    /// Everything the shared transport answers, in the order it has always been registered.
+    /// Out of `makeTransport` because, inline, that function went past the 50 lines SwiftLint
+    /// allows under `--strict`.
+    private static let exchanges: [InMemoryTransport.Exchange] = [
+        InMemoryTransport.Exchange(
+            method: .post,
+            url: baseURL.appendingPathComponent("auth/login"),
+            response: .response(status: 200, body: loginBody)
+        ),
+        InMemoryTransport.Exchange(
+            method: .get,
+            url: baseURL.appendingPathComponent("products").withQuery([("limit", "20"), ("skip", "0")]),
+            response: .response(status: 200, body: productsPageBody)
+        ),
+        InMemoryTransport.Exchange(
+            method: .get,
+            url: baseURL.appendingPathComponent("products/\(productID)"),
+            response: .response(status: 200, body: productBody)
+        ),
+        InMemoryTransport.Exchange(
+            method: .get,
+            url: baseURL.appendingPathComponent("products/search").withQuery([("q", "mascara")]),
+            response: .response(status: 200, body: searchBody)
+        ),
+        InMemoryTransport.Exchange(
+            method: .get,
+            url: baseURL.appendingPathComponent("auth/me"),
+            response: .response(status: 200, body: meBody)
+        ),
+        // Diagnostics (PRD-APP-02) — experiments that reuse the app's own
+        // authenticated `APIServiceProtocol`, so their fixtures live on the SAME
+        // shared transport as everything above:
+        InMemoryTransport.Exchange(
+            method: .get,
+            url: baseURL.appendingPathComponent("products/999999"),
+            response: .response(status: 404, body: notFoundBody)
+        ),
+        InMemoryTransport.Exchange(
+            method: .get,
+            url: baseURL.appendingPathComponent("products").withQuery([("delay", "3000")]),
+            // 20s, deliberately far longer than the real 3s delay it stands in for:
+            // `DiagnosticsUITests` needs a comfortable window to find AND tap
+            // "Cancelar" (each XCUITest query round-trip alone can take several
+            // hundred ms) before the fixture would resolve on its own — a shorter
+            // latency made the test race the fixture and occasionally tap into a
+            // result that had already landed.
+            response: .response(status: 200, body: productsPageBody, latency: .seconds(20))
+        ),
+        // Uploads (PRD-APP-02): `POST /products/add`, uploaded (not `execute`d) with
+        // the photo as base64 in the JSON body — DummyJSON echoes it with a fresh id;
+        // the fixture does the same.
+        InMemoryTransport.Exchange(
+            method: .post,
+            url: baseURL.appendingPathComponent("products/add"),
+            response: .response(status: 200, body: addProductBody)
+        ),
+    ]
 
     /// A SEPARATE transport for Diagnostics' 401/host-unreachable experiments
     /// (`DiagnosticsService`'s own `unauthenticatedAPI`/`unreachableAPI` pipelines) — NOT
@@ -135,9 +128,14 @@ enum OfflineFixtures {
         return transport
     }
 
+    // The two bodies below are split with the multi-line literal's trailing `\`, which joins
+    // lines WITHOUT inserting a newline: same bytes as the one-line originals, under the line
+    // length SwiftLint allows under `--strict`. Same device as `productImagesJSON`.
     private static let loginBody = Data(
         """
-        {"accessToken":"offline-access","refreshToken":"offline-refresh","id":1,"username":"emilys","email":"emily.johnson@x.dummyjson.com","firstName":"Emily","lastName":"Johnson","image":"https://dummyjson.com/icon/emilys/128"}
+        {"accessToken":"offline-access","refreshToken":"offline-refresh","id":1,"username":"emilys",\
+        "email":"emily.johnson@x.dummyjson.com","firstName":"Emily","lastName":"Johnson",\
+        "image":"https://dummyjson.com/icon/emilys/128"}
         """
         .utf8
     )
@@ -177,7 +175,8 @@ enum OfflineFixtures {
 
     private static let meBody = Data(
         """
-        {"id":1,"username":"emilys","email":"emily.johnson@x.dummyjson.com","firstName":"Emily","lastName":"Johnson","image":"https://dummyjson.com/icon/emilys/128"}
+        {"id":1,"username":"emilys","email":"emily.johnson@x.dummyjson.com",\
+        "firstName":"Emily","lastName":"Johnson","image":"https://dummyjson.com/icon/emilys/128"}
         """
         .utf8
     )
@@ -189,8 +188,13 @@ enum OfflineFixtures {
 
 private extension URL {
     func withQuery(_ items: [(String, String)]) -> URL {
-        var components = URLComponents(url: self, resolvingAgainstBaseURL: false)!
+        // No `!` (SwiftLint `--strict`), but just as loud if a fixture URL were malformed: the
+        // `guard`/`preconditionFailure` pattern `AppModule.swift` uses for its base URL.
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else {
+            preconditionFailure("Fixture URL can't be decomposed: \(self)")
+        }
         components.queryItems = items.map { URLQueryItem(name: $0.0, value: $0.1) }
-        return components.url!
+        guard let url = components.url else { preconditionFailure("Fixture URL can't be rebuilt: \(components)") }
+        return url
     }
 }
