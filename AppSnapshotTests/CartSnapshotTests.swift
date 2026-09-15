@@ -45,66 +45,68 @@ final class CartSnapshotTests: XCTestCase {
 
         func load(userId: Int) async throws -> Cart {
             switch outcome {
-            case .content:
-                return Cart(
-                    id: 1,
-                    lines: [
-                        CartLine(
-                            id: 168,
-                            title: "Charger SXY 21",
-                            unitPrice: 540.00,
-                            quantity: 3,
-                            total: 1620.00,
-                            discountedTotal: 1481.20,
-                            thumbnailURL: nil
-                        ),
-                        CartLine(
-                            id: 78,
-                            title: "Apple MacBook Pro 14 Inch Space Grey",
-                            unitPrice: 1999.99,
-                            quantity: 1,
-                            total: 1999.99,
-                            discountedTotal: 1798.99,
-                            thumbnailURL: nil
-                        )
-                    ],
-                    total: 3619.99,
-                    discountedTotal: 3280.19,
-                    totalQuantity: 4
-                )
-            case .sinDescuento:
-                return Cart(
-                    id: 1,
-                    lines: [
-                        CartLine(
-                            id: 168,
-                            title: "Charger SXY 21",
-                            unitPrice: 540.00,
-                            quantity: 3,
-                            total: 1620.00,
-                            discountedTotal: 1620.00,
-                            thumbnailURL: nil
-                        ),
-                        CartLine(
-                            id: 78,
-                            title: "Apple MacBook Pro 14 Inch Space Grey",
-                            unitPrice: 1999.99,
-                            quantity: 1,
-                            total: 1999.99,
-                            discountedTotal: 1999.99,
-                            thumbnailURL: nil
-                        )
-                    ],
-                    total: 3619.99,
-                    discountedTotal: 3619.99,
-                    totalQuantity: 4
-                )
-            case .empty:
-                return .empty
-            case .failure:
-                throw CartError.server
+            case .content: return Self.contenido
+            case .sinDescuento: return Self.sinDescuento
+            case .empty: return .empty
+            case .failure: throw CartError.server
             }
         }
+
+        // Los dos carritos viven fuera de `load`: dentro, la función pasaba de las 50 líneas que
+        // SwiftLint `--strict` admite. Son los mismos datos, así que ninguna referencia se regraba.
+        private static let contenido = Cart(
+            id: 1,
+            lines: [
+                CartLine(
+                    id: 168,
+                    title: "Charger SXY 21",
+                    unitPrice: 540.00,
+                    quantity: 3,
+                    total: 1620.00,
+                    discountedTotal: 1481.20,
+                    thumbnailURL: nil
+                ),
+                CartLine(
+                    id: 78,
+                    title: "Apple MacBook Pro 14 Inch Space Grey",
+                    unitPrice: 1999.99,
+                    quantity: 1,
+                    total: 1999.99,
+                    discountedTotal: 1798.99,
+                    thumbnailURL: nil
+                )
+            ],
+            total: 3619.99,
+            discountedTotal: 3280.19,
+            totalQuantity: 4
+        )
+
+        private static let sinDescuento = Cart(
+            id: 1,
+            lines: [
+                CartLine(
+                    id: 168,
+                    title: "Charger SXY 21",
+                    unitPrice: 540.00,
+                    quantity: 3,
+                    total: 1620.00,
+                    discountedTotal: 1620.00,
+                    thumbnailURL: nil
+                ),
+                CartLine(
+                    id: 78,
+                    title: "Apple MacBook Pro 14 Inch Space Grey",
+                    unitPrice: 1999.99,
+                    quantity: 1,
+                    total: 1999.99,
+                    discountedTotal: 1999.99,
+                    thumbnailURL: nil
+                )
+            ],
+            total: 3619.99,
+            discountedTotal: 3619.99,
+            totalQuantity: 4
+        )
 
         // Los snapshots fotografían estados de carga, no ediciones: nadie las llama.
         func setQuantity(_ quantity: Int, ofLine lineId: Int, in cart: Cart) async throws -> Cart { cart }

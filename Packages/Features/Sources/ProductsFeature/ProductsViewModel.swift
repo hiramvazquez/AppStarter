@@ -121,7 +121,7 @@ public final class ProductsViewModel: LogicViewModel<any ProductsLogicProtocol>,
                 vm.canLoadMore = page.hasMore
             } catch CatalogError.cancelled {
                 // Sin esto el overlay se queda encima
-                // y la paginación muere DEL TODO, porque el `guard !isPerformingActivity`
+                // y la paginación muere del todo, porque el `guard !isPerformingActivity`
                 // de arriba ya no vuelve a pasar nunca.
                 // Solo si esta Task sigue viva: `performLoad` cancela la anterior al
                 // arrancar, así que la superada se desenrolla por aquí con `.cancelled` y

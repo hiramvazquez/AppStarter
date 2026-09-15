@@ -15,9 +15,15 @@ final class UploadsSnapshotTests: XCTestCase {
     /// `UploadsView.platformImage(from:)` returns `nil`, falling back to "Ninguna foto
     /// todavía.", for anything else) — so the "content" snapshot actually shows the photo
     /// preview `Image`, not the empty-photo placeholder text.
-    private static let onePixelPNG = Data(
-        base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-    )!
+    ///
+    /// Sin `!` (SwiftLint `--strict`), pero igual de ruidoso si el base64 estuviera mal.
+    private static let onePixelPNG: Data = {
+        let base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+        guard let data = Data(base64Encoded: base64) else {
+            preconditionFailure("El PNG de 1×1 del fixture no es base64 válido")
+        }
+        return data
+    }()
 
     private final class StubLogic: UploadsLogicProtocol, @unchecked Sendable {
         func capturePhoto() async throws -> Data { UploadsSnapshotTests.onePixelPNG }

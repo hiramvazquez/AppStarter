@@ -65,6 +65,7 @@ excluded:           # globs: valen también al lintar subdirectorios desde otro 
   - .swiftpm
   - DerivedData
   - Package.swift
+  - .claude         # worktrees de Claude Code: copias enteras del repo que duplicarían cada violación
   - "**/.build"
   - "**/.swiftpm"
   - "**/DerivedData"
