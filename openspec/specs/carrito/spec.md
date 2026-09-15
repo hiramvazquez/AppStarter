@@ -2,8 +2,12 @@
 
 ## Purpose
 
-Leer el carrito de un usuario y enseñarlo: qué lleva, cuántas unidades y lo que va a pagar
-con el descuento aplicado. Solo lectura — modificar el carrito no es de esta capacidad.
+Leer el carrito de un usuario y enseñarlo —qué lleva, cuántas unidades y lo que va a pagar
+con el descuento aplicado—, y editarlo: cambiar la cantidad de una línea y quitarla. Lo que
+se ve tras una edición es lo que respondió el servidor, y las ediciones NO persisten en él:
+es un límite de DummyJSON, declarado en su requisito, y al volver a abrir la pantalla
+reaparece el carrito que tenga el servidor. Añadir productos o borrar el carrito entero no es
+de esta capacidad.
 
 La identidad del usuario NO la resuelve esta capacidad: la recibe. `CartFeature` no puede
 importar `ProfileFeature` (R13), y subir un proveedor de identidad a `Networking` habría

@@ -121,6 +121,13 @@ public nonisolated struct CartLine: Sendable, Equatable, Hashable, Identifiable 
 /// `GET /carts/user/{id}` devuelve una LISTA de carritos. Esta pantalla muestra el primero;
 /// esa reducción se hace en la `Logic`, no aquí — ver `CartLogic.load(userId:)`.
 public nonisolated struct Cart: Sendable, Equatable {
+    /// El id del carrito, al que va el `PUT` de una edición. `nil` SOLO en `Cart.empty`: un
+    /// usuario sin carritos no tiene carrito que editar, y un id inventado (`0`) acabaría en
+    /// `PUT /carts/0` con el 404 dado por el servidor en vez de por el modelo.
+    ///
+    /// Obligatorio en el `init`, sin default, igual que `total`: con `= nil` un servicio podía
+    /// olvidarse de mapearlo y todas las ediciones fallarían con los tests de carga en verde.
+    public let id: Int?
     public let lines: [CartLine]
     /// Total SIN descuento, tal y como lo devuelve la API. Tampoco se recalcula sumando las
     /// líneas, por la misma razón que `discountedTotal`.
@@ -130,7 +137,8 @@ public nonisolated struct Cart: Sendable, Equatable {
     public let discountedTotal: Double
     public let totalQuantity: Int
 
-    public init(lines: [CartLine], total: Double, discountedTotal: Double, totalQuantity: Int) {
+    public init(id: Int?, lines: [CartLine], total: Double, discountedTotal: Double, totalQuantity: Int) {
+        self.id = id
         self.lines = lines
         self.total = total
         self.discountedTotal = discountedTotal
@@ -138,7 +146,7 @@ public nonisolated struct Cart: Sendable, Equatable {
     }
 
     /// Un usuario sin carritos. Distinto de "falló": la pantalla tiene estado vacío propio.
-    public static let empty = Cart(lines: [], total: 0, discountedTotal: 0, totalQuantity: 0)
+    public static let empty = Cart(id: nil, lines: [], total: 0, discountedTotal: 0, totalQuantity: 0)
 
     public var isEmpty: Bool { lines.isEmpty }
 
@@ -195,17 +203,72 @@ public enum CartError: TransportMappable, CaseIterable {
 /// Cada operación que `CartViewModel` puede pedirle a su Logic.
 public protocol CartLogicProtocol: Logic {
     func load(userId: Int) async throws -> Cart
+    /// Cambia a `quantity` las unidades de la línea `lineId` de `cart`, y devuelve el carrito
+    /// que responde el servidor. Una cantidad menor que 1 no llega a la red: vuelve `cart`.
+    func setQuantity(_ quantity: Int, ofLine lineId: Int, in cart: Cart) async throws -> Cart
+    /// Quita la línea `lineId` de `cart`, y devuelve el carrito que responde el servidor.
+    func removeLine(_ lineId: Int, from cart: Cart) async throws -> Cart
 }
 
-/// Toda la lógica de negocio de esta feature: una llamada a `CartServicing`, la reducción
-/// de la lista de carritos a uno, y el mapeo del fallo a `CartError`.
+/// Toda la lógica de negocio de esta feature: leer el carrito (una llamada a `CartServicing`
+/// y la reducción de la lista de carritos a uno), editarlo (componer la lista de líneas que
+/// debe quedar y mandarla por `CartUpdateServicing`), y el mapeo del fallo a `CartError`.
+///
+/// Sin estado a propósito: el carrito vigente es el que la pantalla enseña, y lo recibe en cada
+/// edición. Guardarlo aquí haría dos fuentes de verdad.
 ///
 /// `nonisolated` (M5): no depende del actor principal.
 public nonisolated final class CartLogic: CartLogicProtocol {
     private let cartService: any CartServicing
+    private let cartUpdateService: any CartUpdateServicing
 
-    public init(cartService: any CartServicing) {
+    public init(cartService: any CartServicing, cartUpdateService: any CartUpdateServicing) {
         self.cartService = cartService
+        self.cartUpdateService = cartUpdateService
+    }
+
+    public func setQuantity(_ quantity: Int, ofLine lineId: Int, in cart: Cart) async throws -> Cart {
+        // Una cantidad menor que 1 NO se manda: la API la acepta y deja la línea en el carrito,
+        // a cero —una «quitada» que sigue en la lista—. Quitar es `removeLine`. Y no se lanza:
+        // desde la pantalla no se puede provocar (el control se para en 1), y un banner por
+        // algo que nadie pidió sería ruido.
+        guard quantity >= 1 else { return cart }
+        let lines = cart.lines.map { line in
+            CartLineQuantity(id: line.id, quantity: line.id == lineId ? quantity : line.quantity)
+        }
+        do {
+            return try await replaceLines(of: cart, with: lines)
+        } catch let error as APIError {
+            throw CartError.from(error)
+        }
+    }
+
+    public func removeLine(_ lineId: Int, from cart: Cart) async throws -> Cart {
+        let lines = cart.lines
+            .filter { $0.id != lineId }
+            .map { CartLineQuantity(id: $0.id, quantity: $0.quantity) }
+        do {
+            return try await replaceLines(of: cart, with: lines)
+        } catch let error as APIError {
+            throw CartError.from(error)
+        }
+    }
+
+    /// Manda `lines` como el carrito ENTERO, no solo lo que cambia. El servidor no guarda
+    /// ediciones y calcula cada respuesta sobre el carrito original: una petición con solo la
+    /// línea tocada devolvería el original con ese único cambio, y la segunda edición desharía
+    /// la primera (cláusula 3 del requisito de edición de `carrito`).
+    ///
+    /// La traducción a `CartError` NO vive aquí sino en cada método del protocolo, como en
+    /// `load`. Desde este método privado, `CartError.from` no compila («main actor-isolated
+    /// static method 'from' cannot be called from outside of the actor»: el paquete aísla por
+    /// defecto al actor principal, e infiere aislada la conformidad a `TransportMappable`); desde
+    /// los métodos del protocolo, sí. El `APIError` sale de aquí sin tocar.
+    private func replaceLines(of cart: Cart, with lines: [CartLineQuantity]) async throws -> Cart {
+        // Sin id no hay carrito que editar. Solo `Cart.empty` —un usuario sin carritos— llega
+        // así, y «No encontramos el carrito de esta cuenta» es exactamente lo que pasa.
+        guard let cartId = cart.id else { throw CartError.notFound }
+        return try await cartUpdateService.replaceLines(cartId: cartId, with: lines)
     }
 
     public func load(userId: Int) async throws -> Cart {

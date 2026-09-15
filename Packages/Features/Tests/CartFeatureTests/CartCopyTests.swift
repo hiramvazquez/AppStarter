@@ -53,7 +53,7 @@ struct CartCopyTests {
     @Test("El pie con descuento nombra subtotal, descuento y total")
     func footerWithDiscountNamesTheBreakdown() {
         let texto = CartCopy.totalAccessibilityLabel(
-            Cart(lines: [], total: 119.96, discountedTotal: 105.41, totalQuantity: 4)
+            Cart(id: 1, lines: [], total: 119.96, discountedTotal: 105.41, totalQuantity: 4)
         )
 
         #expect(texto.contains("4 artículos"))
@@ -66,7 +66,7 @@ struct CartCopyTests {
     @Test("El pie sin descuento dice solo el total")
     func footerWithoutDiscountNamesOnlyTheTotal() {
         let texto = CartCopy.totalAccessibilityLabel(
-            Cart(lines: [], total: 105.41, discountedTotal: 105.41, totalQuantity: 4)
+            Cart(id: 1, lines: [], total: 105.41, discountedTotal: 105.41, totalQuantity: 4)
         )
 
         #expect(texto.contains("total \(money(105.41))"))

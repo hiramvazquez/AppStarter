@@ -47,6 +47,7 @@ final class CartSnapshotTests: XCTestCase {
             switch outcome {
             case .content:
                 return Cart(
+                    id: 1,
                     lines: [
                         CartLine(
                             id: 168,
@@ -73,6 +74,7 @@ final class CartSnapshotTests: XCTestCase {
                 )
             case .sinDescuento:
                 return Cart(
+                    id: 1,
                     lines: [
                         CartLine(
                             id: 168,
@@ -103,6 +105,11 @@ final class CartSnapshotTests: XCTestCase {
                 throw CartError.server
             }
         }
+
+        // Los snapshots fotografían estados de carga, no ediciones: nadie las llama.
+        func setQuantity(_ quantity: Int, ofLine lineId: Int, in cart: Cart) async throws -> Cart { cart }
+
+        func removeLine(_ lineId: Int, from cart: Cart) async throws -> Cart { cart }
     }
 
     private func makeViewModel(outcome: StubOutcome) async -> CartViewModel {
@@ -151,21 +158,21 @@ final class CartSnapshotTests: XCTestCase {
 
     func testEmptyKit() async {
         let vm = await makeViewModel(outcome: .empty)
-        captura(ScreenContainer(vm) { _ in CartContent(cart: vm.cart) }, theme: .kit, named: "kit")
+        captura(ScreenContainer(vm) { send in CartContent(cart: vm.cart, send: send) }, theme: .kit, named: "kit")
     }
 
     func testEmptyBrand() async {
         let vm = await makeViewModel(outcome: .empty)
-        captura(ScreenContainer(vm) { _ in CartContent(cart: vm.cart) }, theme: .brand, named: "brand")
+        captura(ScreenContainer(vm) { send in CartContent(cart: vm.cart, send: send) }, theme: .brand, named: "brand")
     }
 
     func testErrorKit() async {
         let vm = await makeViewModel(outcome: .failure)
-        captura(ScreenContainer(vm) { _ in CartContent(cart: vm.cart) }, theme: .kit, named: "kit")
+        captura(ScreenContainer(vm) { send in CartContent(cart: vm.cart, send: send) }, theme: .kit, named: "kit")
     }
 
     func testErrorBrand() async {
         let vm = await makeViewModel(outcome: .failure)
-        captura(ScreenContainer(vm) { _ in CartContent(cart: vm.cart) }, theme: .brand, named: "brand")
+        captura(ScreenContainer(vm) { send in CartContent(cart: vm.cart, send: send) }, theme: .brand, named: "brand")
     }
 }

@@ -3,8 +3,8 @@ import Foundation
 import Observation
 
 /// Orquesta la pantalla de carrito: pide el carrito del usuario y decide entre contenido,
-/// vacío y error. Nunca importa `CoreNetworking` ni referencia `CartService` — solo
-/// `logic`.
+/// vacío y error, y manda las ediciones —cambiar una cantidad, quitar una línea— sin tapar el
+/// carrito. Nunca importa `CoreNetworking` ni referencia `CartService` — solo `logic`.
 ///
 /// `@Observable` no se hereda de `BaseViewModel`: sin él, `cart` no notificaría a SwiftUI
 /// (regla R15 del linter).
@@ -21,10 +21,17 @@ public final class CartViewModel: LogicViewModel<any CartLogicProtocol>, ActionH
     /// esta feature no conoce: ver la decisión de diseño en el proposal del cambio.
     public let userId: Int
 
+    /// El carrito que se ve. Solo lo escribe una respuesta del servidor —la carga o una
+    /// edición—, nunca la pantalla por adelantado: una cantidad nueva junto a importes de la
+    /// anterior es una cuenta que no sale.
     public private(set) var cart: Cart = .empty
 
     public enum Action: Sendable {
         case load
+        /// Dejar la línea `lineId` en `quantity` unidades. Lo manda el control de cantidad.
+        case setQuantity(_ quantity: Int, lineId: Int)
+        /// Quitar la línea `id`. Lo manda la acción «Quitar».
+        case removeLine(id: Int)
     }
 
     public init(logic: any CartLogicProtocol, userId: Int) {
@@ -35,6 +42,10 @@ public final class CartViewModel: LogicViewModel<any CartLogicProtocol>, ActionH
     public func handle(_ action: Action) {
         switch action {
         case .load: load()
+        case .setQuantity(let quantity, let lineId):
+            edit { vm in try await vm.logic.setQuantity(quantity, ofLine: lineId, in: vm.cart) }
+        case .removeLine(let id):
+            edit { vm in try await vm.logic.removeLine(id, from: vm.cart) }
         }
     }
 
@@ -54,6 +65,34 @@ public final class CartViewModel: LogicViewModel<any CartLogicProtocol>, ActionH
                 // cancela la carga anterior al arrancar la nueva, y sin la condición la
                 // superada le quitaría el indicador a la que la superó.
                 if !Task.isCancelled { vm.setIdle() }
+                throw CartError.cancelled
+            }
+        }
+    }
+
+    /// Lo que comparten las dos ediciones: todo menos la llamada a la `Logic`.
+    ///
+    /// Actividad secundaria y no carga: `phase` no pasa por `.loading`, así que el carrito sigue
+    /// a la vista con el overlay encima mientras el servidor responde, y un fallo sale en un
+    /// banner en vez de sustituir el carrito por una pantalla de error.
+    private func edit(_ operation: @escaping @MainActor (CartViewModel) async throws -> Cart) {
+        // Una edición con otra en vuelo NO arranca. El overlay ya se come los toques, pero eso es
+        // un detalle de pintado del kit; y sin esta guardia, `performActivity` cancelaría la
+        // primera al arrancar la segunda, que además saldría de un `cart` que aún no incluye la
+        // primera: la segunda edición desharía la primera.
+        guard !isPerformingActivity else { return }
+        performActivity(style: .overlay, errorHandling: .banner) { vm in
+            do {
+                let cart = try await operation(vm)
+                vm.cart = cart
+                if cart.isEmpty { vm.setEmpty() }
+            } catch CartError.cancelled {
+                // Igual que en `load()`, con `activity` en vez de `phase`: una cancelación
+                // reconocida sale de `performActivity` sin `stopActivity()`, y el overlay se
+                // quedaría puesto para siempre —comiéndose los toques, con la guardia de arriba
+                // rechazando cualquier edición—. Solo si esta `Task` sigue viva: si la pantalla
+                // ya se retiró (`cancelInFlightWork()`), no hay nadie a quien desbloquear.
+                if !Task.isCancelled { vm.stopActivity() }
                 throw CartError.cancelled
             }
         }
