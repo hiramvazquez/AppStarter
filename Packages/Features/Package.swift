@@ -324,6 +324,7 @@ let package = Package(
                 "CartFeature",
                 .product(name: "AppFoundationTestSupport", package: "AppFoundation"),
                 .product(name: "CoreNetworkingTestSupport", package: "CoreNetworking"),
+                .product(name: "PlatformTestSupport", package: "Platform"),
             ],
             path: "Tests/CartFeatureTests",
             swiftSettings: swiftSettings
