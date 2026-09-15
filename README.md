@@ -342,7 +342,7 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
   `Throttler` en `Packages/Features/Sources/GalleryFeatureUI/GalleryViewModel.swift:31`
   (uso en la línea 60).
 - **`Logic`/`LogicViewModel` + flags del generador**: `--api` en `LoginLogic` en
-  `Packages/Features/Sources/LoginFeature/LoginLogic.swift:59`; `--local` en
+  `Packages/Features/Sources/LoginFeature/LoginLogic.swift:66`; `--local` en
   `FavoritesLogic` en `Packages/Features/Sources/FavoritesFeature/FavoritesLogic.swift:38`;
   `--api --local` + `--service-from`/`--store-from` (reutiliza `ProductsServicing` y
   `FavoritesStoring`): `favoritesStore` en
@@ -376,7 +376,7 @@ el símbolo aparezca de verdad a ±3 líneas de la citada.
 - **`AppEnvironment`**: `Packages/Features/Sources/SettingsFeature/SettingsView.swift:61`
   (versión en la línea 62).
 - **`CameraKit`/`AnalyticsAdapters` por protocolo de `Domain`**: `any CameraCapturing` en
-  `Packages/Features/Sources/UploadsFeature/UploadsLogic.swift:76`;
+  `Packages/Features/Sources/UploadsFeature/UploadsLogic.swift:87`;
   `recentEvents()` (`AnalyticsTracking`) en
   `Packages/Platform/Sources/Domain/AnalyticsTracking.swift:36`, consumido en
   `Packages/Features/Sources/SettingsFeature/SettingsLogic.swift:95`.
