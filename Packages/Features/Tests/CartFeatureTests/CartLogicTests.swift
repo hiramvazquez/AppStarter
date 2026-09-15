@@ -126,11 +126,13 @@ struct CartLogicTests {
 
         #expect(update.calls.count == 1)
         #expect(update.calls.first?.cartId == 7)
-        #expect(update.calls.first?.lines == [
-            CartLineQuantity(id: 162, quantity: 4),
-            CartLineQuantity(id: 113, quantity: 2),
-            CartLineQuantity(id: 122, quantity: 1),
-        ])
+        #expect(
+            update.calls.first?.lines == [
+                CartLineQuantity(id: 162, quantity: 4),
+                CartLineQuantity(id: 113, quantity: 2),
+                CartLineQuantity(id: 122, quantity: 1)
+            ]
+        )
         // Lo que se enseña es lo que dijo el servidor, no el carrito con la cantidad retocada.
         #expect(cart == Self.respuesta)
     }
@@ -143,10 +145,12 @@ struct CartLogicTests {
             .removeLine(113, from: Self.tresLineas)
 
         #expect(update.calls.first?.cartId == 7)
-        #expect(update.calls.first?.lines == [
-            CartLineQuantity(id: 162, quantity: 4),
-            CartLineQuantity(id: 122, quantity: 1),
-        ])
+        #expect(
+            update.calls.first?.lines == [
+                CartLineQuantity(id: 162, quantity: 4),
+                CartLineQuantity(id: 122, quantity: 1)
+            ]
+        )
         #expect(cart == Self.respuesta)
     }
 
@@ -170,10 +174,12 @@ struct CartLogicTests {
         _ = try await logic.removeLine(122, from: primera)
 
         #expect(update.calls.count == 2)
-        #expect(update.calls.last?.lines == [
-            CartLineQuantity(id: 162, quantity: 2),
-            CartLineQuantity(id: 113, quantity: 3),
-        ])
+        #expect(
+            update.calls.last?.lines == [
+                CartLineQuantity(id: 162, quantity: 2),
+                CartLineQuantity(id: 113, quantity: 3)
+            ]
+        )
     }
 
     @Test("Una cantidad menor que 1 no llega al servidor y vuelve el mismo carrito")

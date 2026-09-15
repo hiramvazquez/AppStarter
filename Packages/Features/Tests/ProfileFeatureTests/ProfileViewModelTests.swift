@@ -214,13 +214,13 @@ struct ProfileViewModelTests {
         viewModel.handle(.load)
         let primera = viewModel.inFlightLoad
 
-        viewModel.handle(.load)          // cancela la primera y arranca la segunda
+        viewModel.handle(.load)  // cancela la primera y arranca la segunda
         await primeraPuerta.abrir()
         await primera?.value
 
         #expect(viewModel.isLoading, "la segunda carga sigue en vuelo")
 
-        await segundaPuerta.abrir()      // se suelta para no dejar la Task colgada
+        await segundaPuerta.abrir()  // se suelta para no dejar la Task colgada
         await viewModel.inFlightLoad?.value
     }
 

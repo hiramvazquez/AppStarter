@@ -70,8 +70,13 @@ struct CartServiceTests {
                     id: 1,
                     products: [
                         .init(
-                            id: 1, title: "x", price: 1, quantity: 1,
-                            total: 1, discountedTotal: 1, thumbnail: nil
+                            id: 1,
+                            title: "x",
+                            price: 1,
+                            quantity: 1,
+                            total: 1,
+                            discountedTotal: 1,
+                            thumbnail: nil
                         )
                     ],
                     total: 1,
@@ -112,7 +117,8 @@ struct CartServiceTests {
         // en cada carga. Este pasa bytes de verdad, copiados de la respuesta real de
         // `GET /carts/user/1`.
         let transport = InMemoryTransport()
-        let cuerpo = Data("""
+        let cuerpo = Data(
+            """
             {"carts":[{"id":1,"products":[
               {"id":162,"title":"Blue Frock","price":29.99,"quantity":4,
                "total":119.96,"discountPercentage":12.13,"discountedTotal":105.41,
@@ -120,7 +126,9 @@ struct CartServiceTests {
               "total":119.96,"discountedTotal":105.41,
               "userId":1,"totalProducts":1,"totalQuantity":4}],
              "total":1,"skip":0,"limit":1}
-            """.utf8)
+            """
+            .utf8
+        )
         await transport.register(
             InMemoryTransport.Exchange(
                 method: .get,

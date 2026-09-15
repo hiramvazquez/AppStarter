@@ -1,7 +1,7 @@
 import AppFoundation
 import Domain
-import Networking
 import Foundation
+import Networking
 import Observation
 import PlatformTestSupport
 import Testing
@@ -216,7 +216,7 @@ private final class LogicDeActividadQueSeSolapa: ProductsLogicProtocol, @uncheck
         llamadas += 1
         if cargaInicialPendiente {
             cargaInicialPendiente = false
-            llamadas -= 1                       // esta no cuenta para el solapamiento
+            llamadas -= 1  // esta no cuenta para el solapamiento
             let product = Product(id: 1, title: "A", description: "", price: 1, rating: 1, thumbnailURL: nil)
             return ProductsPage(items: [product], total: 100, skip: 0, limit: 20)
         }
@@ -240,13 +240,13 @@ struct ProductsViewModelSolapamientoTests {
         let logic = LogicDeActividadQueSeSolapa()
         let vm = ProductsViewModel(logic: logic, router: Coordinator(root: .products))
 
-        vm.handle(.load)                        // T1, esperando a que la cancelen
+        vm.handle(.load)  // T1, esperando a que la cancelen
         #expect(vm.isLoading)
 
         // El `guard items.isEmpty` de `load()` NO impide esto: mientras T1 está en vuelo,
         // `items` sigue vacío, así que el segundo `.load` pasa y cancela a T1. Y pasa en la
         // app de verdad — `ProductsView` hace `.onAppear { send(.load) }`.
-        vm.handle(.load)                        // T2 cancela T1
+        vm.handle(.load)  // T2 cancela T1
         while logic.llamadas < 2 { await Task.yield() }
 
         #expect(vm.isLoading, "la carga en vuelo perdió su spinner por culpa de la superada")
@@ -259,10 +259,10 @@ struct ProductsViewModelSolapamientoTests {
         let logic = LogicDeActividadQueSeSolapa()
         let vm = ProductsViewModel(logic: logic, router: Coordinator(root: .products))
 
-        vm.handle(.refresh)                     // A1, esperando a que la cancelen
+        vm.handle(.refresh)  // A1, esperando a que la cancelen
         #expect(vm.isPerformingActivity)
 
-        vm.handle(.refresh)                     // A2 cancela A1
+        vm.handle(.refresh)  // A2 cancela A1
         while logic.llamadas < 2 { await Task.yield() }
 
         // A1 se desenrolla con `.cancelled`. Sin el `if !Task.isCancelled`, su
@@ -283,10 +283,10 @@ struct ProductsViewModelSolapamientoTests {
         await vm.inFlightLoad?.value
         #expect(vm.canLoadMore)
 
-        vm.handle(.loadMore)                    // A1
+        vm.handle(.loadMore)  // A1
         #expect(vm.isPerformingActivity)
 
-        vm.handle(.refresh)                     // A2 cancela A1 — `refresh` no mira isPerformingActivity
+        vm.handle(.refresh)  // A2 cancela A1 — `refresh` no mira isPerformingActivity
         while logic.llamadas < 2 { await Task.yield() }
 
         #expect(vm.isPerformingActivity, "el refresco en vuelo perdió su overlay por la paginación superada")
@@ -294,4 +294,3 @@ struct ProductsViewModelSolapamientoTests {
         vm.inFlightActivity?.cancel()
     }
 }
-

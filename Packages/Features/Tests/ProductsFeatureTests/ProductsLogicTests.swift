@@ -1,8 +1,8 @@
 import CoreNetworking
 import CoreNetworkingTestSupport
 import Domain
-import Networking
 import Foundation
+import Networking
 import PlatformTestSupport
 import Testing
 

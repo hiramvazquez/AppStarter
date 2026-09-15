@@ -16,7 +16,8 @@ struct CartUpdateServiceTests {
     /// La respuesta real de `PUT https://dummyjson.com/carts/1` con
     /// `{"merge":false,"products":[{"id":162,"quantity":2},{"id":113,"quantity":3},{"id":122,"quantity":3}]}`,
     /// medida el 2026-09-15. Solo se han acortado las URL de las miniaturas.
-    private static let respuestaReal = Data("""
+    private static let respuestaReal = Data(
+        """
         {"id":1,"products":[
           {"id":162,"title":"Blue Frock","price":29.99,"quantity":2,"total":59.98,
            "discountPercentage":12.13,"discountedPrice":53,
@@ -29,13 +30,15 @@ struct CartUpdateServiceTests {
            "thumbnail":"https://cdn.dummyjson.com/thumb.webp"}],
          "total":12959.919999999998,"discountedTotal":11441,
          "userId":1,"totalProducts":3,"totalQuantity":8}
-        """.utf8)
+        """
+        .utf8
+    )
 
     /// Las líneas que produjeron `respuestaReal`, en el orden en que se mandaron.
     private static let lineas = [
         CartLineQuantity(id: 162, quantity: 2),
         CartLineQuantity(id: 113, quantity: 3),
-        CartLineQuantity(id: 122, quantity: 3),
+        CartLineQuantity(id: 122, quantity: 3)
     ]
 
     private static func servicio(
@@ -91,11 +94,13 @@ struct CartUpdateServiceTests {
             let products: [Linea]
         }
         let enviado = try JSONDecoder().decode(Enviado.self, from: cuerpo)
-        #expect(enviado.products == [
-            .init(id: 162, quantity: 2),
-            .init(id: 113, quantity: 3),
-            .init(id: 122, quantity: 3),
-        ])
+        #expect(
+            enviado.products == [
+                .init(id: 162, quantity: 2),
+                .init(id: 113, quantity: 3),
+                .init(id: 122, quantity: 3)
+            ]
+        )
     }
 
     @Test("La respuesta real llega al carrito: `discountedPrice` es el importe con descuento de la línea")
@@ -122,9 +127,14 @@ struct CartUpdateServiceTests {
     @Test("Quitar la última línea responde un carrito vacío con su id, no un error")
     func emptyProductsIsAnEmptyCart() async throws {
         // Medido el 2026-09-15: `PUT /carts/1` con `"products":[]` responde 200 con esto.
-        let (servicio, _) = await Self.servicio(cuerpo: Data("""
-            {"id":1,"products":[],"total":0,"discountedTotal":0,"userId":1,"totalProducts":0,"totalQuantity":0}
-            """.utf8))
+        let (servicio, _) = await Self.servicio(
+            cuerpo: Data(
+                """
+                {"id":1,"products":[],"total":0,"discountedTotal":0,"userId":1,"totalProducts":0,"totalQuantity":0}
+                """
+                .utf8
+            )
+        )
 
         let cart = try await servicio.replaceLines(cartId: 1, with: [])
 
