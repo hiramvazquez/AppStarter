@@ -97,13 +97,13 @@ public final class SearchViewModel: LogicViewModel<any SearchLogicProtocol>, Act
     private func search() {
         guard !query.isEmpty else { return }
         performLoad(successTransition: .preserveCurrentPhase) { vm in
-        // Una cancelación reconocida sale de `performLoad`/`performActivity` por un
-        // `return` seco: no toca `phase` ni `activity`, así que la fase transitoria que se
-        // puso ANTES de arrancar se queda puesta. Sin esto, cancelar dejaba la pantalla en
-        // `.loading(.fullScreen)` para siempre —contenido oculto, sin error, sin
-        // reintentar, sin salida—, que es PEOR que el bug que este cambio arregla.
-        // Se devuelve el estado a algo honesto y se relanza para que el reconocedor haga
-        // su trabajo: no mostrar nada.
+            // Una cancelación reconocida sale de `performLoad`/`performActivity` por un
+            // `return` seco: no toca `phase` ni `activity`, así que la fase transitoria que se
+            // puso ANTES de arrancar se queda puesta. Sin esto, cancelar dejaba la pantalla en
+            // `.loading(.fullScreen)` para siempre —contenido oculto, sin error, sin
+            // reintentar, sin salida—, que es PEOR que el bug que este cambio arregla.
+            // Se devuelve el estado a algo honesto y se relanza para que el reconocedor haga
+            // su trabajo: no mostrar nada.
             do {
                 let results = try await vm.logic.search(query: vm.query)
                 vm.results = results

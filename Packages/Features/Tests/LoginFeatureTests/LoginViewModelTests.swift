@@ -90,13 +90,13 @@ struct LoginViewModelTests {
         viewModel.handle(.login)
         let primero = viewModel.inFlightLoad
 
-        viewModel.handle(.login)         // cancela el primero y arranca el segundo
+        viewModel.handle(.login)  // cancela el primero y arranca el segundo
         await primeraPuerta.abrir()
         await primero?.value
 
         #expect(viewModel.isLoading, "el segundo login sigue en vuelo")
 
-        await segundaPuerta.abrir()      // se suelta para no dejar la Task colgada
+        await segundaPuerta.abrir()  // se suelta para no dejar la Task colgada
         await viewModel.inFlightLoad?.value
     }
 

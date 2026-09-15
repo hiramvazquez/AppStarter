@@ -1,8 +1,8 @@
 import AppFoundation
 import AppFoundationTestSupport
 import Domain
-import Networking
 import Foundation
+import Networking
 import Observation
 import PlatformTestSupport
 import Testing
@@ -223,7 +223,7 @@ private final class LogicQueSeSolapa: SearchLogicProtocol, @unchecked Sendable {
             while !Task.isCancelled { await Task.yield() }
             throw CatalogError.cancelled
         }
-        while !Task.isCancelled { await Task.yield() }   // la segunda se queda en vuelo
+        while !Task.isCancelled { await Task.yield() }  // la segunda se queda en vuelo
         return []
     }
 }
@@ -239,11 +239,11 @@ struct SearchViewModelSolapamientoTests {
         let vm = SearchViewModel(logic: logic, router: Coordinator(root: .products))
 
         vm.handle(.updateQuery("a"))
-        vm.handle(.submit)                    // T1, se queda esperando
+        vm.handle(.submit)  // T1, se queda esperando
         #expect(vm.isLoading)
 
         vm.handle(.updateQuery("ab"))
-        vm.handle(.submit)                    // T2 cancela T1
+        vm.handle(.submit)  // T2 cancela T1
         while logic.llamadas < 2 { await Task.yield() }
 
         // T1 se desenrolla con `.cancelled`. Sin el `if !Task.isCancelled`, su `setIdle()`
