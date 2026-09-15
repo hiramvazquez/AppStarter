@@ -16,8 +16,12 @@ public struct CartModule: DependencyModule {
             CartService(api: c.resolve())
         }
 
+        container.register(CartUpdateServicing.self) { c in
+            CartUpdateService(api: c.resolve())
+        }
+
         container.register(CartLogicProtocol.self, lifecycle: .transient) { c in
-            CartLogic(cartService: c.resolve())
+            CartLogic(cartService: c.resolve(), cartUpdateService: c.resolve())
         }
 
         container.register(CartViewModelFactory.self) { c in

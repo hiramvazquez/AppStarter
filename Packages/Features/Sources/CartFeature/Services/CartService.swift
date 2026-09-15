@@ -27,6 +27,9 @@ struct GetUserCartsRequest: BaseRequest {
     }
 
     struct CartDTO: Decodable, Sendable {
+        /// El id del carrito. La respuesta lo trae desde siempre y se tiraba; sin él no hay a
+        /// qué carrito mandar una edición (`CartUpdateService`).
+        let id: Int
         let products: [LineDTO]
         let total: Double
         let discountedTotal: Double
@@ -48,16 +51,17 @@ struct GetUserCartsRequest: BaseRequest {
 
 // MARK: - The service
 
-/// La única llamada a red de esta feature. `CartServicing` es lo que `CartLogic` conoce a
-/// través de su `init` — nunca este tipo concreto.
+/// La llamada que LEE el carrito; la que lo edita es `CartUpdateServicing`, un Service por
+/// llamada. `CartServicing` es lo que `CartLogic` conoce a través de su `init` — nunca este
+/// tipo concreto.
 public protocol CartServicing: Sendable {
     /// Los carritos del usuario, en el orden en que los devuelve la API. Una lista vacía es
     /// una respuesta válida —un usuario sin carritos—, no un error.
     func fetchCarts(userId: Int) async throws(APIError) -> [Cart]
 }
 
-/// El ÚNICO tipo de esta feature que referencia `APIServiceProtocol`/`BaseRequest`.
-/// Conforma `EndpointService` (CoreNetworking) para tener `call(_:)` gratis.
+/// El único tipo que referencia `GetUserCartsRequest`. Conforma `EndpointService`
+/// (CoreNetworking) para tener `call(_:)` gratis.
 public struct CartService: CartServicing, EndpointService {
     public let api: any APIServiceProtocol
 
@@ -69,6 +73,7 @@ public struct CartService: CartServicing, EndpointService {
         let response = try await call(GetUserCartsRequest(userId: userId))
         return response.carts.map { dto in
             Cart(
+                id: dto.id,
                 lines: dto.products.map { line in
                     CartLine(
                         id: line.id,

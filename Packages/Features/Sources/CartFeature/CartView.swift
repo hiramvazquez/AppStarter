@@ -18,7 +18,7 @@ public struct CartView: View {
 
     public var body: some View {
         ScreenContainer(viewModel) { send in
-            CartContent(cart: viewModel.cart)
+            CartContent(cart: viewModel.cart, send: send)
                 .task { send(.load) }
         }
         .navigationTitle("Carrito")
@@ -36,16 +36,20 @@ public struct CartView: View {
 /// tiene el mismo `.task { send(.load) }` y las mismas cuatro referencias en blanco;
 /// `DiagnosticsView`/`UploadsView` mandan `.appear` y no les pasa.
 ///
+/// Recibe `send` para que las filas manden sus ediciones: lo da el `ScreenContainer` que la
+/// envuelve, el de la pantalla o el de los snapshots.
+///
 /// `internal`, no `public`: lo usa la pantalla y lo fotografían los tests de la app, nadie
 /// más.
 struct CartContent: View {
     let cart: Cart
+    let send: ActionSender<CartViewModel.Action>
 
     var body: some View {
         List {
             Section {
                 ForEach(cart.lines) { line in
-                    CartLineRow(line: line)
+                    CartLineRow(line: line, send: send)
                 }
             } footer: {
                 CartTotalFooter(cart: cart)
@@ -61,8 +65,12 @@ struct CartContent: View {
 /// descuento, exige además que las dos cifras se puedan reconciliar: `4 × 29,99 $` a la
 /// izquierda y `105,41 $` a la derecha no es una rebaja, es una cuenta mal hecha, hasta que
 /// aparece el `119,96 $` del que sale.
+///
+/// Y desde que el carrito se edita, lleva sus dos controles: la cantidad y «Quitar» al
+/// deslizar, los dos alcanzables también con VoiceOver.
 private struct CartLineRow: View {
     let line: CartLine
+    let send: ActionSender<CartViewModel.Action>
 
     var body: some View {
         HStack(spacing: 12) {
@@ -78,6 +86,21 @@ private struct CartLineRow: View {
                 Text("\(line.quantity) × \(line.unitPrice.formatted(.currency(code: "USD")))")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+
+                // Un `Binding` sin `@State` a propósito: lo que el control enseña es
+                // `line.quantity`, la cifra del servidor, y pulsar solo PIDE el cambio. Con un
+                // estado local la cantidad se adelantaría a la respuesta y quedaría junto a
+                // importes de la anterior. Desde 1: quitar es su propia acción, y la API deja
+                // en el carrito una línea a cero.
+                Stepper(
+                    "Cantidad",
+                    value: Binding(
+                        get: { line.quantity },
+                        set: { send(.setQuantity($0, lineId: line.id)) }
+                    ),
+                    in: 1...Int.max
+                )
+                .labelsHidden()
             }
 
             Spacer()
@@ -109,6 +132,32 @@ private struct CartLineRow: View {
         // tres. Ver `CartCopy`.
         .accessibilityElement(children: .combine)
         .accessibilityLabel(CartCopy.lineAccessibilityLabel(line))
+        // `.combine` no garantiza que el `Stepper` de dentro siga siendo ajustable, así que la
+        // fila entera lo es: deslizar arriba o abajo con VoiceOver pide el cambio, igual que
+        // el control. Bajar en 1 no hace nada, como el «−» desactivado.
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment:
+                send(.setQuantity(line.quantity + 1, lineId: line.id))
+            case .decrement:
+                if line.quantity > 1 { send(.setQuantity(line.quantity - 1, lineId: line.id)) }
+            @unknown default:
+                break
+            }
+        }
+        .accessibilityAction(named: "Quitar") { send(.removeLine(id: line.id)) }
+        // `swipeActions` y no `.onDelete`: la etiqueta es «Quitar», explícita, y no depende de
+        // los offsets del `ForEach`.
+        //
+        // SIN `role: .destructive`, a propósito. Con ese rol la lista puede animar la fila fuera
+        // al pulsar, antes de que responda el servidor; si el `PUT` falla, la pantalla se quedaría
+        // sin una línea que el carrito sigue teniendo. Es una sospecha del revisor que no se llegó
+        // a reproducir, y se quitó por precaución (decisión del owner, 2026-09-15): el rojo lo pone
+        // `.tint`, y la fila solo se va cuando se va el dato.
+        .swipeActions(edge: .trailing) {
+            Button("Quitar") { send(.removeLine(id: line.id)) }
+                .tint(.red)
+        }
     }
 }
 
@@ -175,6 +224,7 @@ private struct CartTotalFooter: View {
 private nonisolated final class CartPreviewLogic: CartLogicProtocol {
     func load(userId: Int) async throws -> Cart {
         Cart(
+            id: 1,
             lines: [
                 CartLine(
                     id: 162,
@@ -191,6 +241,12 @@ private nonisolated final class CartPreviewLogic: CartLogicProtocol {
             totalQuantity: 4
         )
     }
+
+    // Sin servidor no hay respuesta que enseñar, y la pantalla no recalcula: la preview devuelve
+    // el carrito tal cual.
+    func setQuantity(_ quantity: Int, ofLine lineId: Int, in cart: Cart) async throws -> Cart { cart }
+
+    func removeLine(_ lineId: Int, from cart: Cart) async throws -> Cart { cart }
 }
 
 #Preview {

@@ -16,6 +16,7 @@ struct CartServiceTests {
             GetUserCartsRequest.self,
             returning: GetUserCartsRequest.Response(carts: [
                 .init(
+                    id: 1,
                     products: [
                         .init(
                             id: 162,
@@ -45,6 +46,9 @@ struct CartServiceTests {
         // y la app tiraba: sin estas dos, se puede mapear a cero y la pantalla vuelve a no
         // poder explicar de dónde sale la rebaja, con todo en verde.
         #expect(carts.first?.total == 119.96)
+        // El id del carrito: sin él no hay a qué carrito mandar una edición, y los tests de
+        // carga seguirían verdes con el mapeo puesto a `nil`.
+        #expect(carts.first?.id == 1)
 
         let line = try #require(carts.first?.lines.first)
         #expect(line.id == 162)
@@ -63,6 +67,7 @@ struct CartServiceTests {
             GetUserCartsRequest.self,
             returning: GetUserCartsRequest.Response(carts: [
                 .init(
+                    id: 1,
                     products: [
                         .init(
                             id: 1, title: "x", price: 1, quantity: 1,
@@ -133,6 +138,8 @@ struct CartServiceTests {
         let line = try #require(carts.first?.lines.first)
         #expect(line.total == 119.96)
         #expect(carts.first?.total == 119.96)
+        // La clave `id` del wire, que un `Response` construido en Swift tampoco ejercita.
+        #expect(carts.first?.id == 1)
         // Y que sigue leyendo bien lo de siempre, para que este test no tape una regresión
         // en el resto del mapeo mientras solo mira el campo nuevo.
         #expect(line.discountedTotal == 105.41)

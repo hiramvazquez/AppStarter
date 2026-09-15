@@ -18,7 +18,7 @@ struct CartModelTests {
 
     @Test("Un carrito con líneas no está vacío")
     func cartWithLinesIsNotEmpty() {
-        let cart = Cart(lines: [.fixture()], total: 12, discountedTotal: 10, totalQuantity: 1)
+        let cart = Cart(id: 1, lines: [.fixture()], total: 12, discountedTotal: 10, totalQuantity: 1)
         #expect(!cart.isEmpty)
     }
 
@@ -27,6 +27,7 @@ struct CartModelTests {
         // Se construye a propósito con líneas que NO suman el total: si alguien cambiara
         // `discountedTotal` por una suma calculada, este test se pondría rojo.
         let cart = Cart(
+            id: 1,
             lines: [.fixture(discountedTotal: 10), .fixture(id: 2, discountedTotal: 10)],
             total: 20,
             discountedTotal: 17.5,
@@ -55,7 +56,7 @@ struct CartModelTests {
     func noDiscountWhenAmountsAreIdentical() {
         #expect(CartLine.fixture(total: 119.96, discountedTotal: 119.96).hasDiscount == false)
         #expect(
-            Cart(lines: [], total: 119.96, discountedTotal: 119.96, totalQuantity: 0)
+            Cart(id: 1, lines: [], total: 119.96, discountedTotal: 119.96, totalQuantity: 0)
                 .hasDiscount == false
         )
     }
@@ -67,7 +68,7 @@ struct CartModelTests {
         // mide sobre la cifra que se VE, no sobre el doble en crudo.
         #expect(CartLine.fixture(total: 119.96, discountedTotal: 119.9601).hasDiscount == false)
         #expect(
-            Cart(lines: [], total: 119.96, discountedTotal: 119.9601, totalQuantity: 0)
+            Cart(id: 1, lines: [], total: 119.96, discountedTotal: 119.9601, totalQuantity: 0)
                 .hasDiscount == false
         )
     }
@@ -78,7 +79,7 @@ struct CartModelTests {
         // se podría implementar como «no decorar rebajas pequeñas» y nadie se enteraría.
         #expect(CartLine.fixture(total: 119.96, discountedTotal: 119.95).hasDiscount)
         #expect(
-            Cart(lines: [], total: 119.96, discountedTotal: 119.95, totalQuantity: 0)
+            Cart(id: 1, lines: [], total: 119.96, discountedTotal: 119.95, totalQuantity: 0)
                 .hasDiscount
         )
     }
@@ -92,7 +93,7 @@ struct CartModelTests {
         #expect(CartLine.fixture(total: 100.00, discountedTotal: 105.00).hasDiscount == false)
         #expect(CartLine.fixture(total: 119.96, discountedTotal: 119.97).hasDiscount == false)
         #expect(
-            Cart(lines: [], total: 100.00, discountedTotal: 105.00, totalQuantity: 0)
+            Cart(id: 1, lines: [], total: 100.00, discountedTotal: 105.00, totalQuantity: 0)
                 .hasDiscount == false
         )
     }
@@ -117,7 +118,7 @@ struct CartModelTests {
         #expect(CartLine.fixture(total: 105.41, discountedTotal: 1e300).hasDiscount == false)
         #expect(CartLine.fixture(total: 1e300, discountedTotal: 105.41).hasDiscount == false)
         #expect(
-            Cart(lines: [], total: 1e300, discountedTotal: 105.41, totalQuantity: 0)
+            Cart(id: 1, lines: [], total: 1e300, discountedTotal: 105.41, totalQuantity: 0)
                 .hasDiscount == false
         )
     }
