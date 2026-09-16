@@ -8,7 +8,7 @@ import Networking
 /// a single JSON blob under one key is the right shape — same choice `Domain
 /// .UserDefaultsSessionStore` already made for `StoredSession`. `SettingsLogic` depends
 /// on this protocol through `init` — never on `UserDefaultsSettingsStore` directly.
-public protocol SettingsStoring: Sendable {
+public nonisolated protocol SettingsStoring: Sendable {
     /// The persisted settings, or `AppSettings()` (every toggle off) the first time the
     /// app runs — never throws: a missing/corrupt UserDefaults entry isn't a failure
     /// worth surfacing, it's simply "nothing saved yet."

@@ -56,7 +56,17 @@ public struct SimulatedCamera: CameraCapturing {
 public struct DeviceCameraCapture: CameraCapturing {
     public init() {}
 
-    public func capturePhoto() async throws -> Data {
+    /// `nonisolated`, because `CameraCapturing` is: from Swift 6.4 the witness of a
+    /// `nonisolated` requirement can't be main-actor isolated, and this type has to stay
+    /// `@MainActor` — `UIImagePickerController` and its delegate callbacks live there. The
+    /// hop that used to be implicit in the protocol call is now the `await` below.
+    public nonisolated func capturePhoto() async throws -> Data {
+        try await presentPicker()
+    }
+
+    /// Isolated to the main actor by the type's own `@MainActor`: everything it touches —
+    /// `isSourceTypeAvailable`, the picker and its coordinator — requires it.
+    private func presentPicker() async throws -> Data {
         let sourceType: UIImagePickerController.SourceType =
             UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary
         return try await ImagePickerCoordinator().present(sourceType: sourceType)

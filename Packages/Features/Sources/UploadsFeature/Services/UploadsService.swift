@@ -38,7 +38,7 @@ private struct UploadPayload: Encodable, Sendable {
 
 /// One API call — `POST /products/add`, uploaded (not merely `execute`d, PRD-APP-02) with
 /// real progress reporting — mapped to `UploadedProduct` (`Domain`-safe, never the DTO).
-public protocol UploadsServicing: Sendable {
+public nonisolated protocol UploadsServicing: Sendable {
     func addProduct(
         title: String,
         photoData: Data,

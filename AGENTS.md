@@ -26,6 +26,25 @@ claude plugin marketplace add hiramvazquez/ios-agent-kit
 claude plugin install ios-agent-kit@hiram-kits -y
 ```
 
+**Y con qué toolchain se construye:** con el que trae el Xcode instalado, no con otro. Si
+tienes swiftly (o cualquier gestor que deje un `swift` propio en el PATH) apuntando a una
+versión anterior a la de Xcode, el build muere así:
+
+```
+error: build planning stopped due to build-tool plugin failures
+<unknown>:0: error: unknown argument: '-target-arch-variant'
+```
+
+Ninguno de los dos mensajes nombra el toolchain: el frontend antiguo no entiende los flags
+que emite el SwiftPM de Xcode, y su PluginAPI no puede cargar `BuildToolPlugin`, así que
+`ArchitectureLint` ni arranca y no se compila una sola línea. Parece un fallo del repo y no
+lo es. Compruébalo antes de mirar el código —`swift --version` contra `xcrun swift --version`,
+tienen que coincidir— y si divergen:
+
+```bash
+swiftly use --global-default xcode
+```
+
 **El bucle:**
 
 ```

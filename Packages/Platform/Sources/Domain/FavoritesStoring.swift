@@ -6,7 +6,7 @@ import Foundation
 /// `SwiftDataFavoritesStore` (the SwiftData-backed implementation, owned by
 /// `FavoritesFeature` — SwiftData is a feature-local persistence concern, not shared
 /// vocabulary, so it stays out of `Domain`) directly.
-public protocol FavoritesStoring: Sendable {
+public nonisolated protocol FavoritesStoring: Sendable {
     func isFavorite(id: Int) async -> Bool
 
     /// Adds `product` if it isn't already favorited, removes it if it is.

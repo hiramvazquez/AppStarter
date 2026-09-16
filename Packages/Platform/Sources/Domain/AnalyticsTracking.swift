@@ -17,7 +17,7 @@ public nonisolated struct AnalyticsEvent: Sendable, Equatable {
 /// tests. Features depend on THIS protocol, never on the Analytics SDK directly —
 /// `AnalyticsAdapters` is the only module allowed to import it (`.archlint.yml`, R13:
 /// `allowedImports: [Foundation, Domain, Analytics*]`).
-public protocol AnalyticsTracking: Sendable {
+public nonisolated protocol AnalyticsTracking: Sendable {
     /// `async`: the real adapter (`ConsoleAnalyticsAdapter`) is an `actor` — its recent-
     /// events buffer is genuinely isolated state, so every requirement on this protocol is
     /// `async` even where a given implementation doesn't need to suspend.

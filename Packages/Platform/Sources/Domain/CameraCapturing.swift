@@ -17,7 +17,7 @@ public enum CameraCaptureError: Error, Equatable {
 /// Separate from `CameraProviding` (this file's sibling): that one only answers "is a
 /// camera available" — this one does the actual capture. `Uploads` (PRD-APP-02) is the
 /// first, and today only, consumer.
-public protocol CameraCapturing: Sendable {
+public nonisolated protocol CameraCapturing: Sendable {
     /// Captures (or, on the Simulator, simulates) a photo and returns its encoded bytes
     /// (JPEG/PNG) — never a platform-specific image type, so `Domain` stays
     /// Foundation-only and every feature gets back something it can upload as-is.

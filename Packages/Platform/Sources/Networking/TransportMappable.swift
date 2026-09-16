@@ -29,7 +29,7 @@ import Foundation
 /// Hereda de `DomainError` y no lo acompaña: si fueran hermanos, el `isRetryable` por defecto de
 /// los dos protocolos sería ambiguo para un conformante. Heredando, éste es el más específico y es
 /// el que gana.
-public protocol TransportMappable: DomainError, Equatable {
+public nonisolated protocol TransportMappable: DomainError, Equatable {
     static var offline: Self { get }
     static var notFound: Self { get }
     static var server: Self { get }
@@ -37,7 +37,7 @@ public protocol TransportMappable: DomainError, Equatable {
     static var unknown: Self { get }
 }
 
-public extension TransportMappable {
+public nonisolated extension TransportMappable {
     /// Traduce un fallo del transporte al caso del dominio.
     ///
     /// Una cancelación mapea a `.cancelled` y no a `.unknown`: eso es lo que permite que

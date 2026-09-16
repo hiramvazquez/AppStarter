@@ -29,7 +29,7 @@ public nonisolated struct StoredSession: Sendable, Equatable, Codable {
 /// swaps `UserDefaultsSessionStore` for a Keychain-backed implementation behind the SAME
 /// `SessionStoring` protocol; nothing above the Store layer changes. See
 /// `docs/INFORME-INTEGRACION.md` for why this stayed out of AppFoundation itself.
-public protocol SessionStoring: Sendable {
+public nonisolated protocol SessionStoring: Sendable {
     /// The current bearer token, or `nil` when signed out.
     func currentAccessToken() async -> String?
 

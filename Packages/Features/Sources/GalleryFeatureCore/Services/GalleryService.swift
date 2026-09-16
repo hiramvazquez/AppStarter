@@ -39,7 +39,7 @@ struct GetGalleryProductRequest: BaseRequest {
 /// Returns `Product` (`Domain`, already shared by four other features) — never a new,
 /// Gallery-specific model, since the domain concept (a product's images) already lives
 /// there (PRD-APP-02 groundwork commit).
-public protocol GalleryServicing: Sendable {
+public nonisolated protocol GalleryServicing: Sendable {
     func fetchProduct(id: Int) async throws(APIError) -> Product
 
     /// Warms the URL cache for the next image before the user swipes to it
