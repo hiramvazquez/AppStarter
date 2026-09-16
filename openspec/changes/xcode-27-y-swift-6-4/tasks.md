@@ -87,3 +87,14 @@
 - [x] 7.1 `swift test` en `Packages/Platform` y en `Packages/Features`, con la última línea
       de cada uno pegada en el informe.
 - [x] 7.2 `/kit-verifica` en verde.
+
+- Ronda 1 del juez: ACUERDO-ROTO · comportamiento: no
+  Tres errores de texto, ninguno de código: el dato del `Info.plist` de la enmienda (falso,
+  corregido arriba), el censo «once tipos» de `design.md` y el criterio 8, que pide una
+  evidencia que el repositorio no guarda. Los diez criterios se verificaron cumplidos.
+
+- Ronda 2 del juez: sin veredicto de vuelta · comportamiento: no
+  Confirma las tres correcciones —reprodujo el `xcodegen` del `Info.plist`— y deja dos
+  residuos de texto, ambos números: el «once» de `design.md`, que aquí se elimina en vez de
+  recontarse, y un «seis líneas» que había fabricado la ronda anterior. Sin más rondas: dos
+  seguidas sin tocar comportamiento no las decide una tercera.

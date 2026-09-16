@@ -38,10 +38,10 @@ documentación dice que el tipo «cruza de un `Logic` `nonisolated` de vuelta a 
 `@MainActor`». Le falta la anotación que describe lo que ya declara hacer.
 
 Comprobado el 2026-09-15 parcheando el checkout de `.build` y reconstruyendo: marcando el
-protocolo y su `extension` como `nonisolated`, los **once** tipos de error de dominio del
-repo compilan sin tocar ninguno.
+protocolo y su `extension` como `nonisolated`, los tipos de error de dominio del repo
+compilan sin tocar ninguno.
 
-*Alternativa descartada:* anotar los once tipos aquí. Funciona —también lo medí— pero deja
+*Alternativa descartada:* anotar aquí cada tipo de error de dominio. Funciona —también lo medí— pero deja
 el despiste vivo upstream, obliga a repetir la anotación en cada feature nueva, y se la come
 igual cualquier otro proyecto que consuma el kit.
 
@@ -148,7 +148,7 @@ propio de AppFoundation.
 ## Risks / Trade-offs
 
 - **El cambio depende de publicar AppFoundation 1.3.2** → Es un bloqueo aceptado, no un
-  riesgo a mitigar: sin él los once tipos de error siguen rotos. Las tareas lo ponen
+  riesgo a mitigar: sin él los tipos de error de dominio siguen rotos. Las tareas lo ponen
   primero, y hasta que exista el resto del cambio no se puede verificar de punta a punta.
   El repo de AppFoundation no está clonado en esta máquina.
 - **El salto al MainActor añade una suspensión en el camino de la cámara** → Irrelevante en

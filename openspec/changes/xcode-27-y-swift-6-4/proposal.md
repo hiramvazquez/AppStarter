@@ -156,3 +156,30 @@ todos verificados.
 4. **Dato caducado.** «Fuera de alcance» dice que el borrado de ocho claves de
    `App/Info.plist` está sin commitear; ya lo está (`e482f7f`), así que ese párrafo describe
    un estado que no existe.
+
+### Corrección de esta misma enmienda, tras el juicio (ronda 1: ACUERDO-ROTO)
+
+El juez midió que el punto 4 de arriba es falso, y lo es. Queda como estaba, tachado por esto:
+
+5. **El punto 4 se equivoca, y la causa importa.** `e482f7f` **creó** `App/Info.plist` con las
+   ocho claves; no borró nada. Lo que pasó es otra cosa: `project.yml` genera ese fichero
+   (`info: path: App/Info.plist`), así que al ejecutar `xcodegen generate` en la tarea 3.1 el
+   fichero se **regeneró** y las ocho claves volvieron. Hoy están las ocho y el árbol está
+   limpio: el borrado que Xcode 27 había hecho ya no existe, y no porque se commiteara.
+   La decisión que el «Fuera de alcance» aplazaba —aceptar el borrado o revertirlo— queda
+   resuelta de hecho en favor de revertirlo, y por el camino previsto: el generador manda.
+
+6. **El censo de `design.md` no cuadra.** Su decisión 1 y sus «Risks» hablan de «los once
+   tipos de error de dominio». Contados hoy: **10** en producción —7 conformando `DomainError`
+   directamente y 3 a través de `TransportMappable`— y 12 si se suman los dos enums de
+   `TransportMappableTests`. Once no es ninguno de los dos. El argumento no depende del
+   número, así que se corrige el dato y no se recuenta en cada lectura futura: se deja dicho
+   aquí y no se toca la prosa de `design.md`.
+
+7. **El criterio 8 pide algo que el repositorio no puede guardar.** Dice «con la salida pegada
+   en el informe», y el informe de `verifica.sh` solo pega salida cuando un paso sale en rojo;
+   en verde guarda una línea por paso. Así que esa mitad del criterio solo podía vivir en la
+   conversación, que no se archiva. Lo que sí queda auditable y está verde: el informe de
+   `.agent-kit/verificacion.txt` con todos sus pasos en ✅, la firma reconstruible contra el
+   árbol del commit, y los recuentos de tests en el mensaje del commit. Un criterio futuro que quiera esa evidencia
+   tiene que pedir algo que el repositorio conserve.
