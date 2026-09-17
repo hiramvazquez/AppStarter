@@ -73,8 +73,29 @@
       línea — sobre el paquete entero saca dos errores ajenos y preexistentes
       (`SettingsLogic.swift`, `CartLogic.swift`), así que habría que acotar por target y filtrar
       por grupo de diagnóstico, y eso es decidir qué más vigila la puerta.
-- [ ] 3.3 **La prueba de verdad**: el job `Features (swift test + archlint)` del CI en verde, y
+- [x] 3.3 **La prueba de verdad**: el job `Features (swift test + archlint)` del CI en verde, y
       `Platform` sin cancelarse. Verificación: el número de run, anotado, y el toolchain que
       ese run imprime.
       Si sigue rojo por el mismo diagnóstico, el arreglo es incorrecto y se replantea D1 por
       escrito, sin ir probando anotaciones a ciegas contra el CI.
+      **Hecho — el criterio se cumple**: run `35284398983` (2026-09-17T22:55Z), toolchain
+      `/Applications/Xcode_26.3.0.app`, `Apple Swift version 6.2.4`, el mismo que producía el
+      error. `Features (swift test + archlint)` **en verde** por primera vez en más de doce
+      corridas, y `Platform` en verde también, sin cancelarse. `check-showcase.sh`, verde.
+
+      **Y pasó lo que este acuerdo escribió que pasaría.** El job `App (xcodebuild test: unit +
+      snapshot + UI, offline)`, que llevaba doce corridas saltado por el fail-fast, se
+      desbloqueó y salió **rojo**: `AppSnapshotTests/CartSnapshotTests.swift:151: error: … failed
+      - Snapshot "kit" does not match reference`, 2 fallos de 30 tests; el resto de suites de
+      ese job, en verde, y el XCUITest que llegó a correr también. No es una regresión de este
+      cambio —este cambio no toca `AppSnapshotTests` ni `App/`— sino la primera medición de ese
+      job desde antes del 2026-09-09. Va como hallazgo nuevo, según «Fuera de alcance».
+
+      Vale la pena decir de qué huele: una referencia de snapshot no coincide cuando se grabó
+      con un simulador distinto del que corre, y el runner va con el Xcode que le toque
+      (26.3.0 hoy) mientras las referencias se graban en local con Xcode 27. Es la misma causa
+      de fondo que el rojo que este cambio arregla: aquí y allí no se comprueba lo mismo. Eso
+      es del cambio del toolchain, que ya está en marcha aparte.
+
+      Con esto, el CI de `main` NO está «arreglado»: está verde en tres jobs de cinco, con
+      `Integration` saltado y `App` rojo por snapshots.
