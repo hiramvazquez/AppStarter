@@ -20,11 +20,11 @@ import UploadsFeature
 /// `AppModule.swift` registers. Resolves every `ViewModel` from `Container.shared` —
 /// never constructs one directly (the composition root already did that work).
 ///
-/// `generate-feature` (modo multi) never edits this file: it adds the `case` to
-/// `AppRoute` automatically (marker `// archinit:routes` — best-effort here, since
-/// `AppRoute` lives in `Domain`, not `App/AppRoute.swift`; see `Domain/AppRoute.swift`'s
-/// doc comment and `docs/INFORME-MULTI.md`) but always prints the matching `switch` arm
-/// to add here by hand — the same manual step single-module `archinit` already documents.
+/// `generate-feature` (modo multi, AppFoundation 1.4.2) does edit this file: it inserts the feature's
+/// `import` at `// archinit:imports` and its `switch` arm at `// archinit:destinations`. What it cannot
+/// add is the `AppRoute` case: it looks for `App/AppRoute.swift`, and here the enum lives in `Domain`
+/// (see `Domain/AppRoute.swift`'s doc comment and `docs/INFORME-MULTI.md`), so that one goes in by hand.
+/// The manual steps live in `AGENTS.md` § «Si vas a añadir una feature nueva».
 struct RootView: View {
     @State private var coordinator = Container.shared.resolve(Coordinator<AppRoute>.self)
 

@@ -130,12 +130,17 @@ cd Packages/Features
 swift package --allow-writing-to-package-directory generate-feature Gallery --api --module
 ```
 
-`generate-feature` en modo multi da de alta el target (y su test target) entre los
-markers `archinit:features-begin/end`/`archinit:products-begin/end` de
-`Packages/Features/Package.swift`, y — best-effort — el `import`/`case`/módulo en
-`App/AppModule.swift`/`App/AppRoute.swift` (aquí ese último best-effort no aplica:
-`AppRoute` vive en `Packages/Platform/Sources/Domain/AppRoute.swift`, no en `App/`, ver
-`docs/INFORME-MULTI.md`). Los seis features actuales (Login, Products, ProductDetail,
+`generate-feature` en modo multi (comprobado con AppFoundation 1.4.2) da de alta el target
+y su test target entre los markers `archinit:features-begin/end` de
+`Packages/Features/Package.swift`, y el producto entre `archinit:products-begin/end`.
+Además registra la feature en la app, cada cosa si encuentra su marker: el `import` en
+`App/AppModule.swift` y en `App/RootView.swift` (`// archinit:imports`), el módulo en
+`App/AppModule.swift` (`// archinit:modules`), el destino en `App/RootView.swift`
+(`// archinit:destinations`) y el producto en `project.yml` (`# archinit:products`). El
+`case` de la ruta no lo añade aquí: `AppRoute` vive en
+`Packages/Platform/Sources/Domain/AppRoute.swift` y el generador lo busca en `App/` (ver
+`docs/INFORME-MULTI.md`). Los pasos que quedan a mano están en `AGENTS.md` § «Si vas a
+añadir una feature nueva». Los seis features actuales (Login, Products, ProductDetail,
 Favorites, Profile, Search) se movieron A MANO desde el antiguo paquete único
 `AppStarterKit/` siguiendo exactamente esa forma — `docs/INFORME-MULTI.md` documenta el
 proceso paso a paso y cada fricción encontrada, con repro.
@@ -147,11 +152,10 @@ cd Packages/Features
 swift package --allow-writing-to-package-directory generate-feature MiFeature --api
 ```
 
-Sigue los pasos manuales que imprime el comando (el `case` en
-`Packages/Platform/Sources/Domain/AppRoute.swift`, el destino en `App/RootView.swift`, el
-producto en `project.yml` si no hay marker `# archinit:products`), y complétalo con el
-dominio real. `swift package archlint` (o el build de Xcode) te dice si te saliste de la
-arquitectura — incluida la regla R13: una feature no puede importar otra.
+Los pasos que quedan a mano están en `AGENTS.md` § «Si vas a añadir una feature nueva»;
+haz esos y completa la feature con el dominio real. `swift package archlint` (o el build
+de Xcode) te dice si te saliste de la arquitectura — incluida la regla R13: una feature no
+puede importar otra.
 
 ### Reutilizar el Service/Store de otro feature (`--service-from`/`--store-from`)
 
