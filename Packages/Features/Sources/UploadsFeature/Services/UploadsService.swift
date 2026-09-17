@@ -29,7 +29,7 @@ struct AddProductRequest: BaseRequest {
 /// multipart file: DummyJSON accepts (and echoes) an arbitrary JSON body, so the photo
 /// travels as a base64 string field in it (PRD-APP-02: "la foto se manda como parte del
 /// body (base64 en el JSON)").
-private struct UploadPayload: Encodable, Sendable {
+private nonisolated struct UploadPayload: Encodable, Sendable {
     let title: String
     let photoBase64: String
 }
