@@ -33,8 +33,8 @@ let package = Package(
         // archinit:products-end
     ],
     dependencies: [
-        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.3.2"),
-        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.2.2"),
+        .package(url: "https://github.com/hiramvazquez/AppFoundation.git", from: "1.4.1"),
+        .package(url: "https://github.com/hiramvazquez/CoreNetworking.git", from: "1.3.1"),
         .package(path: "../Platform")
     ],
     targets: [
