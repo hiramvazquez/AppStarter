@@ -64,7 +64,10 @@ excluded:           # globs: valen también al lintar subdirectorios desde otro 
   - .build
   - .swiftpm
   - DerivedData
-  - Package.swift
+  # Con glob, y no `Package.swift` a secas, por dos razones: la longitud de un manifiesto
+  # generado crece con cada feature que se añade entre los markers, y el nombre sin glob solo
+  # encajaba en la raíz, que en modo multi no tiene ningún manifiesto.
+  - "**/Package.swift"
   - .claude         # worktrees de Claude Code: copias enteras del repo que duplicarían cada violación
   - "**/.build"
   - "**/.swiftpm"

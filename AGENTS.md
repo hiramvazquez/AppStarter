@@ -101,13 +101,25 @@ cd Packages/Features
 swift package --allow-writing-to-package-directory generate-feature MiFeature --api
 ```
 
-En modo multi (marcador `.archinit-multi` en `Packages/Features/`), `generate-feature` da
-de alta el target real (y su test target) entre los markers `archinit:features-*`/
-`archinit:products-*` de `Packages/Features/Package.swift`, y añade el `import`/módulo en
-`App/AppModule.swift` (marker `// archinit:modules`) — best-effort, igual que el `case` de
-`App/AppRoute.swift`, que en este repo no existe (ver arriba): añade el `case` a
-`Packages/Platform/Sources/Domain/AppRoute.swift` a mano, y el destino en
-`App/RootView.swift` (el generador siempre imprime este último paso, en modo multi o no).
+En modo multi (marcador `.archinit-multi` en `Packages/Features/`), y comprobado con
+AppFoundation 1.4.2, `generate-feature` registra él mismo —cada cosa, si encuentra su marker—:
+
+- en `Packages/Features/Package.swift`, el target real y su test target entre los markers
+  `archinit:features-begin`/`-end`, y el producto entre `archinit:products-begin`/`-end`;
+- el `import` en `App/AppModule.swift` y en `App/RootView.swift` (marker `// archinit:imports`
+  en los dos);
+- el módulo en `App/AppModule.swift` (marker `// archinit:modules`);
+- el destino `case .<nombre>:` en `App/RootView.swift` (marker `// archinit:destinations`);
+- el producto en `project.yml` (marker `# archinit:products`).
+
+Quedan dos pasos a mano:
+
+1. Añade `case <nombre>` a `Packages/Platform/Sources/Domain/AppRoute.swift`. Sin él la app no
+   compila, porque el destino que acaba de añadir el generador referencia `AppRoute.<nombre>`.
+   Ojo: el generador pide este paso nombrando `App/AppRoute.swift`, que en este repo no existe
+   (ver arriba).
+2. `xcodegen generate` —o `Scripts/bootstrap.sh`, que lo ejecuta— para que el target nuevo entre
+   en el proyecto de Xcode.
 
 ## Capas
 
@@ -191,8 +203,9 @@ swift package --allow-writing-to-package-directory generate-feature Counter     
 ```
 
 Genera View/ViewModel/Logic/Service/Module (+ Store si toca) + tests/mocks, todo
-compilando y en verde. En modo multi, da de alta el target en `Package.swift` — el resto de
-pasos manuales (arriba, «Si vas a añadir una feature nueva»), imprímelos y hazlos tú.
+compilando y en verde. En modo multi, da de alta el target en `Package.swift` y registra la
+feature en la app; los dos pasos que quedan a mano están arriba, en «Si vas a añadir una
+feature nueva».
 
 `ArchitectureLint` (build-tool plugin, en `Packages/Platform/Package.swift` y
 `Packages/Features/Package.swift`) y `swift package archlint --path <paquete>` (command
