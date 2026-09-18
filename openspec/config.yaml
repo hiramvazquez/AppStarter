@@ -11,7 +11,7 @@ context: |
   genera xcodegen desde project.yml y no lleva lógica.
 
   Reglas de arquitectura: AGENTS.md y .archlint.yml (R13/R16) mandan sobre cualquier otra
-  guía. Reglas de Swift/SwiftUI: .claude/skills/swift-swiftui.md.
+  guía. Reglas de Swift/SwiftUI: el skill `swift-swiftui` del plugin ios-agent-kit.
 
   Verificación del proyecto: `/kit-verifica` (plugin ios-agent-kit) — build y tests de los
   dos paquetes más el informe de lógica repetida, firmado contra el sha256 del ÁRBOL DE

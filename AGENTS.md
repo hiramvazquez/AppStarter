@@ -60,7 +60,8 @@ El único paso opcional es el juez: se invoca **cuando nadie vaya a leer el acue
 entregado** —cambios grandes o que tocan varias capas (más de unos cinco ficheros), alcance que
 se movió al implementar, o cuando quien orquesta no es quien acordó—.
 
-No se commitea sin firma de verificación válida: la puerta de `PreToolUse` lo bloquea.
+No se commitea sin firma de verificación válida: lo bloquea la puerta de commit, un hook
+`pre-commit` de git que `/kit-verifica` deja instalado en cada firma.
 Stagea, verifica y commitea en **comandos separados** — se firma el árbol **y** el índice, así
 que encadenar `git add && git commit` cambia el índice entre la firma y el commit. Y un
 `git commit -am` sobre un árbol editado después de firmar también queda bloqueado: antes se
