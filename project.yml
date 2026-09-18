@@ -231,6 +231,18 @@ schemes:
       # el CI la exporta antes de generar, no antes de testear.
       environmentVariables:
         UI_TEST_OFFLINE: "${UI_TEST_OFFLINE}"
+      # El locale del proceso de test se fija en el ESQUEMA, por la misma razón que
+      # UI_TEST_OFFLINE: es lo único que leen igual Xcode, `kit.conf` y el CI. Sin esto el
+      # proceso hereda el locale de la máquina, y todo lo que se formatea con él —
+      # `.formatted(.currency(code: "USD"))` en `CartView`— sale distinto en cada una:
+      # `US$540.00` en `es_ES@rg=mxzzzz`, `$540.00` en `en_US`. Una referencia de snapshot
+      # grabada así es la foto de una máquina, y el fallo que da en otra («does not match
+      # reference») no nombra el locale. La norma vive en
+      # `openspec/specs/plataforma/spec.md` («Los tests de la app corren con un locale
+      # fijado»): quien cambie `en`/`US` regraba en el mismo cambio las referencias cuyo
+      # texto depende del locale.
+      language: en
+      region: US
     run:
       config: Debug
     archive:
