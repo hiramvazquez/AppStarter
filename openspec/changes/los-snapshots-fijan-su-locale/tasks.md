@@ -116,7 +116,7 @@
       existe en `openspec/specs/plataforma/spec.md` hasta archivar; es lo que pedía la 1.1.
       **Ojo:** esa firma es del árbol anterior a esta anotación. Escribir aquí el resultado
       de la firma invalida la firma; se repite `/kit-verifica` justo antes del commit.
-- [ ] 3.3 **La prueba de verdad**: la corrida del CI sobre el commit del cambio. Va después de
+- [x] 3.3 **La prueba de verdad**: la corrida del CI sobre el commit del cambio. Va después de
       `/kit-verifica` por necesidad —el CI solo corre sobre lo ya empujado—, no porque importe
       menos. `main` ya está en rojo por estos dos tests, así que empujar no rompe ningún
       verde.
@@ -128,3 +128,18 @@
       este cambio o es de `el-ci-fija-el-xcode-con-el-que-prueba`.
       **Si falla otra cosa** —un `XCUITest`, un test de `AppTests`—, es un hallazgo de haber
       fijado el locale para los tres targets: se anota el test y el mensaje, y se decide.
+      **Resultado (2026-09-18): run `35389558928`**, sobre `0461d2a`, empujado a `main` con
+      permiso expreso del owner. Job `App (xcodebuild test: unit + snapshot + UI, offline)`
+      (`105744910901`) en **`success`**; la corrida entera en `success`
+      (<https://github.com/hiramvazquez/AppStarter/actions/runs/35389558928>).
+      Del log del job: `testContentKit` y `testContentSinDescuentoKit` **`passed`** —corrieron,
+      no se saltaron—, igual que los otros cuatro de `CartSnapshotTests`;
+      `Executed 30 tests, with 0 failures (0 unexpected)` entre `AppTests` y
+      `AppSnapshotTests` —eran 2 fallos de 30—, `Executed 10 tests, with 0 failures
+      (0 unexpected)` en `AppUITests`, `** TEST SUCCEEDED **`. Ningún otro test ha caído por
+      fijar el locale para los tres targets.
+      **Sobre el límite de los criterios:** el runner comparó en `iPhone 17 Pro`, `OS:26.2`,
+      con `Xcode 26.3`, contra referencias grabadas en `iPhone 17`, iOS 27.0, Xcode 27.0. Con
+      el locale fijado pasan, así que entre esos dos entornos no queda, para estas dos
+      pantallas, diferencia de render que no quepa en `precision: 0.98`. El locale era causa
+      suficiente y, dentro de esa tolerancia, la única.
