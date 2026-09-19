@@ -45,6 +45,16 @@ tienen que coincidir— y si divergen:
 swiftly use --global-default xcode
 ```
 
+**Y el CI valida con otro Xcode que el tuyo.** Aquí se desarrolla con Xcode 27 / Swift 6.4;
+el CI fija **Xcode 26.3 / Swift 6.2.4** en el `env:` de `.github/workflows/ci.yml`
+(`XCODE_SOPORTADO`). Una verificación local en verde —`/kit-verifica` incluido— **no prueba**
+que el CI vaya a pasar: medido el 2026-09-17, el diagnóstico `[#IsolatedConformances]` sobre
+una conformidad inferida como aislada al MainActor es error en Swift 6.2.4 y no lo es en 6.4.
+Si el CI rechaza algo que en tu máquina compila, se corrige el código para que compile en las
+dos; subir la versión del CI es una decisión del owner, no la salida por defecto. El sentido
+contrario —código que solo acepta 26.3— lo vigila el job `aviso-toolchain-desarrollo`, que
+corre en Xcode 27 y no bloquea.
+
 **El bucle:**
 
 ```

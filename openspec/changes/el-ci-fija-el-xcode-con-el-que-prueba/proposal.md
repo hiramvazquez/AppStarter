@@ -119,10 +119,13 @@ foros de Swift. No he determinado si lo que hace 6.4 es deliberado o un hueco; e
 - [ ] Los tres jobs de macOS (`packages`, `app`, `integration`) seleccionan el toolchain con
       `maxim-lobanov/setup-xcode@v1` y `xcode-version: ${{ env.XCODE_SOPORTADO }}`, y ninguno
       declara la versión a pelo en su propio paso.
-- [ ] El `env:` del workflow declara `XCODE_SOPORTADO: "26.3"` y, en el comentario contiguo,
+- [ ] El `env:` del workflow declara `XCODE_SOPORTADO: "26.3.0"` y, en el comentario contiguo,
       la fecha de la comprobación (2026-09-17), el comando `gh api
       repos/actions/runner-images/contents/images/macos/macos-15-arm64-Readme.md` y la lista
-      de versiones que la imagen ofrecía ese día.
+      de versiones que la imagen ofrecía ese día. *Corregido al implementar, el 2026-09-19:*
+      aquí decía `"26.3"`. `setup-xcode` lo trata como un rango y elegiría un 26.3.x posterior
+      sin avisar, que contradice la spec («sigue validando exactamente la versión que tiene
+      escrita»); lo cazó el revisor.
 - [ ] Existe un job `aviso-toolchain-desarrollo` que corre en `runs-on: xcode-27`, lleva
       `continue-on-error: true`, y su comentario dice la condición concreta para volverlo
       bloqueante (que la imagen `xcode-27` salga de preview) con el enlace de seguimiento
@@ -144,6 +147,7 @@ foros de Swift. No he determinado si lo que hace 6.4 es deliberado o un hueco; e
 |---|---|
 | `.github/workflows/ci.yml` | los tres pasos de selección de toolchain, un `env:` nuevo y un job de aviso |
 | `AGENTS.md` | la sección de toolchain gana el desfase con el CI |
+| `README.md` | la sección de CI deja de decir que el Xcode nunca se fija, y lista el job de aviso (añadido al implementar, tarea 3.3) |
 | `openspec/specs/ci-toolchain/spec.md` (al archivar) | capacidad nueva |
 | `openspec/specs/plataforma/spec.md` (al archivar) | el requisito de toolchain documentado |
 

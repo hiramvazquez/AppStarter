@@ -9,13 +9,17 @@ con el toolchain de desarrollo se vea en el CI y no al publicar.
 ### Requirement: La versión del toolchain del CI es explícita
 
 La integración continua MUST nombrar la versión de Xcode que usa. Esa versión MUST estar
-escrita en un solo sitio del que la lean todos los jobs, y NOT MUST resolverse a partir de lo
+escrita en un solo sitio del que la lean todos los jobs bloqueantes, y NOT MUST resolverse a partir de lo
 que la imagen del runner tenga instalado —por ejemplo, ordenando `/Applications/Xcode_*.app` y
 tomando la última—, porque esa resolución cambia cuando la imagen se actualiza y desplazaría
 la versión validada sin intervención humana.
 
 Junto a la versión MUST constar la fecha en que se comprobó qué ofrece la imagen y el comando
 que lo comprueba, para que subirla exija rehacer la medición.
+
+El job de aviso temprano queda fuera de esta regla: no bloquea y usa el Xcode de la imagen que
+da el toolchain de desarrollo, donde la versión validada no existe. Lo rige el requisito del
+aviso temprano.
 
 #### Scenario: La imagen del runner incorpora una versión mayor
 
@@ -32,7 +36,7 @@ que lo comprueba, para que subirla exija rehacer la medición.
 
 #### Scenario: Un job de macOS se añade más adelante
 
-- **WHEN** se añade un job nuevo que compila o prueba el proyecto en macOS
+- **WHEN** se añade un job nuevo y bloqueante que compila o prueba el proyecto en macOS
 - **THEN** selecciona el toolchain leyendo la misma versión declarada que los demás
 - **AND** no declara una versión propia
 

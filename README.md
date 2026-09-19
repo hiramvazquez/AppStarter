@@ -514,9 +514,13 @@ original de los paquetes desde Xcode).
   TestResults.xcresult`, subido como artefacto solo si el job falla (capturas y árbol de
   accesibilidad del runner, la única evidencia cuando el iOS del runner difiere del local).
 - **`integration`** (real, contra DummyJSON): solo por `workflow_dispatch`.
+- **`aviso-toolchain-desarrollo`** (matriz `Platform`/`Features`, imagen `xcode-27`): `swift
+  build --build-tests` + `swift test` con el Xcode con el que se desarrolla. No bloquea
+  mientras esa imagen siga en preview.
 
-Selección del Xcode más reciente disponible en el runner (`ls /Applications/Xcode_*.app`)
-en cada job que lo necesita — nunca fijado a una versión concreta.
+Los jobs bloqueantes de macOS usan una versión **fijada**, Xcode 26.3 (`26.3.0`, con el
+parche, para que no se cuele otra), declarada una sola vez en el `env:` del workflow con la
+fecha y el comando que la comprobaron; no se elige «la más nueva» de la imagen. Por qué esa y qué no cubre una verificación local, en `AGENTS.md`.
 
 ## Lo que hizo la IA
 

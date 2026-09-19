@@ -37,7 +37,9 @@ condiciona el cómo:
 
 ### D1. Una sola versión fijada, no la matriz de tres de `spm-pro`
 
-`XCODE_SOPORTADO: "26.3"` en el `env:` del workflow, y los tres jobs de macOS la leen.
+`XCODE_SOPORTADO: "26.3.0"` en el `env:` del workflow, y los tres jobs de macOS la leen. Con
+el parche escrito: `setup-xcode` trata `"26.3"` como un rango y se quedaría con un 26.3.x
+posterior sin avisar (corregido al implementar, el 2026-09-19).
 
 *Por qué:* `spm-pro` necesita tres (`XCODE_MINIMO`, `XCODE_TESTS_MINIMO`, `XCODE_ACTUAL`)
 porque publica librerías: tiene que comprobar el suelo que promete a quien las consume, por

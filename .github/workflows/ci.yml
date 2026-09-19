@@ -9,6 +9,25 @@ on:
   pull_request:
   workflow_dispatch:
 
+env:
+  # Versión FIJA, no «la más reciente de la imagen»: ese selector validaba lo que trajera el
+  # runner ese día y se movería solo el día que la imagen incorpore otra Xcode, sin que nadie
+  # lo decida. La fijó el owner el 2026-09-17: es la que el CI ya ejecutaba de hecho y la más
+  # nueva que ofrece macos-15. AppStarter no publica librerías, así que no hay un suelo más
+  # bajo que comprobar.
+  #
+  # Comprobado el 2026-09-17 con
+  #   gh api repos/actions/runner-images/contents/images/macos/macos-15-arm64-Readme.md
+  # qué ofrece la imagen: 16.0 … 16.4, 26.0.1, 26.1.1, 26.2, 26.3. Ninguna 27: Xcode 27 solo
+  # está en la imagen xcode-27, en preview (ver el job de aviso, abajo).
+  #
+  # Con el parche escrito, 26.3.0 y no 26.3: la action lo trata como un rango y con 26.3 se
+  # quedaría sin avisar con un 26.3.x posterior si la imagen lo trae. Así, el día que la
+  # imagen deje de traer esta, el job falla nombrándola en vez de validar otra.
+  #
+  # Al subirla, rehacer esa comprobación y actualizar la fecha.
+  XCODE_SOPORTADO: "26.3.0"
+
 jobs:
   showcase:
     name: check-showcase.sh (README escaparate)
@@ -29,14 +48,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select the newest available Xcode (swift-tools 6.2 mínimo)
+      - name: Seleccionar Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_SOPORTADO }}
+
+      - name: Versiones
         run: |
-          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
-          if [ -z "$LATEST" ]; then
-            LATEST=/Applications/Xcode.app
-          fi
-          echo "Usando $LATEST"
-          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
           swift --version
 
       - name: swift test (Packages/${{ matrix.package }})
@@ -71,15 +90,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select the newest available Xcode (swift-tools 6.2 mínimo)
+      - name: Seleccionar Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_SOPORTADO }}
+
+      - name: Versiones
         run: |
-          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
-          if [ -z "$LATEST" ]; then
-            LATEST=/Applications/Xcode.app
-          fi
-          echo "Usando $LATEST"
-          sudo xcode-select -s "$LATEST"
           xcodebuild -version
+          swift --version
 
       - name: Install xcodegen
         run: brew install xcodegen
@@ -131,13 +150,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select the newest available Xcode (swift-tools 6.2 mínimo)
+      - name: Seleccionar Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ env.XCODE_SOPORTADO }}
+
+      - name: Versiones
         run: |
-          LATEST=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -n 1)
-          if [ -z "$LATEST" ]; then
-            LATEST=/Applications/Xcode.app
-          fi
-          sudo xcode-select -s "$LATEST"
+          xcodebuild -version
           swift --version
 
       - name: Packages/Features integration tests (real DummyJSON)
@@ -145,3 +165,43 @@ jobs:
         env:
           INTEGRATION: "1"
         run: swift test --filter AuthIntegrationTests
+
+  # Aviso temprano del toolchain con el que se DESARROLLA (Xcode 27 / Swift 6.4).
+  #
+  # Cubre el sentido CONTRARIO al de los jobs de arriba, y por eso no sobra ninguno de los dos:
+  # los fijados en 26.3 protegen de escribir código que solo acepta Swift 6.4 —medido el
+  # 2026-09-17: el diagnóstico [#IsolatedConformances] es error en 6.2.4 y no en 6.4—; este
+  # protege de escribir código que solo acepta 26.3 y rompe al abrir el proyecto en Xcode 27.
+  # Solo compila y prueba los dos paquetes: lo que tiene que ver es una incompatibilidad de
+  # compilación, y montar el simulador en una imagen en preview sería ruido.
+  #
+  # NO bloquea, y es deliberado: xcode-27 es una imagen en PREVIEW, y una imagen en preview no
+  # puede decidir si la corrida pasa.
+  #
+  # CONDICIÓN PARA VOLVERLO BLOQUEANTE: cuando la imagen xcode-27 salga de preview y su Xcode
+  # sea estable. Seguimiento: https://github.com/actions/runner-images/issues/14404
+  aviso-toolchain-desarrollo:
+    name: Aviso temprano — Xcode 27 (${{ matrix.package }})
+    runs-on: xcode-27
+    continue-on-error: true
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [Platform, Features]
+    defaults:
+      run:
+        working-directory: Packages/${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versiones
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: swift build --build-tests
+        run: swift build --build-tests
+
+      - name: swift test
+        run: swift test
