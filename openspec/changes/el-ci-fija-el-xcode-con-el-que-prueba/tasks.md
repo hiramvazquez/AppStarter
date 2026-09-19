@@ -61,10 +61,10 @@
       ser `26.3` en los tres) y la conclusión del job de aviso.
       Va después de `/kit-verifica` por necesidad —el CI solo corre sobre lo ya empujado—, no
       porque importe menos.
-      **Lo que NO cuenta como fallo de este cambio**: que el job `app` salga rojo por
-      `CartSnapshotTests`. Está previsto en «Fuera de alcance» y es lo que el CI destapa al
-      desbloquearse. Si sale, se anota aquí el run y se abre el cambio aparte; no se toca
-      nada de este.
+      **Ya no hay un rojo previsto** (corregido el 2026-09-19: aquí se daba por previsto el
+      de `CartSnapshotTests`, que cerró `los-snapshots-fijan-su-locale`). El job `app` está en
+      verde en `main` desde el run `35389558928`; si sale rojo sobre este cambio, se anota el
+      run y el test y se decide por escrito si entra aquí.
       **Lo que sí cuenta**: que algún job de macOS no imprima `26.3`, que el job de aviso
       haga fallar la corrida, o que aparezca un error de compilación en 26.3 en un módulo que
       hoy está verde. En ese último caso se anota el fichero y el diagnóstico y se decide por

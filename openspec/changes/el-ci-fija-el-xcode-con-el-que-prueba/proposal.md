@@ -93,24 +93,14 @@ foros de Swift. No he determinado si lo que hace 6.4 es deliberado o un hueco; e
 
 ## Fuera de alcance
 
-- **El rojo de `CartSnapshotTests`.** Es una causa distinta de esta y el owner la ha dejado
-  para un cambio aparte el 2026-09-17. Este cambio **no** declara el CI arreglado: lo que
-  hace es que, cuando falle, se sepa contra qué versión.
+- **El rojo de `CartSnapshotTests`.** Es una causa distinta de esta, y la cerró su propio
+  cambio, `los-snapshots-fijan-su-locale`, archivado el 2026-09-18: los importes se
+  formateaban con el locale del proceso. El job `app` está en verde en `main` desde el run
+  `35389558928`, con Xcode 26.3 contra referencias grabadas con Xcode 27.
 
-  Medido en el run `35284398983` (2026-09-17), el primero que desbloquea el job `app` en
-  doce corridas: **30 tests, 2 fallos, y los dos son `CartSnapshotTests.testContentKit` y
-  `CartSnapshotTests.testContentSinDescuentoKit`** («Snapshot "kit" does not match
-  reference»). Los 10 XCUITests pasan, y `AppTests` pasa entero. Es decir: detrás de este
-  rojo no hay nada más escondido, y el cambio aparte tiene un alcance de dos tests.
-
-  *Pista para ese cambio, no alcance de este:* las dos referencias que fallan
-  (`AppSnapshotTests/__Snapshots__/CartSnapshotTests/testContentKit.kit.png` y
-  `testContentSinDescuentoKit.kit.png`) llevan fecha del 2026-09-15 12:16 y las otras cuatro
-  del mismo directorio son del 2026-09-07 y pasan. Las dos que fallan son exactamente las
-  regrabadas en local con Xcode 27, y el job `app` solo se ha ejecutado una vez desde
-  entonces —el run `35022613870`, esa misma tarde—, fallando ya por esas dos. Apunta a que
-  el segundo rojo es otra cara del mismo desfase, pero eso hay que medirlo en su cambio, no
-  darlo por bueno aquí.
+  *Corregido el 2026-09-19, por escrito:* este punto daba ese rojo por abierto y dejaba una
+  pista para su cambio, que era «otra cara del mismo desfase» de Xcode. Se midió allí y la
+  pista era falsa: la causa era el locale.
 - **Cambiar la versión de Xcode con la que se desarrolla en local.** Sigue siendo la 27; lo
   que cambia es que el desfase queda escrito en vez de implícito.
 - **Revisar el resto de `d575e75`** —los siete protocolos anotados y `DeviceCameraCapture`—.

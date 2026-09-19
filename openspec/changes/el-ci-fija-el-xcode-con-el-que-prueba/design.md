@@ -29,7 +29,8 @@ condiciona el cómo:
 
 **Non-Goals**
 
-- Que el CI quede verde. Detrás espera `CartSnapshotTests`, y este cambio no lo toca.
+- Arreglar tests. El único rojo que había detrás, `CartSnapshotTests`, lo cerró
+  `los-snapshots-fijan-su-locale` (corregido el 2026-09-19: aquí decía que seguía esperando).
 - Reproducir la matriz de tres versiones de `spm-pro`.
 
 ## Decisions
@@ -114,8 +115,9 @@ dos versiones concluirá que uno sobra, y el que quitará es el que no bloquea.
   había dato. El run `35284398983` ya deja `Features` y `Platform` en verde con el arreglo del
   DTO, lo que reduce mucho ese riesgo, pero si aparece alguno se anota y se decide por
   escrito; no se prueban anotaciones contra el CI.
-- **[Este cambio no pone `main` en verde]** → `CartSnapshotTests` sigue roto y es lo primero
-  que el CI destapará al desbloquearse `app`. Está en «Fuera de alcance» del proposal para que
-  nadie lea la corrida siguiente como un fracaso de este cambio.
+- **[Que el job `app` salga rojo sobre este cambio]** → ya no hay un rojo previsto detrás:
+  `main` está en verde desde el run `35389558928`. Un rojo en `app` es un hallazgo nuevo y se
+  trata como dice la tarea 4.4. (Corregido el 2026-09-19: aquí se daba por hecho que
+  `CartSnapshotTests` seguiría roto.)
 - **[Dependencia nueva de una action de terceros]** → asumido en D2, fijada por major y ya en
   uso en el repositorio hermano.
