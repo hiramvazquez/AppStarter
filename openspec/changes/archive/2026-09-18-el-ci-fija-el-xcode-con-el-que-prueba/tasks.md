@@ -18,7 +18,7 @@
 - [x] 1.3 Dejar en cada uno de los tres jobs un paso que imprima la versión efectiva
       (`xcodebuild -version` y `swift --version`), como ya hace `spm-pro`. Verificación: el
       log de la corrida de la tarea 4.4 muestra `26.3` en los tres.
-      **Implementado:** un paso `Versiones` en cada uno de los tres jobs. Su verificación es el log de la 4.4, todavía pendiente.
+      **Hecho:** un paso `Versiones` en cada uno de los tres jobs. Los tres imprimen `Xcode 26.3` en la 4.4.
 
 ## 2. El aviso temprano
 
@@ -27,7 +27,8 @@
       `swift build --build-tests` y `swift test`. Sin `xcodebuild` ni simulador (design D3).
       Verificación: el job aparece en la corrida de la tarea 4.4 y su resultado no cambia la
       conclusión de la corrida.
-      **Implementado** con `timeout-minutes: 20`, como `packages`. Su verificación es la corrida de la 4.4, todavía pendiente. La etiqueta `xcode-27` consigue runner en `spm-pro` (run `35358228447`).
+      **Hecho** con `timeout-minutes: 20`, como `packages`. En la 4.4 aparece con sus dos
+      entradas de la matriz, las dos en verde con Xcode 27.0 / Swift 6.4.
 - [x] 2.2 Escribir en el comentario del job las dos cosas que el requisito pide y que D5
       explica: la condición concreta para volverlo bloqueante —que la imagen `xcode-27` salga
       de preview— con el enlace actions/runner-images#14404, y que este job cubre el sentido
@@ -84,7 +85,7 @@
       sin lógica repetida en lo que toca el cambio. Firma `diff: e12eba12…`, `toolchain: Swift
       6.4 · Xcode 27.0`, `resultado: verde`. Anotarla aquí no la invalida: desde la 2.2.0,
       `openspec/` queda fuera de la huella.
-- [ ] 4.4 **La prueba de verdad**: la corrida del CI sobre este cambio. Verificación: el
+- [x] 4.4 **La prueba de verdad**: la corrida del CI sobre este cambio. Verificación: el
       número de run, anotado, junto con la versión que imprimen los tres jobs de macOS (debe
       ser `26.3` en los tres) y la conclusión del job de aviso.
       Va después de `/kit-verifica` por necesidad —el CI solo corre sobre lo ya empujado—, no
@@ -97,3 +98,19 @@
       haga fallar la corrida, o que aparezca un error de compilación en 26.3 en un módulo que
       hoy está verde. En ese último caso se anota el fichero y el diagnóstico y se decide por
       escrito si entra aquí; no se prueban anotaciones contra el CI.
+      **Hecho (2026-09-19): dos corridas sobre `6c4d3cc`, las dos `success`.** Hacen falta dos
+      porque `integration` solo corre con `workflow_dispatch`.
+      - Run `35422327712` (push): `packages` (Platform y Features) y `app` imprimen
+        `Xcode 26.3` · `Build version 17C529` · `Apple Swift version 6.2.4`, y `setup-xcode`
+        dice «Xcode is set to 26.3.0 (17C529)». `integration`, *skipped*.
+      - Run `35423039462` (dispatch): `integration` imprime lo mismo y pasa sus 2 tests contra
+        DummyJSON. Los demás jobs repiten `26.3` y verde.
+      - Aviso temprano, en las dos: `success` en Platform y en Features, con `Xcode 27.0`
+        (`27A266a`) y `Swift 6.4`. Con Xcode 27 salen los mismos tests que con 26.3
+        (Platform 14 en 5 suites, Features 217 en 39): `swift test` los reparte en una
+        ejecución por target y hay que sumar.
+      - Ningún error de compilación nuevo en 26.3: los paquetes pasan sus tests, lint y
+        archlint, y `app` termina en `** TEST SUCCEEDED **`.
+      Lo que estas corridas **no** prueban: con el aviso en verde no se ve que
+      `continue-on-error` impida que un rojo suyo tumbe la corrida. Esa garantía es la de la
+      documentación de GitHub Actions y la lectura del YAML.
