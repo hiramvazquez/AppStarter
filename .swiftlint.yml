@@ -122,3 +122,49 @@ custom_rules:
     excluded: '.*(Tests|Mocks)/.*'
     message: "privacy: .public expone el valor en el log del dispositivo; justifícalo en un comentario o quítalo."
     severity: warning
+
+  # ── Invariantes de seguridad (spec `seguridad`) ───────────────────────────────────────
+  # Estos dos son regex, así que no entienden el código: miran el texto. Se aceptan porque
+  # con `--strict` BLOQUEAN, y porque la alternativa medida no sirve — semgrep, probado el
+  # 2026-09-22, no casa llamadas con etiquetas en Swift (`$D.set($V, forKey: $K)` no
+  # encuentra el `defaults.set(data, forKey: key)` que hay en Session.swift).
+  no_http_url:
+    name: "URL sin TLS"
+    # `(?i)` porque `"HTTP://` no casaba. `match_kinds: string` para que solo mire literales:
+    # sin eso, un comentario que EXPLIQUE por qué algo no es http bloqueaba la verificación.
+    regex: '(?i)"http://'
+    match_kinds:
+      - string
+    # Un COMPONENTE de directorio que termine en Tests/Mocks/TestSupport, no una subcadena de
+    # la ruta: `[^/]*` cubre los nombres reales de este repo —`AppTests`, `AppUITests`,
+    # `AppSnapshotTests`, `PlatformTestSupport`— y las barras impiden que un clon bajo
+    # `~/Tests-varios/` apague la regla en todo el repo sin decir nada. Lo cazó el revisor:
+    # anclar a `(Tests|Mocks|TestSupport)` a secas dejaba fuera los tres targets de la app, y
+    # el stub offline de `AppUITests` bloqueaba pese a que el mensaje manda ponerlo ahí.
+    excluded: '.*/[^/]*(Tests|Mocks|TestSupport)/.*'
+    message: "Una URL de red va por https. Si es un host local de pruebas, ponlo en un Test."
+    severity: warning
+  sesion_fuera_de_keychain:
+    name: "credenciales en UserDefaults"
+    # Acota por el NOMBRE DEL FICHERO, no por la ruta entera: `[^/]*…\.swift$` exige que la
+    # palabra esté en el nombre. Sin eso, un clon bajo un directorio llamado `Token` hacía
+    # casar TODOS los ficheros del repo.
+    included: '.*/[^/]*(Session|Token|Credential|Keychain)[^/]*\.swift$'
+    # `match_kinds` deja fuera comentarios y documentación: la regla mira código. Si no, el día
+    # que la sesión pase a Keychain, el comentario de `KeychainSessionStore.swift` que explique
+    # a qué sustituye pondría la verificación en rojo por documentar.
+    match_kinds:
+      - identifier
+      - typeidentifier
+    # EXCEPCIÓN DECLARADA, no silenciada: `Domain/Session.swift` guarda el bearer token en
+    # UserDefaults por la decisión de plantilla de PRD-APP-01 —poder clonar y correr sin
+    # aprovisionar Keychain—, con un fork de producción sustituyéndolo tras el mismo
+    # protocolo `SessionStoring`. Es la ÚNICA, y el día que se mueva a Keychain se borra esta
+    # alternativa. Un segundo almacén sí tiene que fallar.
+    #
+    # Las otras son directorios de test: componente que TERMINE en Tests/Mocks/TestSupport, que
+    # es como se llaman de verdad aquí (`AppTests`, `AppUITests`, `PlatformTestSupport`).
+    excluded: '.*(/Packages/Platform/Sources/Domain/Session\.swift$|/[^/]*(Tests|Mocks|TestSupport)/.*)'
+    regex: 'UserDefaults'
+    message: "Una credencial va a Keychain. Si es una excepción deliberada, decláralo en .swiftlint.yml con su motivo."
+    severity: warning

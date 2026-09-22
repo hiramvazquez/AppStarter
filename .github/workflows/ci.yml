@@ -9,6 +9,11 @@ on:
   pull_request:
   workflow_dispatch:
 
+# El token del workflow, en solo lectura: ningún job de este CI escribe en el repositorio ni
+# publica nada, y el permiso por defecto de la organización puede ser más amplio.
+permissions:
+  contents: read
+
 env:
   # Versión FIJA, no «la más reciente de la imagen»: ese selector validaba lo que trajera el
   # runner ese día y se movería solo el día que la imagen incorpore otra Xcode, sin que nadie
@@ -37,6 +42,48 @@ jobs:
       - uses: actions/checkout@v4
       - name: Scripts/check-showcase.sh
         run: ./Scripts/check-showcase.sh
+
+  # Vulnerabilidades conocidas de las dependencias. Va en CI y NO en `kit.conf` porque lo que
+  # cambia no es este repositorio: son los avisos publicados. Comprobarlo en cada verificación
+  # local costaría una llamada de red por commit para responder casi siempre lo mismo.
+  #
+  # CONSECUENCIA ASUMIDA: entre dos corridas puedes commitear sobre una dependencia con un
+  # aviso recién publicado. Mismo trato que el resto del CI de este proyecto.
+  #
+  # Lee los dos `Package.resolved` VERSIONADOS; ubuntu porque no necesita Xcode para nada.
+  #
+  # LO QUE NO CUBRE, medido el 2026-09-22: esos dos ficheros declaran solo los paquetes
+  # propios. El único tercero, `swift-snapshot-testing` (target de snapshots), se declara en
+  # `project.yml` y su fichero de versiones lo escribe xcodegen dentro del `.xcodeproj`, que
+  # no está en git. Cubrirlo pediría resolver los paquetes del proyecto en un runner de macOS
+  # para vigilar una dependencia de tests. Cuando entre un tercero de producción, se revisa.
+  dependencias:
+    name: Dependencias (OSV-Scanner)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      # Versión FIJA y sha comprobado, no `latest`: este job va de cadena de suministro, y
+      # descargar un binario sin fijar ni verificar es justo lo que vigila. El sha sale del
+      # `osv-scanner_SHA256SUMS` que publica la propia release; al subir de versión, se
+      # actualizan las dos líneas juntas.
+      - name: Instalar OSV-Scanner (v2.6.0, sha comprobado)
+        env:
+          OSV_VERSION: v2.6.0
+          OSV_SHA256: ca69b3d3cd08f889a49dc0a383122f71cc528b83803671df5fd874d97485b108
+        run: |
+          set -euo pipefail
+          curl -sSfL -o /tmp/osv-scanner \
+            "https://github.com/google/osv-scanner/releases/download/${OSV_VERSION}/osv-scanner_linux_amd64"
+          echo "${OSV_SHA256}  /tmp/osv-scanner" | sha256sum -c -
+          chmod +x /tmp/osv-scanner
+          sudo mv /tmp/osv-scanner /usr/local/bin/osv-scanner
+          osv-scanner --version
+      - name: osv-scanner sobre los Package.resolved
+        run: |
+          osv-scanner scan source \
+            --lockfile Packages/Platform/Package.resolved \
+            --lockfile Packages/Features/Package.resolved
 
   packages:
     name: ${{ matrix.package }} (swift test + archlint)

@@ -1,0 +1,19 @@
+# Config de gitleaks para AppStarter. La lee el paso `secretos` de kit.conf.
+#
+# Extiende la config por defecto —que es la que sabe de claves de AWS, tokens de GitHub,
+# claves privadas y cadenas de alta entropía— y le quita de en medio los artefactos de build.
+#
+# Por qué la exclusión: medido el 2026-09-22, escanear el árbol entero daba 11 hallazgos, los
+# 11 falsos positivos dentro de `Packages/*/.build/plugins/*/cache/*.json` —hashes de caché de
+# los plugins de SwiftPM que parecen claves de API—, y tardaba 65 s sobre 1,08 GB. Con estas
+# rutas fuera: 0 hallazgos en 136 ms, sobre 1,75 MB. Nada de lo excluido está en git.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Artefactos de build: no son código de este repositorio y ninguno está versionado."
+paths = [
+  '''(^|/)\.build/''',
+  '''(^|/)DerivedData/''',
+  '''(^|/)\.swiftpm/''',
+]

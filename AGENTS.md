@@ -203,6 +203,49 @@ Quedan dos pasos a mano:
   R13 rompe el build. Si necesitas datos de otra feature, recibe un protocolo de `Domain`/
   `Networking` por `init`; si necesitas navegar a su pantalla, usa `AppRoute`.
 
+## Seguridad: lo que se da por hecho
+
+Seis invariantes. No son consejos: cada uno tiene detrás una comprobación que corre en
+`/kit-verifica`, así que incumplir uno deja el proyecto **sin firma** y la puerta bloquea el
+commit. El detalle y sus escenarios están en la spec `seguridad`.
+
+Con una excepción que conviene conocer: la firma **no cubre `openspec/`**, así que un secreto
+escrito ahí después de verificar no invalida la firma y ese commit pasa. Lo caza la siguiente
+verificación, porque el escaneo sí mira ese directorio. Para los otros cinco invariantes no
+aplica: solo miran Swift, y en `openspec/` no hay Swift.
+
+| se da por hecho | lo comprueba |
+|---|---|
+| No hay secretos en el árbol | `gitleaks`, con `.gitleaks.toml` |
+| Nada imprime a consola en producción | SwiftLint `no_print_in_production` |
+| Ningún log expone valores con `privacy: .public` | SwiftLint `os_log_public_interpolation` |
+| Ninguna URL de red usa `http://` | SwiftLint `no_http_url` |
+| Las credenciales no viven en `UserDefaults` | SwiftLint `sesion_fuera_de_keychain` |
+| No hay `try!`, `as!` ni `!` forzado | SwiftLint `force_try`, `force_cast`, `force_unwrapping` |
+
+Dos cosas que conviene saber antes de escribir:
+
+- **Un secreto commiteado no se arregla borrando la línea**: queda en la historia y hay que
+  rotarlo. Por eso el escaneo va antes del commit y no después.
+- **La única excepción declarada** es `UserDefaultsSessionStore`
+  (`Packages/Platform/Sources/Domain/Session.swift`), que guarda el bearer token en
+  `UserDefaults` por la decisión de plantilla de PRD-APP-01. Está escrita en
+  `.swiftlint.yml`, junto a la regla que la detecta. Un segundo almacén de credenciales sobre
+  `UserDefaults` falla, y así debe ser.
+
+Lo que estas comprobaciones **no** miran: si una autorización está bien puesta, si esa
+pantalla debería ver esos datos, o qué se envía a terceros. Eso no se decide leyendo el texto
+del código, y es trabajo del revisor (`/kit-revisa`).
+
+Y son de texto, no de semántica: el almacén de credenciales se detecta por el NOMBRE del
+fichero, así que uno llamado de otra forma se escapa; una URL construida por concatenación, o
+escrita dentro de un string multilínea, también. Nada comprueba hoy `App/Info.plist`: si
+alguien desactiva ATS, no salta nada. Y un `.gitleaksignore` en la raíz puede tapar un
+hallazgo de secretos: si aparece uno, que diga por qué.
+
+Las dependencias se revisan contra vulnerabilidades conocidas en el CI, no en cada commit: lo
+que cambia ahí no es este repositorio, son los avisos publicados.
+
 ## Generador y linter
 
 ```bash
