@@ -222,6 +222,7 @@ aplica: solo miran Swift, y en `openspec/` no hay Swift.
 | Ninguna URL de red usa `http://` | SwiftLint `no_http_url` |
 | Las credenciales no viven en `UserDefaults` | SwiftLint `sesion_fuera_de_keychain` |
 | No hay `try!`, `as!` ni `!` forzado | SwiftLint `force_try`, `force_cast`, `force_unwrapping` |
+| ATS no está desactivado | el paso `ATS`, sobre `project.yml` y los `Info.plist` |
 
 Dos cosas que conviene saber antes de escribir:
 
@@ -239,9 +240,16 @@ del código, y es trabajo del revisor (`/kit-revisa`).
 
 Y son de texto, no de semántica: el almacén de credenciales se detecta por el NOMBRE del
 fichero, así que uno llamado de otra forma se escapa; una URL construida por concatenación, o
-escrita dentro de un string multilínea, también. Nada comprueba hoy `App/Info.plist`: si
-alguien desactiva ATS, no salta nada. Y un `.gitleaksignore` en la raíz puede tapar un
-hallazgo de secretos: si aparece uno, que diga por qué.
+escrita dentro de un string multilínea, también. Y un `.gitleaksignore` en la raíz puede
+tapar un hallazgo de secretos: si aparece uno, que diga por qué.
+
+Lo de ATS se comprueba en los dos sitios donde se desactiva hoy: `project.yml`, que es la
+fuente que fusiona xcodegen, y CUALQUIER plist del árbol —da igual cómo se llame y aunque no
+esté stageado todavía, porque el build lee el disco y no el índice—. El plist se lee con
+`plutil`, que entiende el formato binario en el que Xcode los reescribe a veces, y si no se
+puede leer el paso falla: no se puede afirmar que esté limpio algo que no se ha mirado. Se
+vigila la clave `NSAppTransportSecurity` entera, porque todas sus variantes abren el mismo
+agujero. Queda fuera un `xcconfig`, que hoy este proyecto no tiene.
 
 Las dependencias se revisan contra vulnerabilidades conocidas en el CI, no en cada commit: lo
 que cambia ahí no es este repositorio, son los avisos publicados.

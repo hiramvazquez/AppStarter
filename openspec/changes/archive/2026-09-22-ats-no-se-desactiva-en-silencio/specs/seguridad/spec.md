@@ -1,9 +1,4 @@
-# seguridad Specification
-
-## Purpose
-TBD - created by archiving change los-invariantes-de-seguridad-se-comprueban. Update Purpose after archive.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Los invariantes de seguridad se comprueban en cada verificación
 
@@ -77,43 +72,3 @@ tenerlo.
 - **WHEN** un invariante está escrito pero nada lo comprueba, o una comprobación bloquea algo
   que no está en la lista
 - **THEN** se corrige la lista o la comprobación, por escrito, antes de seguir
-
-### Requirement: Las excepciones a un invariante se declaran donde se ven
-
-Un invariante que este proyecto incumple a propósito SHALL quedar declarado junto a la
-comprobación que lo detecta, nombrando el sitio exacto y el motivo. NOT MUST silenciarse
-bajando la severidad, quitando la regla, ni con una desactivación suelta en el fichero
-afectado.
-
-Hoy hay exactamente una: `UserDefaultsSessionStore` guarda el bearer token en `UserDefaults`,
-por la decisión de plantilla de PRD-APP-01 —poder clonar y correr sin aprovisionar Keychain—.
-
-#### Scenario: Aparece un segundo almacén de credenciales sobre UserDefaults
-
-- **WHEN** se añade otro almacén de credenciales sobre `UserDefaults` en un fichero cuyo nombre
-  nombra sesión, token, credencial o keychain
-- **THEN** la verificación sale en rojo, porque la excepción declarada es solo la existente
-- **AND** si el fichero se llama de otra forma, la comprobación no lo ve: eso lo cubre el
-  revisor, y está dicho arriba
-
-#### Scenario: La excepción deja de hacer falta
-
-- **WHEN** el almacén de sesión pasa a Keychain
-- **THEN** basta retirar la excepción declarada, sin tocar la regla
-
-### Requirement: Las dependencias se revisan contra vulnerabilidades conocidas
-
-El CI SHALL comprobar los `Package.resolved` del proyecto contra una base de vulnerabilidades
-conocidas, y SHALL fallar si alguna dependencia tiene un aviso. Esa comprobación NOT MUST
-correr en cada verificación local: lo que cambia no es el código del repositorio, sino los
-avisos publicados.
-
-#### Scenario: Una dependencia acumula un aviso conocido
-
-- **WHEN** una dependencia declarada tiene una vulnerabilidad publicada
-- **THEN** el job de dependencias del CI falla y la nombra
-
-#### Scenario: Se verifica en local
-
-- **WHEN** alguien corre `/kit-verifica`
-- **THEN** no se consulta ninguna base de vulnerabilidades ni se sale a la red por ello
