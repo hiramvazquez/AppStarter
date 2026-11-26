@@ -1,5 +1,5 @@
 {
-  "originHash" : "06b5de51556c925af274bd1ce8c3271e56b4563c9f3f290e6ffd8f6245e58262",
+  "originHash" : "adee73527737f0941c3fe66e826ea5e3bfc5e78a18361c14997aff360927a055",
   "pins" : [
     {
       "identity" : "appfoundation",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/hiramvazquez/CoreNetworking.git",
       "state" : {
-        "revision" : "a3e8287ff6e1a2184a0b99907f580340836b0a0b",
-        "version" : "1.3.1"
+        "revision" : "ce8be467c9fd17084c12af154c02c28005b3a767",
+        "version" : "1.3.2"
       }
     }
   ],
