@@ -64,8 +64,13 @@ public final class LoginViewModel: LogicViewModel<any LoginLogicProtocol>, Actio
         showBanner(.warning("Tu sesión ha caducado. Inicia sesión de nuevo."))
     }
 
+    /// El envío va por `performActivity`, que deja el formulario a la vista. Un formulario es
+    /// contenido que ya está en pantalla y que el usuario necesita para corregir: con la
+    /// primitiva de carga un fallo pone la fase en `.error`, el contenedor lo oculta, y como
+    /// `invalidCredentials` no es reintentable tampoco hay botón — no queda forma de volver a
+    /// intentarlo sin relanzar la app. Así el aviso sale en el banner, encima del formulario.
     private func login() {
-        performLoad { vm in
+        performActivity(errorHandling: .banner) { vm in
             do {
                 try await vm.logic.login(username: vm.username, password: vm.password)
                 // `Container(parent:)` per session (PRD-APP-02): a fresh session-scoped child
@@ -73,11 +78,12 @@ public final class LoginViewModel: LogicViewModel<any LoginLogicProtocol>, Actio
                 vm.sessionState.startSession()
                 vm.router.setRoot(.products)
             } catch LoginError.cancelled {
-                // Una cancelación reconocida sale de `performLoad` por un `return` seco que no
-                // toca `phase`: sin esto el botón de entrar se queda en `.loading` para siempre
-                // y no hay forma de reintentar. Y solo si esta Task sigue viva, porque
-                // `performLoad` cancela la anterior al arrancar.
-                if !Task.isCancelled { vm.setIdle() }
+                // Una cancelación reconocida sale de `performActivity` por un `return` seco que
+                // no retira la actividad: sin esto el indicador se queda puesto sobre el
+                // formulario para siempre, comiéndose los toques, y no hay forma de reintentar.
+                // Y solo si esta Task sigue viva, porque `performActivity` cancela la anterior
+                // al arrancar.
+                if !Task.isCancelled { vm.stopActivity() }
                 throw LoginError.cancelled
             }
         }
