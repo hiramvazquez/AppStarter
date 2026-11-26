@@ -66,11 +66,15 @@ diagnóstico, y SHALL NOT aparecer en pantalla.
 ### Requirement: Versión mínima de los kits
 
 Los manifiestos del proyecto SHALL declarar AppFoundation `1.4.2` o superior y
-CoreNetworking `1.3.1` o superior, en los tres sitios donde vive el suelo de versión:
+CoreNetworking `1.3.2` o superior, en los tres sitios donde vive el suelo de versión:
 `project.yml`, `Packages/Platform/Package.swift` y `Packages/Features/Package.swift`.
 
 Por debajo de esas versiones el proyecto arrastra un fallo de seguridad ya corregido
 (AppFoundation 1.2.6, el error interno visible para el usuario).
+
+Por debajo de CoreNetworking `1.3.2`, lo que el servidor mande en la cabecera `Retry-After`
+decide si la app sigue viva: un valor como `inf` o `1e30` termina el proceso, y uno finito
+enorme deja la petición esperando sin límite práctico.
 
 Por debajo de AppFoundation `1.3.2` el proyecto además no compila con un toolchain Swift
 6.4 o superior: `DomainError` queda aislado al MainActor y ningún tipo de error de dominio
@@ -85,7 +89,7 @@ pasan `swift format lint --strict`.
 
 - **WHEN** se ejecuta `swift package update` o `xcodebuild -resolvePackageDependencies`
 - **THEN** los tres `Package.resolved` quedan en AppFoundation 1.4.2 o superior
-- **AND** en CoreNetworking 1.3.1 o superior
+- **AND** en CoreNetworking 1.3.2 o superior
 
 #### Scenario: Se compila con un toolchain Swift 6.4 o superior
 
